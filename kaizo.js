@@ -2413,6 +2413,7 @@ Game.registerMod("Kaizo Cookies", {
 			return decay.spawnWrinkler(obj); 
 		};
 		decay.wSoulMovement = new Crumbs.behavior(function(p) {
+			if (Game.keys[65] && decay.prefs.touchpad && this.getComponent('pointerInteractive').hovered) { this.grabbed = true; }
 			if (!this.grabbed) { this.y -= p.dy * (1 / (1 + Math.min(this.inMilk / 50, 2))); }
 			if (this.grabbed) {
 				if (!this.getComponent('pointerInteractive').click) { this.grabbed = false; }
@@ -5198,6 +5199,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -5586,7 +5588,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		
 
 		/*=====================================================================================
         Power clicks
