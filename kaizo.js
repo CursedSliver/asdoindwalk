@@ -2522,7 +2522,7 @@ Game.registerMod("Kaizo Cookies", {
 			keep: 0.7,
 			overtimeLimit: 8,
 			overtimeEfficiency: 0.9,
-			power: 2,
+			power: 1.5,
 			factor: 0.6
 		});
 		decay.halts['wSoulShiny'] = new decay.haltChannel({
