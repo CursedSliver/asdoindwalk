@@ -1616,6 +1616,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (decay.offBrandFingers[i].bought) { ho *= 1.15; }
 			}
 			decay.haltOTLimit = ho;
+			decay.setPowerGainMult();
 		}
 		Game.registerHook('check', decay.setRates);
 		Game.registerHook('reincarnate', decay.setRates);
@@ -2541,7 +2542,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Lucky radar')) { mult *= 2; }
 			if (Game.Has('Shimmering encapsulation')) { mult *= 2; }
 			if (Game.Has('Immense flow')) { mult *= 2; }
-			if (Game.hasGod) { const lvl = Game.hasGod('decadence'); if (lvl==1) { mult*=3.77; } else if (lvl==2) { mult*=2.77; } else if (lvl==3) { mult*=1.77; } }
+			if (Game.hasGod) { const lvl = Game.hasGod('decadence'); if (lvl==1) { mult*=1.77; } else if (lvl==2) { mult*=1.57; } else if (lvl==3) { mult*=1.37; } }
 
 			if (!isWrath) mult*=Game.eff('goldenCookieGain');
 			else mult*=Game.eff('wrathCookieGain'); //screw power click effect on gc gain, that was too op anyways
@@ -4133,13 +4134,13 @@ Game.registerMod("Kaizo Cookies", {
 			Game.Objects['Wizard tower'].minigame.spells['conjure baked goods'].desc=loc("+%1% prestige level effect and potential for 60 seconds.", 75);
 			Game.Objects['Wizard tower'].minigame.spells['conjure baked goods'].failDesc=loc("Trigger a %1-minute coagulation and lose %2% of your cookies owned.", [3, 50]);
 			addLoc('Holify Abomination');
-			addLoc('Obliterate the most powerful wrinkler without losing any cookies, and automatically stores its soul if possible');
+			addLoc('Obliterate the most powerful wrinkler without any negative effects or losing any cookies, and automatically stores its soul if possible');
 			addLoc('Summons a shiny wrinkler.');
 			addLoc('Wrinkler obliteration in progress...');
 			addLoc('But the shiny wrinkler couldn\'t fit.');
 			addLoc('Beware of the beast!');
 			gp.spells['resurrect abomination'].name = loc('Holify Abomination');
-			gp.spells['resurrect abomination'].desc = loc('Obliterate the most powerful wrinkler without losing any cookies, and automatically stores its soul if possible.');
+			gp.spells['resurrect abomination'].desc = loc('Obliterate the most powerful wrinkler without any negative effects or losing any cookies, and automatically stores its soul if possible.');
 			gp.spells['resurrect abomination'].failDesc = loc('Summons a shiny wrinkler.');
 			decay.holifyAbominationShrinkBehavior = new Crumbs.behavior(function(p) {
 				p.speed += p.acceleration;
@@ -4716,9 +4717,9 @@ Game.registerMod("Kaizo Cookies", {
         	eval("temp.gods['ages'].activeDescFunc="+Game.Objects['Temple'].minigame.gods['ages'].activeDescFunc.toString().replace("else if (godLvl==3) mult*=0.15*Math.sin((Date.now()/1000/(60*60*24))*Math.PI*2);","else if (godLvl==3) mult*=0.15*Math.sin((Date.now()/1000/(60*60*48))*Math.PI*2);"));
 
 			addLoc('Golden and wrath cookie gain +%1%.');
-			temp.gods['decadence'].desc1='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",7)+' '+loc('Golden and wrath cookie gain +%1%.',277)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",7)+'</span>';
-			temp.gods['decadence'].desc2='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",5)+' '+loc('Golden and wrath cookie gain +%1%.',177)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",5)+'</span>';
-			temp.gods['decadence'].desc3='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",2)+' '+loc('Golden and wrath cookie gain +%1%.',77)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",2)+'</span>';
+			temp.gods['decadence'].desc1='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",7)+' '+loc('Golden and wrath cookie gain +%1%.',77)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",7)+'</span>';
+			temp.gods['decadence'].desc2='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",5)+' '+loc('Golden and wrath cookie gain +%1%.',57)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",5)+'</span>';
+			temp.gods['decadence'].desc3='<span class="green">'+loc("Golden and wrath cookie effect duration +%1%.",2)+' '+loc('Golden and wrath cookie gain +%1%.',37)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",2)+'</span>';
 
 			eval("temp.slotGod="+replaceAll('M', 'pp', temp.slotGod.toString()));
 			eval("temp.slotGod="+temp.slotGod.toString().replace('Game.recalculateGains=true;', 'Game.recalculateGains=true; decay.setRates();').replace('if (slot==god.slot)', 'if (slot==god.slot || !decay.gameCan.slotGods)'));
@@ -4899,7 +4900,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.UpdateMenu='+Game.UpdateMenu.toString()
 		.replace(
 			`loc("at %1% of its potential <b>(+%2% CpS)</b>",[Beautify(heavenlyMult*100,1),Beautify(decay.getCpSBoostFromPrestige(),1)])`, 
-			`'<div id="prestigePowerDisplay" style="margin-top: 3px;">'+decay.getPrestigeLevelUnleashText()+((heavenlyMult!=1)?(' '+loc("at x%1 effect and count", Beautify(heavenlyMult))):'')+'</div>'`
+			`'<div id="prestigePowerDisplay" style="margin-top: 3px;">'+decay.getPrestigeLevelUnleashText()+((Game.heavenlyMult>=1)?(' '+loc("at x%1 effect and count", Beautify(Game.heavenlyMult, 2))):'')+'</div>'`
 		));
 		eval('Game.CalculateGains='+Game.CalculateGains.toString()
 			.replace(`mult+=parseFloat(Game.prestige)*0.01*Game.heavenlyPower*Game.GetHeavenlyMultiplier();`, 'mult+=decay.getCpSBoostFromPrestige();')
@@ -5202,8 +5203,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Personal biscuit'].basePrice=999999999999999999999999999999999999999999999999999999999999999*butterBiscuitMult
 
 		allValues('upgrades rework');
-
-		/*
+		
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -5592,7 +5592,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		*/
 
 		/*=====================================================================================
         Power clicks
@@ -5794,9 +5793,18 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.gainPower = function(amount) {
 			if (Game.hasBuff('Power poked') || !decay.powerUnlocked()) { return; }
+			amount *= decay.powerGainMult;
 			decay.power = Math.min(decay.power + amount, decay.totalPowerLimit);
 			decay.times.sincePowerGain = 0;
 			if (decay.powerToNext - amount < 0) { decay.onPCChange(); }
+		}
+		decay.powerGainMult = 1;
+		decay.setPowerGainMult = function() {
+			let mult = 1;
+			for (let i in decay.POBoosters) {
+				if (decay.POBoosters[i].bought) { mult *= 1.25; }
+			}
+			return mult;
 		}
 		
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("this.last=choice;","this.last=choice; var powerClick=false; if (decay.powerClicksOn() && decay.hasPowerClicks()) { decay.spendPowerClick(); powerClick=true; PlaySound('snd/powerShimmer.mp3',0.4); PlaySound('snd/powerClick'+choose([1,2,3])+'b.mp3',0.7-Math.random()*0.3); }"));
@@ -5810,15 +5818,15 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Twin Gates of Transcendence'].icon = [23, 2, kaizoCookies.images.custImg];
 		replaceDesc('Angels', 'Maximum power click capacity increased to <b>3</b>.<q>Lowest-ranking at the first sphere of pastry heaven, angels are tasked with delivering new recipes to the mortals they deem worthy.</q>');
 		Game.Upgrades['Angels'].basePrice *= 7**1;
-		replaceDesc('Archangels', 'Power orbs appear <b>20%</b> more often, and power orbs has <b>15%</b> less health.<q>Members of the first sphere of pastry heaven, archangels are responsible for the smooth functioning of the world\'s largest bakeries.</q>');
+		replaceDesc('Archangels', 'You gain <b>25%</b> more power.<q>Members of the first sphere of pastry heaven, archangels are responsible for the smooth functioning of the world\'s largest bakeries.</q>');
 		Game.Upgrades['Archangels'].basePrice *= 7**2;
 		replaceDesc('Virtues', 'Maximum power click capacity increased to <b>4</b>.<q>Found at the second sphere of pastry heaven, virtues make use of their heavenly strength to push and drag the stars of the cosmos.</q>');
 		Game.Upgrades['Virtues'].basePrice *= 7**3;
-		replaceDesc('Dominions', 'Power orbs appear <b>20%</b> more often, and power orbs has <b>15%</b> less health.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
+		replaceDesc('Dominions', 'You gain <b>25%</b> more power.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
 		Game.Upgrades['Dominions'].basePrice *= 7**4;
 		replaceDesc('Cherubim', 'Maximum power click capacity increased to <b>5</b>.<q>Sieging at the first sphere of pastry heaven, the four-faced cherubim serve as heavenly bouncers and bodyguards.</q>');
 		Game.Upgrades['Cherubim'].basePrice *= 7**5;
-		replaceDesc('Seraphim', 'Power orbs appear <b>20%</b> more often, and power orbs has <b>15%</b> less health.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
+		replaceDesc('Seraphim', 'You gain <b>25%</b> more power.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
 		Game.Upgrades['Seraphim'].basePrice *= 7**6;
 		replaceDesc('God', 'Maximum power click capacity increased to <b>6</b>.<q>Like Santa, but less fun.</q>');
 		Game.Upgrades['God'].basePrice *= 7**7;
@@ -5933,9 +5941,6 @@ Game.registerMod("Kaizo Cookies", {
 		}`); doesnt work lmao s k u l l*/
 		decay.getPowerOrbHP = function() {
 			var base = 110;
-			for (let i in decay.POBoosters) {
-				if (decay.POBoosters[i].bought) { base *= (1 - 0.15); }
-			}
 			if (decay.isConditional('power')) { base *= 1.5; }
 			return base;
 		}
@@ -6425,9 +6430,6 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power <= decay.powerClickReqs[0] || !decay.powerUnlocked()) { return; }
 
 			var inverseChance = 0.995;
-			for (let i in decay.POBoosters) {
-				if (decay.POBoosters[i].bought) { inverseChance = Math.pow(inverseChance, 1.2); }
-			}
 			if (decay.isConditional('typing') || decay.isConditional('typingR') || decay.isConditional('power')) { inverseChance = Math.pow(inverseChance, 5); }
 			if (Math.random() < (1 - inverseChance)) {
 				new decay.powerOrb();
