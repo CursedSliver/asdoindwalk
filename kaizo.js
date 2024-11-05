@@ -4766,6 +4766,9 @@ Game.registerMod("Kaizo Cookies", {
 		//earlygame building prices rework below
 		for (let i in Game.Objects) {
 			Game.Objects[i].basePrice /= (1 + Game.Objects[i].id);
+			for (let ii in Game.Objects[i].tieredUpgrades) { 
+				Game.Objects[i].tieredUpgrades[ii].basePrice /= (1 + Game.Objects[i].id);
+			}
 		}
 
 		decay.changeUpgradeDescs = function() {
@@ -8300,6 +8303,7 @@ Game.registerMod("Kaizo Cookies", {
 		strIn = str[17];
 		if (isv(strIn)) { Game.cookieClicksGlobal = parseFloat(strIn); if (Game.cookieClicksGlobal > decay.cookieClicksTotalNGM) { decay.cookieClicksTotalNGM = Game.cookieClicksGlobal; }}
 
+		decay.removeAllWrinklers();
 		Game.loadAllWrinklers(str[18]);
 		decay.removeAllWrinklerSouls();
 
@@ -8321,9 +8325,11 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		strIn = str[24];
+		decay.setupCovenant();
 		if (isv(strIn) && strIn != 'NA') {
 			decay.covenantModes[strIn].upgrade.unlocked = 1;
 			decay.covenantModes[strIn].upgrade.bought = 0;
+			console.log(strIn);
 		}
 		if (!decay.isCovenantUnlocked()) { decay.covenantModes.off.upgrade.bought = 1; }
 
