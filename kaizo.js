@@ -907,7 +907,7 @@ Game.registerMod("Kaizo Cookies", {
 			order: 20,
 			behaviors: [
 				new Crumbs.behaviorInstance(Crumbs.objectBehaviors.fillWhole),
-				new Crumbs.behaviorInstance(function() { this.alpha = 1 - decay.leftSectionSpeed(); })
+				new Crumbs.behaviorInstance(function() { this.alpha = Math.max(1 / (1 + decay.leftSectionSpeed() * 3) - 0.1, 0); })
 			]
 		});
 		eval('Crumbs.spawnCookieShower='+Crumbs.spawnCookieShower.toString().replace('Game.prefs.particles', 'Math.random() < decay.leftSectionSpeed() && Game.prefs.particles'));
@@ -1234,7 +1234,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			shinySoulEffect: {
 				title: 'Reflective blessings',
-				desc: 'Upon claiming a shiny wrinkler, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS, for up to doubling your bank! You might be able to do something with this information...',
+				desc: 'Upon claiming a shiny wrinkler\'s soul, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS, for up to doubling your bank! You might be able to do something with this information...',
 				icon: [10, 3, kaizoCookies.images.custImg]
 			}
 		}
@@ -2094,7 +2094,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.x = this.leftSection.offsetWidth / 2 + pos[0]; this.y = this.leftSection.offsetHeight * 0.4 + pos[1];
 			this.rotation = Math.PI * 2 - this.rad;
 			if (this.getComponent('pointerInteractive').hovered) {
-				if ((decay.prefs.scrollWrinklers && Game.Scroll!=0 && Date.now() - decay.lastWrinklerClick > 105) || (Game.keys[65] && decay.prefs.touchpad)) { 
+				if (Date.now() - decay.lastWrinklerClick > 105 && ((decay.prefs.scrollWrinklers && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad))) { 
 					decay.onWrinklerClick.call(this);
 					decay.lastWrinklerClick = Date.now();
 				} 
@@ -4878,7 +4878,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('fully unleashed <b>(+%1% CpS)</b>');
 		decay.getPrestigeLevelUnleashText = function() {
 			if (Game.activePrestigeCount == Game.prestige) {
-				return loc('fully unleashed <b>(+%1% CpS)</b>', Beautify(decay.getCpSBoostFromPrestige(),1));
+				return loc('fully unleashed <b>(+%1% CpS)</b>', Beautify(decay.getCpSBoostFromPrestige()*100,1));
 			}
 			return loc("with %1 prestige levels unleashed <b>(+%2% CpS)</b>", [Beautify(Game.activePrestigeCount), Beautify(decay.getCpSBoostFromPrestige()*100,1)]);
 		}
