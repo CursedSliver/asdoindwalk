@@ -2096,6 +2096,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (this.getComponent('pointerInteractive').hovered) {
 				if ((decay.prefs.scrollWrinklers && Game.Scroll!=0 && Date.now() - decay.lastWrinklerClick > 105) || (Game.keys[65] && decay.prefs.touchpad)) { 
 					decay.onWrinklerClick.call(this);
+					decay.lastWrinklerClick = Date.now();
 				} 
 				this.hurt = Math.max(this.hurt, 12); 
 			}
