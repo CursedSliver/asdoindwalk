@@ -7,8 +7,9 @@ var kaizoWarning = true;
 //additional helper functions
 var upgradeDescsToReplace = [];
 
-function replaceDesc(name, toReplaceWith) {
+function replaceDesc(name, toReplaceWith, keepFlavorText) {
 	if (!Game.ready) { upgradeDescsToReplace.push([name, toReplaceWith]); return; } 
+	if (keepFlavorText) { toReplaceWith += getFlavorText(Game.Upgrades[name]); }
 	Game.Upgrades[name].baseDesc = toReplaceWith;
 	Game.Upgrades[name].desc = toReplaceWith;
 	Game.Upgrades[name].ddesc = toReplaceWith;
@@ -28,6 +29,9 @@ function auraDesc(id, str, actionStr) {
 	Game.dragonAuras[id].desc=loc(str);
 	Game.dragonLevels[id+3].action = Game.dragonLevels[id+3].action.slice(0, Game.dragonLevels[id+3].action.indexOf('<small>'))+'<small>'+actionStr+'</small>';
 }
+function getFlavorText(upgrade) {
+	return upgrade.desc.slice(upgrade.desc.indexOf('<q>'), upgrade.desc.length);
+}
 var cookieChanges = [];
 function cookieChange(name, newPow) {
 	if (!Game.ready) { cookieChanges.push([name, newPow]); }
@@ -35,7 +39,7 @@ function cookieChange(name, newPow) {
 	if (!(typeof Game.Upgrades[name].power == 'function')) { Game.Upgrades[name].power = newPow; } else {
 		eval('Game.Upgrades["'+name+'"].power='+Game.Upgrades[name].power.toString().replace('var pow=2;', 'var pow='+newPow+';').replace(') pow=3;', ') pow=1.5*'+newPow+';'));
 	}
-	var flavorText = Game.Upgrades[name].desc.slice(Game.Upgrades[name].desc.indexOf('<q>'), Game.Upgrades[name].desc.length);
+	var flavorText = getFlavorText(Game.Upgrades[name]);
 	Game.Upgrades[name].desc = loc("Cookie production multiplier <b>+%1%</b>.", newPow)+flavorText;
 	Game.Upgrades[name].ddesc = loc("Cookie production multiplier <b>+%1%</b>.", newPow)+flavorText;
 	Game.Upgrades[name].baseDesc = loc("Cookie production multiplier <b>+%1%</b>.", newPow)+flavorText;
@@ -592,6 +596,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.hasBuff('Stagnant body').arg1) { tickSpeed *= 1 + Game.hasBuff('Stagnant body').arg1; }
             if (Game.hasBuff('Coagulated')) { tickSpeed *= 1.5; }
             if (Game.hasBuff('Cursed')) { tickSpeed *= 3; }
+			if (Game.Has('Santa\'s bottomless bag')) { tickSpeed *= 0.9; }
 			if (Game.ascensionMode==42069) { tickSpeed *= 0.5; }
 			if (Game.Has('Lumpy evolution')) {
 				var n = 0;
@@ -2125,7 +2130,7 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		decay.wrinklerStats = new Crumbs.behavior(function() {
 			this.hp = Math.min(this.hp + decay.wrinklerRegen, this.hpMax);
-			if (this.dist == 0) { 
+			if (this.dist <= 0) { 
                 this.sucked += Math.max(Game.cpsSucked, (Math.pow(Game.cookiesInTermsOfCps, 0.2) - 5)) * (this.shiny?3:1) * Game.cookiesPs * decay.wrinklersN / Game.fps; this.explosionProgress += (1 / ((this.bomber?(2+this.size):(20+10*this.size)) * Game.fps)); 
             }
             if (this.explosionProgress >= 1) { decay.wrinklerExplosion.call(this); }
@@ -2726,7 +2731,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in arr) {
 				let param = arr[i].split('_');
 				for (let ii = 0; ii < param.length - 1; ii++) {
-					if (isv(param[ii])) { param[ii] = parseFloat(param[ii]); } else { continue loop; break; }
+					if (isv(param[ii])) { param[ii] = parseFloat(param[ii]); } else { continue loop; }
 				}
 				let obj = {
 					dist: param[0],
@@ -2885,6 +2890,10 @@ Game.registerMod("Kaizo Cookies", {
 			this.setCap();
 			return this.amount < this.cap;
 		}
+		decay.utenglobeStorageItem.prototype.lose = function(amount) {
+			this.amount = Math.max(0, this.amount - amount);
+			decay.updateUtenglobe();
+		}
 		decay.utenglobeStorageItem.prototype.getUpgradeDesc = function() {
 			return '<div style="height: 100%; display: flex; justify-content: center; align-items: center; flex: 1;"><div style="display: inline-block; width: 10%;"><div style="width: 48px; height: 48px; transform: scale(0.5) translateX(-33%);'+writeIcon(this.icon)+'"></div></div><div style="display: inline-block; width: 80%; left: 0px;">'+this.upgradeButtons()+'</div><div style="display: inline-block; width: 10%;"><div style="width: 48px; height: 48px; transform: scale(0.5) translateX(-33%);'+writeIcon(this.icon)+'"></div></div></div>';
 		}
@@ -3026,7 +3035,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.shimmer.prototype.pop='+Game.shimmer.prototype.pop.toString().replace('Game.Click=0;', 'Game.Click=0; decay.purifyFromShimmer(this);'));
 		decay.purifyFromShimmer = function(obj) {
 			if (obj.type == 'reindeer') {
-				if (decay.isConditional('reindeer')) { decay.amplifyAll(5, 20); } else if (obj.noPurity) { decay.amplifyAll(10, 0); Game.Notify('LOL', '', [12, 8]); } else { decay.purifyAll(2, 0.2, 5); decay.triggerNotif('reindeer'); }
+				if (decay.isConditional('reindeer')) { decay.amplifyAll(5, 20); } else if (obj.noPurity) { decay.amplifyAll(10, 0); Game.Notify('LOL', '', [12, 8]); } else { decay.purifyAll(1.5 * (1 + Game.Has('Weighted sleighs') * 0.25), 0.2, 5); decay.triggerNotif('reindeer'); }
 				return;
 			} 
 			if (obj.type == 'a mistake') {
@@ -3086,6 +3095,9 @@ Game.registerMod("Kaizo Cookies", {
 			decay.wrinklerSpawnRate = decay.setWrinklerSpawnRate();
 
 			for (let i in decay.seFrees) { decay.seFrees[i] = 0; } 
+
+			decay.fatigue = 0;
+			decay.exhaustion = 0;
 
 			decay.ascendUtenglobe();
 
@@ -4592,7 +4604,7 @@ Game.registerMod("Kaizo Cookies", {
 			.replace("if (godLvl==1) mult*=1.15;","if (godLvl==1) mult*=1.25;")
 			.replace("else if (godLvl==2) mult*=1.20;","else if (godLvl==2) mult*=1.20;")
 			.replace("else if (godLvl==3) mult*=1.1;","else if (godLvl==3) mult*=1.15;")
-			.replace(`Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')`, `Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')+Game.Has('Muscle relaxant')+Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Trigger fingers')+Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Non-euclidean baking trays')`)
+			.replace(`Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')`, `(Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')+Game.Has('Muscle relaxant')+Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Trigger fingers')+Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Non-euclidean baking trays'))*(Game.Has("Santa's helpers")+1)`)
 		);
 
         //Nerfing Mokalsium
@@ -4856,7 +4868,7 @@ Game.registerMod("Kaizo Cookies", {
 			} else if (Game.Has('Heavenly chip secret')) { 
 				base = 100;
 			}
-			return Math.min(base, Game.prestige) * Game.heavenlyMult;
+			return Math.min(base, Game.prestige * Game.heavenlyMult);
 		}
 		decay.updateHeavenlyKeyCharge = function() {
 			if (!Game.Has('Heavenly key') || Game.activePrestigeCount >= Game.prestige || decay.gen < 1) { return; }
@@ -4926,8 +4938,23 @@ Game.registerMod("Kaizo Cookies", {
 			return counter;
 		}
 
-		eval('Game.UpgradeSanta='+Game.UpgradeSanta.toString().replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=Math.pow(Game.santaLevel*2,Game.santaLevel*2);'));
-		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString().replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=Math.pow(Game.santaLevel*2,Game.santaLevel*2);').replace('Math.pow(Game.santaLevel+1,Game.santaLevel+1)', 'Math.pow(Game.santaLevel*2,Game.santaLevel*2)'));
+		//santa changes
+		eval('Game.UpgradeSanta='+Game.UpgradeSanta.toString()
+			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
+			.replace('Game.cookies>moni', 'Game.cookies>moni && decay.utenglobeStorage.soul.amount >= Game.santaSoulReqs[Game.santaLevel] && decay.utenglobeStorage.shinySoul.amount >= Game.santaShinySoulReqs[Game.santaLevel]')
+			.replace('Game.Spend(moni);', 'Game.Spend(moni); decay.utenglobeStorage.soul.lose(Game.santaSoulReqs[Game.santaLevel]); decay.utenglobeStorage.shinySoul.lose(Game.santaShinySoulReqs[Game.santaLevel]);')
+		);
+		addLoc('%1 souls');
+		addLoc('%1 shiny souls');
+		Game.santaSoulReqs = [1, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 14, 16, 21]; //14 levels
+		Game.santaShinySoulReqs = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 4];
+		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString()
+			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
+			.replace(`'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+loc("sacrifice %1",'<div'+(Game.cookies>moni?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(Math.pow(Game.santaLevel+1,Game.santaLevel+1)))+'</div>')+'</div>'+`, `'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+'<div'+((Game.cookies>moni&&decay.utenglobeStorage.soul.amount>=Game.santaSoulReqs[Game.santaLevel]&&decay.utenglobeStorage.shinySoul.amount>=Game.santaShinySoulReqs[Game.santaLevel])?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(moni))+'<br>'+loc('%1 souls',Beautify(Game.santaSoulReqs[Game.santaLevel]))+(Game.santaShinySoulReqs[Game.santaLevel]>0?('<br>'+loc('%1 shiny souls',Beautify(Game.santaShinySoulReqs[Game.santaLevel]))):'')+'</div></div>'+`)
+		);
+		addLoc('Also makes all santa\'s gifts <b>%1</b> times cheaper.');
+		replaceDesc('Season switcher', Game.Upgrades['Season switcher'].desc + '<br>' + loc('Also makes all santa\'s gifts <b>%1</b> times cheaper.', Beautify(1e9)));
+		Game.seasonTriggerBasePrice = 1e6;
 		Game.santaUpgradesBought = 0;
 		Game.recalcSantaUpgradesBought = function() {
 			let count = 0;
@@ -4937,12 +4964,45 @@ Game.registerMod("Kaizo Cookies", {
 			Game.santaUpgradesBought = count;
 		}
 		Game.recalcSantaUpgradesBought();
+		addLoc('Cost increases by <b>10 times</b> for each santa upgrade bought.');
 		Game.registerHook('check', Game.recalcSantaUpgradesBought);
 		for (let i in Game.santaDrops) {
-			Game.Upgrades[Game.santaDrops[i]].priceFunc=function(){return Math.pow(2525,Game.santaUpgradesBought)*2525;}
+			Game.Upgrades[Game.santaDrops[i]].priceFunc=function(){return Math.pow(10,Game.santaUpgradesBought)*2525;}
 			Game.Upgrades[Game.santaDrops[i]].buyFunction=Game.recalcSantaUpgradesBought;
 		}
 		Game.Upgrades['Santa\'s dominion'].cost = Math.pow(28, 28);
+		addLoc('The latest building produces <b>%1%</b> more.');
+		addLoc('All buildings are <b>%1%</b> cheaper.');
+		addLoc('All upgrades are <b>%1%</b> cheaper.');
+		replaceDesc('Toy workshop', loc('All upgrades are <b>%1%</b> cheaper.', 50), true);
+		eval('Game.Upgrade.prototype.getPrice='+Game.Upgrade.prototype.getPrice.toString().replace(`if (Game.Has('Toy workshop')) price*=0.95;`, `if (Game.Has('Toy workshop')) price*=0.5;`));
+		replaceDesc('Season savings', loc('All buildings are <b>%1%</b> cheaper.', 25), true);
+		replaceDesc('Naughty list', 'Grandmas are <b>twice</b> as efficient.<br>Grandmas are <b>100 times</b> cheaper.', true);
+		eval('Game.modifyBuildingPrice='+Game.modifyBuildingPrice.toString().replace(`if (Game.Has('Season savings')) price*=0.99;`, `if (Game.Has('Season savings')) price*=0.75; if (building.name=='Grandma' && Game.Has('Naughty list')) price *= 0.01;`))
+		replaceDesc('Santa\'s legacy', 'Cookie production multiplier <b>+10% per Santa\'s levels</b>.', true);
+		replaceDesc('A lump of coal', loc('Cookie production multiplier <b>+%1%</b>.', 5), true);
+		replaceDesc('An itchy sweater', loc('Cookie production multiplier <b>+%1%</b>.', 5), true);
+		replaceDesc('Increased merriness', loc('Cookie production multiplier <b>+%1%</b>.', 50), true);
+		replaceDesc('Improved jolliness', loc('Cookie production multiplier <b>+%1%</b>.', 50), true);
+		replaceDesc('Santa\'s dominion', 'Cookie production multiplier <b>+222%</b>.<br>All buildings are <b>1% cheaper</b>.<br>All upgrades are <b>2% cheaper</b>.', true);
+		eval('Game.CalculateGains='+Game.CalculateGains.toString()
+			.replace('mult*=1.15', 'mult*=1.5')
+			.replace('mult*=1.15', 'mult*=1.5')
+			.replace(`if (Game.Has('A lump of coal')) mult*=1.01;`, `if (Game.Has('A lump of coal')) mult*=1.05;`)
+			.replace(`if (Game.Has('An itchy sweater')) mult*=1.01;`, `if (Game.Has('An itchy sweater')) mult*=1.05;`)
+			.replace(`if (Game.Has('Santa\'s legacy')) mult*=1+(Game.santaLevel+1)*0.03;`, `if (Game.Has('Santa\'s legacy')) mult*=1+(Game.santaLevel+1)*0.1;`)
+			.replace(`if (Game.Has('Santa\'s dominion')) mult*=1.2;`, `if (Game.Has('Santa\'s dominion')) mult*=2.22;`)
+		);
+		replaceDesc('Santa\'s helpers', 'Clicking is <b>50%</b> more powerful, and the six mouse efficiency doubling upgrades <b>quadruple</b> instead.', true);
+		eval('Game.mouseCps='+Game.mouseCps.toString().replace(`if (Game.Has('Santa\'s helpers')) mult*=1.1;`, `if (Game.Has('Santa\'s helpers')) mult*=1.5;`));
+		replaceDesc('Santa\'s bottomless bag', 'Random drops are <b>10%</b> more common.<br>Decay rates <b>-10%</b>.', true);
+		replaceDesc('Ho ho ho-flavored frosting', 'Reindeer give <b>4 times as much</b>.', true);
+		replaceDesc('Weighted sleighs', 'Reindeers are <b>twice as slow</b>.<br>Reindeers purify <b>25%</b> more decay.', true);
+		eval('Game.shimmerTypes.reindeer.popFunc='+Game.shimmerTypes.reindeer.popFunc.toString().replace(`if (Game.Has('Ho ho ho-flavored frosting')) moni*=2;`, `if (Game.Has('Ho ho ho-flavored frosting')) moni*=4;`));
+		for (let i in Game.santaDrops) {
+			Game.Upgrades[Game.santaDrops[i]].desc = Game.Upgrades[Game.santaDrops[i]].desc.slice(0, Game.Upgrades[Game.santaDrops[i]].desc.indexOf('<q>')) + '<br>' + loc('Cost increases by <b>10 times</b> for each santa upgrade bought.') + Game.Upgrades[Game.santaDrops[i]].desc.slice(Game.Upgrades[Game.santaDrops[i]].desc.indexOf('<q>'), Game.Upgrades[Game.santaDrops[i]].desc.length);
+			Game.Upgrades[Game.santaDrops[i]].desc = Game.Upgrades[Game.santaDrops[i]].desc.replace('<br>'+loc('Cost scales with Santa level.'), '');
+		}
 
 		Game.synergyPriceFunc = function() { return (this.buildingTie1.basePrice*this.buildingTie2.basePrice)*Game.Tiers[this.tier].price*(Game.Has('Chimera')?0.98:1); }
 		Game.Tiers.synergy1.price = 200;
@@ -5203,7 +5263,8 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Personal biscuit'].basePrice=999999999999999999999999999999999999999999999999999999999999999*butterBiscuitMult
 
 		allValues('upgrades rework');
-		
+
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -5592,6 +5653,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
@@ -7734,6 +7796,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			decay.offBrandFingers = [];
 
+			//potentially have them increase click halt power instead?
 			this.achievements.push(new Game.Upgrade('Illustrium fingernails', 'Repeated decay halting (such as via rapid clicks) halts decay for up to <b>+15%</b> more time.<br>Clicking halts decay for <b>5%</b> longer.<q>This illustrious metal gleams with a teal-green light. It seems to be especially effective in stabilizing reality.</q>', 1e30, [0, 5, kaizoCookies.images.custImg])); decay.offBrandFingers.push(Game.last);
 			this.achievements.push(new Game.Upgrade('Vegetable-oiled joints', 'Repeated decay halting (such as via rapid clicks) halts decay for up to <b>+15%</b> more time.<br>Clicking halts decay for <b>5%</b> longer.<q>Reject chemistry, embrace nature.</q>', 1e36, [0, 6, kaizoCookies.images.custImg])); decay.offBrandFingers.push(Game.last);
 			this.achievements.push(new Game.Upgrade('Ultraviolet obliteration', 'Repeated decay halting (such as via rapid clicks) halts decay for up to <b>+15%</b> more time.<br>Clicking halts decay for <b>5%</b> longer.<q>The power of the sun imprinted on my hand...</q>', 1e42, [0, 7, kaizoCookies.images.custImg])); decay.offBrandFingers.push(Game.last);
@@ -7890,6 +7953,9 @@ Game.registerMod("Kaizo Cookies", {
 			LocalizeUpgradesAndAchievs();
 
 			Game.Upgrades['Twin Gates of Transcendence'].dname=loc("Power clicks");
+			for (let i in Game.santaDrops) {
+				Game.Upgrades[Game.santaDrops[i]].ddesc = Game.Upgrades[Game.santaDrops[i]].desc;
+			}
 		}
 		this.getThisModAchievs = function() {
 			var n = 0;
@@ -7928,7 +7994,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Objects.Cursor.amount > 0) {
 				if (Game.cookieClicks > 100) { Game.Unlock('Muscle relaxant'); }
 				if (Game.cookieClicks > 300) { Game.Unlock('Trigger fingers'); }
-				if (Game.cookieClicks > 700) { Game.Unlock('Non-euclidean baking trays'); }
+				if (Game.cookieClicks > 500) { Game.Unlock('Non-euclidean baking trays'); }
 			}
 
 			if (Game.Has('Purification domes') && Game.HasAchiev('Self remade')) { Game.Unlock('Touch of nature'); }
