@@ -2131,7 +2131,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.wrinklerStats = new Crumbs.behavior(function() {
 			this.hp = Math.min(this.hp + decay.wrinklerRegen, this.hpMax);
 			if (this.dist <= 0) { 
-                this.sucked += Math.max(Game.cpsSucked, (Math.pow(Game.cookiesInTermsOfCps, 0.2) - 5)) * (this.shiny?3:1) * Game.cookiesPs * decay.wrinklersN / Game.fps; this.explosionProgress += (1 / ((this.bomber?(2+this.size):(20+10*this.size)) * Game.fps)); 
+                this.sucked += Math.max(Game.cpsSucked, (Math.pow(Game.cookiesInTermsOfCps, 0.2) - 5)) * (this.shiny?3:1) * Game.cookiesPs * decay.wrinklersN / Game.fps; 
+				this.explosionProgress += (1 / ((this.bomber?(2+this.size):(20+10*this.size)) * Game.fps)); 
             }
             if (this.explosionProgress >= 1) { decay.wrinklerExplosion.call(this); }
 			if (Math.random()<0.01 && !Game.prefs.notScary) this.hurt=Math.max(this.hurt,Math.random() * 10);
@@ -2664,8 +2665,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.onWrinklerSuckedPop = function(me) {
 			if (me.shiny) { decay.triggerNotif('shinyWrinkler'); }
 			Game.DropEgg(0.9);
-            if (Game.season == 'halloween') { Game.dropHalloweenCookie(this); }
-        	Game.cookies = Math.max(0, Game.cookies - this.sucked);
+            if (Game.season == 'halloween') { Game.dropHalloweenCookie(me); }
+        	Game.cookies = Math.max(0, Game.cookies - me.sucked);
 			if (Game.Has('Legacy')) {
             	Game.gainBuff('coagulated', 2 + Game.log10Cookies * 0.12);
             	Game.gainBuff('cursed', 2);
