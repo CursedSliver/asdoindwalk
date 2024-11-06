@@ -4869,7 +4869,7 @@ Game.registerMod("Kaizo Cookies", {
 			} else if (Game.Has('Heavenly chip secret')) { 
 				base = 100;
 			}
-			return Math.min(base, Game.prestige * Game.heavenlyMult);
+			return Math.min(base * Game.heavenlyMult, Game.prestige);
 		}
 		decay.updateHeavenlyKeyCharge = function() {
 			if (!Game.Has('Heavenly key') || Game.activePrestigeCount >= Game.prestige || decay.gen < 1) { return; }
