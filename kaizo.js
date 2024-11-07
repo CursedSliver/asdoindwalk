@@ -4616,7 +4616,7 @@ Game.registerMod("Kaizo Cookies", {
 			.replace("if (godLvl==1) mult*=1.15;","if (godLvl==1) mult*=1.25;")
 			.replace("else if (godLvl==2) mult*=1.20;","else if (godLvl==2) mult*=1.20;")
 			.replace("else if (godLvl==3) mult*=1.1;","else if (godLvl==3) mult*=1.15;")
-			.replace(`Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')`, `(Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')+Game.Has('Muscle relaxant')+Game.Has('Trigger fingers')+Game.Has('Non-euclidean baking trays'))*2*(Game.Has("Santa's helpers"))`)
+			.replace(`Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')`, `(Game.Has('Reinforced index finger')+Game.Has('Carpal tunnel prevention cream')+Game.Has('Ambidextrous')+Game.Has('Muscle relaxant')+Game.Has('Trigger fingers')+Game.Has('Non-euclidean baking trays'))*2*(1+Game.Has("Santa's helpers"))`)
 		);
 
         //Nerfing Mokalsium
