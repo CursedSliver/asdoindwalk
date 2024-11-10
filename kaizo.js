@@ -458,7 +458,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		//decay core
 		decay.update = function(buildId, tickSpeed) { 
-			if (Game.Has('Purity vaccines')) { return decay.mults[buildId]; }
+			if (Game.Has('Purity vaccines') || decay.takeABreak) { return decay.mults[buildId]; }
 			if (buildId == 20) {
 				return decay.getCpsDiffFromDecay();
 			}
@@ -535,6 +535,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.gen = decay.mults[20];
 			decay.cpsDiff = decay.gen;
 			Game.updateVeil();
+
+			decay.updateBreaks();
 
 			if (Game.T%6 == 0) { 
 				decay.wrinklerSpawnRate = decay.setWrinklerSpawnRate();
@@ -728,7 +730,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.overtimeLimit = 10; 
 			this.factor = 0.15; //more = faster that decay recovers from decreasing effective halt
 			this.keep = 0.35; //fraction of halt each stop kept as overtime
-			this.tickspeedPow = 0.35; //represents the amount that the current tickspeed affects its effectiveness, more = more effect
+			this.tickspeedPow = 0.25; //represents the amount that the current tickspeed affects its effectiveness, more = more effect
 			this.overtimeDec = 0.25; //fraction of normal decHalt applied to overtime when normal halt is in effect
 			this.overtimeEfficiency = 0.35; //overtime multiplier
 			this.power = 1; //the amount of effective halt that "1" is equivalent to
@@ -748,7 +750,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.halt = Math.max(this.halt, val);
 			this.overtime = Math.min(this.overtimeLimit, this.overtime + this.halt * this.keep); 
 		}
-		decay.haltChannel.prototype.recover = function() {
+		decay.haltChannel.prototype.recover = function(mult) {
 			const decHalt = decay.decHalt * Math.pow(Math.max(decay.rateTS, 1), this.tickspeedPow) * this.decMult / Game.fps;
 			this.halt = Math.max(0, this.halt - decHalt);
 			if (this.halt == 0) {
@@ -798,7 +800,6 @@ Game.registerMod("Kaizo Cookies", {
 			decay.times.sinceLastHalt = 0;
 		}
 		decay.recover = function() { 
-			var decHaltMult = Math.pow(Math.max(decay.rateTS, 1), decay.haltTickingPow);
 			for (let i in decay.halts) {
 				decay.halts[i].recover();
 			}
@@ -829,6 +830,26 @@ Game.registerMod("Kaizo Cookies", {
             
             return r;
         }
+		decay.saveHaltValues = function() {
+			let str = '';
+			for (let i in decay.halts) {
+				if (!(decay.halts[i].halt || decay.halts[i].overtime)) { continue; }
+				str += i + '-' + decay.halts[i].halt + '-' + decay.halts[i].overtime + ',';
+			}
+			if (!str) { return str; }
+			str = str.slice(0, str.length - 1);
+			return str;
+		}
+		decay.loadHaltValues = function(str) {
+			if (!str) { return; }
+			str = str.split(',');
+			for (let i in str) {
+				const v = str[i].split('-');
+				if (!isv(v[0])) { continue; }
+				if (isv(v[1])) { decay.halts[v[0]].halt = parseFloat(v[1]); }
+				if (isv(v[2])) { decay.halts[v[0]].overtime = parseFloat(v[2]); }
+			}
+		}
 		decay.amplify = function(buildId, mult, anticlose) {
 			if (buildId == 20) { decay.mults[20] = decay.getCpsDiffFromDecay(); return; }
 			if (!decay.unlocked) { return false; }
@@ -946,10 +967,31 @@ Game.registerMod("Kaizo Cookies", {
  		decay.get = function(buildId) {
 			return decay.mults[buildId];
 		}
+		decay.takeABreak = 0; //I dont even
+		decay.applyBreaks = function(amount) {
+			decay.takeABreak = Math.max(decay.takeABreak, amount);
+		}
+		decay.updateBreaks = function() {
+			if (decay.takeABreak > 0) {
+				decay.takeABreak--;
+			}
+		}
+		addLoc('Infinite decay');
+		addLoc('Your game was wiped due to infinite decay!');
+		addLoc('Excess decay caused a forced ascension without gaining any prestige or heavenly chips.');
+		addLoc('Game automatically paused.');
+		addLoc('You have just reached infinite decay, which would have caused a forced ascension with no heavenly chips gained, effectively wiping all progress made in this run.<div class="line"></div>Luckily, reaching infinite decay for the first time earned you an achievement that purified all of your decay, giving you another chance. Use it well!');
 		decay.onInf = function() {
-			Game.Win('Ultimate death');
-			if (decay.prefs.wipeOnInf && Game.ascensionMode != 42069) { Game.HardReset(2); Game.Notify('Infinite decay', 'Your game was reset due to infinite decay!', [21, 25], Game.fps * 3600 * 24 * 365, false, 1); decay.setRates(); return; }
-			if (decay.prefs.ascendOnInf || Game.ascensionMode == 42069) { decay.forceAscend(true); Game.Notify('Infinite decay', 'Excess decay caused a forced ascension without gaining any prestige or heavenly chips.', [21, 25], Game.fps * 3600 * 24 * 365, false, 1); decay.refreshAll(1); }
+			if (!Game.HasAchiev('Ultimate death')) { 
+				Game.Win('Ultimate death'); 
+				decay.refreshAll(1);
+				decay.applyBreaks(1 * Game.fps);
+				Game.Prompt('<id infDecay><h3>'+loc('Infinite decay')+'</h3><div class="block" style="padding: 8px;"><b>'+loc('Game automatically paused.')+'</b></div><div class="block">'+loc('You have just reached infinite decay, which would have caused a forced ascension with no heavenly chips gained, effectively wiping all progress made in this run.<div class="line"></div>Luckily, reaching infinite decay for the first time earned you an achievement that purified all of your decay, giving you another chance. Use it well!')+'</div>', [loc('Ok!')]);
+				kaizoCookies.pauseGame();
+				return;
+			}
+			if (decay.prefs.wipeOnInf && Game.ascensionMode != 42069) { Game.HardReset(2); Game.Notify(loc('Infinite decay'), loc('Your game was wiped due to infinite decay!'), [21, 25], Game.fps * 3600 * 24 * 365, false, 1); decay.setRates(); return; }
+			if (decay.prefs.ascendOnInf || Game.ascensionMode == 42069) { decay.forceAscend(true); Game.Notify(loc('Infinite decay'), loc('Excess decay caused a forced ascension without gaining any prestige or heavenly chips.'), [21, 25], Game.fps * 3600 * 24 * 365, false, 1); decay.refreshAll(1); }
 		}
 		decay.forceAscend = function(wipePrestige) {
 			if (wipePrestige) { Game.cookiesEarned = 0; }
@@ -1261,8 +1303,8 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			combos: {
 				title: 'Combos',
-				desc: 'What you just performed is a combo, and also the simplest one, often called a "F+CF" by the community. It is already a powerful tool in vanilla, but here - it will be absolutely crucial to progression later on!',
-				icon: [23, 6]
+				desc: 'What you just performed is a combo, and also the simplest one, often called a "F+CF" by the community. It is already a powerful tool in vanilla, but here - it will be absolutely crucial to progression later on! This is because effects stack with themselves multiplicatively: all CpS buffs stack with themselves and they also multiply click power buffs due to the mouse upgrades making each click gain cookies equivalent to some percentage of your current CpS. Because of this, if your clicks made 1 second of CpS each, just a F+CF would give one and a half hours worth of CpS from every click!',
+				icon: [22, 11]
 			}
 		}
 		for (let i in decay.notifs) {
@@ -1484,9 +1526,16 @@ Game.registerMod("Kaizo Cookies", {
 		for (let i in Game.Objects) {
 			eval('Game.Objects["'+i+'"].tooltip='+Game.Objects[i].tooltip.toString().replace(`okie",LBeautify(me.totalCookies)))+'</div>')`, `okie",LBeautify(me.totalCookies)))+'</div>')+(Game.Has('Purification domes')?('<div class="descriptionBlock">Production multiplier <b>'+decay.effectStrs([], me.id)+'</b> from your '+((decay.get(me.id)>1)?'purity':'decay')+' for this building.</div>'):'')`));
 		}
-		eval('Game.Object='+Game.Object.toString().replace(`okie",LBeautify(me.totalCookies)))+'</div>')`, `okie",LBeautify(me.totalCookies)))+'</div>')+(Game.Has('Purification domes')?('<div class="descriptionBlock">Production multiplier <b>'+decay.effectStrs([], me.id)+'</b> from your '+((decay.get(me.id)>1)?'purity':'decay')+' for this building.</div>'):'')`));
+		eval('Game.Object='+Game.Object.toString().replace(`okie",LBeautify(me.totalCookies)))+'</div>')`, `okie",LBeautify(me.totalCookies)))+'</div>')+(Game.Has('Purification domes')?('<div class="descriptionBlock">Production multiplier <b>'+decay.effectStrs([], me.id)+'</b> from your '+((decay.get(me.id)>1)?'purity':'decay')+' for this building.</div>'):'')`))
 
-		eval('Game.UpdateMenu='+Game.UpdateMenu.toString().replace(`(giftStr!=''?'<div class="listing">'+giftStr+'</div>':'')+`, `(giftStr!=''?'<div class="listing">'+giftStr+'</div>':'')+'<div id="decayMultD" class="listing">'+decay.diffStr()+(decay.hasExtraPurityCps?(' <small>('+loc('additionally: ')+'x'+Beautify(decay.extraPurityCps, 4)+')</small>'):'')+'</div><div id="decayMomentumMultD" class="listing" style="'+(decay.momentumUnlocked?'':'display:none;')+'">'+decay.momentumStr()+'</div><div id="decayAccD" class="listing" style="'+((Game.ascensionMode===42069)?'':'display:none;')+'">'+decay.accStr()+'</div>'+`).replace(`'<div class="listing"><b>'+loc("Cookies per second:")`,`'<div id="CpSD" class="listing"><b>'+loc("Cookies per second:")`).replace(`'<div class="listing"><b>'+loc("Raw cookies per second:")`,`'<div id="RawCpSD" class="listing"><b>'+loc("Raw cookies per second:")`).replace(`'<div class="listing"><b>'+loc("Cookies per click:")`,`'<div id="CpCD" class="listing"><b>'+loc("Cookies per click:")`));
+		addLoc('with %1 of active time');
+		eval('Game.UpdateMenu='+Game.UpdateMenu.toString()
+			.replace(`(giftStr!=''?'<div class="listing">'+giftStr+'</div>':'')+`, `(giftStr!=''?'<div class="listing">'+giftStr+'</div>':'')+'<div id="decayMultD" class="listing">'+decay.diffStr()+(decay.hasExtraPurityCps?(' <small>('+loc('additionally: ')+'x'+Beautify(decay.extraPurityCps, 4)+')</small>'):'')+'</div><div id="decayMomentumMultD" class="listing" style="'+(decay.momentumUnlocked?'':'display:none;')+'">'+decay.momentumStr()+'</div><div id="decayAccD" class="listing" style="'+((Game.ascensionMode===42069)?'':'display:none;')+'">'+decay.accStr()+'</div>'+`)
+			.replace(`'<div class="listing"><b>'+loc("Cookies per second:")`,`'<div id="CpSD" class="listing"><b>'+loc("Cookies per second:")`)
+			.replace(`'<div class="listing"><b>'+loc("Raw cookies per second:")`,`'<div id="RawCpSD" class="listing"><b>'+loc("Raw cookies per second:")`)
+			.replace(`'<div class="listing"><b>'+loc("Cookies per click:")`,`'<div id="CpCD" class="listing"><b>'+loc("Cookies per click:")`)
+			.replace(`'<div class="listing"><b>'+loc("Run started:")+'</b> '+(startDate==''?loc("just now"):loc("%1 ago",startDate))+'</div>'+`, `'<div class="listing"><b>'+loc("Run started:")+'</b> '+(startDate==''?loc("just now"):loc("%1 ago",startDate))+', <span id="activeTimeDisplay">'+loc('with %1 of active time', Game.sayTime(Game.TCount, -1))+'</span></div>'+`)
+		);
 		Game.UpdateMenu();
 		Game.getWithered = function() {
 			if (Game.cpsSucked > 0.99) {
@@ -1498,12 +1547,14 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('additionally: ');
 		decay.updateStats = function() {
 			if (Game.onMenu=='stats') { 
-				document.getElementById('decayMultD').innerHTML = decay.diffStr() + (decay.hasExtraPurityCps?(' <small>('+loc('additionally: ')+'x'+Beautify(decay.extraPurityCps, 4)+')</small>'):'');
-				document.getElementById('CpSD').innerHTML = '<b>'+loc("Cookies per second:")+'</b> '+Beautify(Game.cookiesPs,1)+' <small>'+'('+loc("multiplier:")+' '+Beautify(Math.round(Game.globalCpsMult*100),1)+'%)'+(Game.cpsSucked>0?' <span class="warning">('+loc("withered:")+' '+Game.getWithered()+')</span>':'')+'</small>';
-				document.getElementById('RawCpSD').innerHTML = '<b>'+loc("Raw cookies per second:")+'</b> '+Beautify(Game.cookiesPsRaw,1)+' <small>'+'('+loc("highest this ascension:")+' '+Beautify(Game.cookiesPsRawHighest,1)+')'+'</small>';
-				document.getElementById('CpCD').innerHTML = '<b>'+loc("Cookies per click:")+'</b> '+Beautify(Game.computedMouseCps,1);
-				document.getElementById('decayMomentumMultD').innerHTML = decay.momentumStr();
-				document.getElementById('decayAccD').innerHTML = decay.accStr();
+				l('decayMultD').innerHTML = decay.diffStr() + (decay.hasExtraPurityCps?(' <small>('+loc('additionally: ')+'x'+Beautify(decay.extraPurityCps, 4)+')</small>'):'');
+				l('CpSD').innerHTML = '<b>'+loc("Cookies per second:")+'</b> '+Beautify(Game.cookiesPs,1)+' <small>'+'('+loc("multiplier:")+' '+Beautify(Math.round(Game.globalCpsMult*100),1)+'%)'+(Game.cpsSucked>0?' <span class="warning">('+loc("withered:")+' '+Game.getWithered()+')</span>':'')+'</small>';
+				l('RawCpSD').innerHTML = '<b>'+loc("Raw cookies per second:")+'</b> '+Beautify(Game.cookiesPsRaw,1)+' <small>'+'('+loc("highest this ascension:")+' '+Beautify(Game.cookiesPsRawHighest,1)+')'+'</small>';
+				l('CpCD').innerHTML = '<b>'+loc("Cookies per click:")+'</b> '+Beautify(Game.computedMouseCps,1);
+				l('decayMomentumMultD').innerHTML = decay.momentumStr();
+				l('decayAccD').innerHTML = decay.accStr();
+
+				l('activeTimeDisplay').innerHTML = loc('with %1 of active time', Game.sayTime(Game.TCount, -1))
 			}
 		}
 		//"D" stands for display, mainly just dont want to conflict with any other id and lazy to check
@@ -1543,7 +1594,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.specialTab == 'dragon') { verticalPlacement = 0.75; } 
 			else if (Game.specialTab == 'santa') { verticalPlacement = 0.8; }
 			else if (Game.specialTab == 'utenglobe') { 
-				if (decay.utenglobeTab == 0) { verticalPlacement = 0.75; }
+				if (decay.utenglobeTab == 0) { verticalPlacement = 0.72; }
 				else if (decay.utenglobeTab == 1) { verticalPlacement = 0.65; }
 			}
 			verticalPlacement = Math.max(verticalPlacement * l('sectionLeft').offsetHeight, 250);
@@ -1649,7 +1700,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.rawCpsMults = function(mult) {
 			//mult *= (1 + 3 * Math.pow(1 - decay.incMult, 12));
 			mult *= decay.cpsPurityMults();
-			if (decay.challengeStatus('combo1')) { mult *= 1 + 9.09 / (Math.max(Game.log10Cookies - 15, 0) / 4 + 1); }
+			if (decay.challengeStatus('combo1')) { mult *= 1 + 9.09 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1); }
 			if (decay.challengeStatus('comboGSwitch')) { mult *= 1.1; }
 			if (Game.Has('Wrinkler ambergris')) { mult *= 1.06; }
 			for (let i in Game.UpgradesByPool['tech']) {
@@ -2256,16 +2307,28 @@ Game.registerMod("Kaizo Cookies", {
 			//resets stats based on its attributes
 			if (w.phantom) { w.findChild('wc').getComponent('settings').obj.globalCompositeOperation = 'lighter'; } else { w.findChild('wc').getComponent('settings').obj.globalCompositeOperation = 'source-over'; }
 		}
+		decay.dealPassthroughDamage = function(w, damage) {
+			while (true) {
+				if (damage <= w.hp) { w.hp -= damage; return; }
+				damage -= w.hp;
+				w.size--;
+				if (w.size <= 0) { w.hp = 0; return; } else { w.hpMax = decay.wrinklerHPFromSize(w.size); w.hp = w.hpMax; }
+			}
+		}
         addLoc('Popped a wrinkler');
-		decay.onWrinklerClick = function() { 
+		decay.damageWrinkler = function(damage, passthrough) {
 			if (this.phantom) {
 				
 			} else {
-				this.hp -= decay.wrinklerResistance * (this.shiny?0.33:1) * 1000 / Game.fps / Game.deltaTime; 
+				if (passthrough) {
+					decay.dealPassthroughDamage(this, damage);
+				} else {
+					this.hp -= damage; 
+				}
 				this.hurt = Math.ceil(decay.wrinklerResistance * 60);
 			}
 
-			if (this.hp > 0) { return; }
+			if (this.hp > 0 && this.size > 0) { return; }
 				
             if (this.size <= 0) { 
                 decay.wrinklerDeath.call(this);
@@ -2278,25 +2341,34 @@ Game.registerMod("Kaizo Cookies", {
             }
             decay.wrinklersN--;
 		}
+		decay.onWrinklerClick = function() {
+			if (Game.hasBuff('Power surge') && decay.spendPowerClick()) {
+				const shinyMult = (this.shiny?0.5:1);
+				decay.damageWrinkler.call(this, 200 * shinyMult, true);
+				let allWrinklers = Crumbs.getObjects('w');
+				this.dist += 0.5;
+
+				for (let i in allWrinklers) {
+					if (allWrinklers[i] == this) { continue; }
+					decay.damageWrinkler.call(allWrinklers[i], 36 * shinyMult);
+					if (allWrinklers[i].size > 0) { decay.damageWrinkler.call(allWrinklers[i], 36 * shinyMult); }
+					allWrinklers[i].dist += 0.2;
+				}
+				return;
+			}
+			decay.damageWrinkler.call(this, decay.wrinklerResistance * (this.shiny?0.33:1) * 1000 / Game.fps / Game.deltaTime);
+		}
 		addLoc('Decay amplified!');
         decay.wrinklerDeath = function() {
             this.die();
             if (this.sucked) {
-				this.sucked *= decay.wrinklerLossMult;
-                Game.Notify(loc("Popped a wrinkler"), loc("You lost <b>%1</b>!", loc("%1 cookie", LBeautify(this.sucked))), [19, 8], 6);
-                if (this.sucked >= 1) { Game.Popup('<div style="font-size:80%;">' + loc("-%1!", loc("%1 cookie", LBeautify(this.sucked))) + '</div>', Game.mouseX, Game.mouseY); }
-				else { Game.Popup('<div style="font-size:80%;">' + loc('Decay amplified!') + '</div>', Game.mouseX, Game.mouseY); decay.amplifyAll(1.5, 0.15); decay.triggerNotif('wrinklerAmplify'); }
-                for (let i = 0; i < 7; i++) {
-                    Crumbs.spawn(Crumbs.spawnFallingCookie(0, 0, Math.random() * +4 - 6, Math.random() * 8 - 4, 2.5, 'wrinklerPoppedCookie', true, Math.random() * 0.5 + 0.75, 3));
-                }
-
-                decay.onWrinklerSuckedPop(this);
+                decay.onWrinklerSuckedPop.call(this);
             } else {
-                decay.onWrinklerIntercept(this);
+                decay.onWrinklerIntercept.call(this);
             }
             decay.spawnWrinklerbits(this, 8, 1.5);
             if (this.shiny) Game.Win('Last Chance to See');
-            decay.onWrinklerPop(this);
+            decay.onWrinklerPop.call(this);
         }
         addLoc('Decay rates and halting requirement +50% for %1!');
         new Game.buffType('coagulated', function(time) {
@@ -2602,7 +2674,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		});
 		addLoc('Reflective blessing!');
-		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*30`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, Game.cookiesPs * 600) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
+		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*30`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, Game.cookiesPs * 300 * (Game.resets>0?0.5:1)) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
 		decay.soulClaimCount = 0;
 		decay.shinySoulClaimCount = 0;
 		decay.soulClaimAuraPower = 0;
@@ -2707,23 +2779,31 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		addLoc('-%1!');
 		addLoc('You lost <b>%1</b>!');
-		decay.onWrinklerSuckedPop = function(me) {
-			if (me.shiny) { decay.triggerNotif('shinyWrinkler'); }
+		decay.onWrinklerSuckedPop = function() {
+			this.sucked *= decay.wrinklerLossMult;
+            Game.Notify(loc("Popped a wrinkler"), loc("You lost <b>%1</b>!", loc("%1 cookie", LBeautify(this.sucked))), [19, 8], 6);
+            if (this.sucked >= 1) { Game.Popup('<div style="font-size:80%;">' + loc("-%1!", loc("%1 cookie", LBeautify(this.sucked))) + '</div>', Game.mouseX, Game.mouseY); }
+			else { Game.Popup('<div style="font-size:80%;">' + loc('Decay amplified!') + '</div>', Game.mouseX, Game.mouseY); decay.amplifyAll(1.5, 0.15); decay.triggerNotif('wrinklerAmplify'); }
+            for (let i = 0; i < 7; i++) {
+                Crumbs.spawn(Crumbs.spawnFallingCookie(0, 0, Math.random() * +4 - 6, Math.random() * 8 - 4, 2.5, 'wrinklerPoppedCookie', true, Math.random() * 0.5 + 0.75, 3));
+            }
+
+			if (this.shiny) { decay.triggerNotif('shinyWrinkler'); }
 			Game.DropEgg(0.6);
-			if (Game.season == 'halloween') { Game.dropHalloweenCookie(me); }
-        	Game.cookies = Math.max(0, Game.cookies - me.sucked);
+			if (Game.season == 'halloween') { Game.dropHalloweenCookie(this); }
+        	Game.cookies = Math.max(0, Game.cookies - this.sucked);
 			if (Game.Has('Legacy')) {
             	Game.gainBuff('coagulated', 2 + Game.log10Cookies * 0.12);
             	Game.gainBuff('cursed', 2);
 			}
 		}
-		decay.onWrinklerIntercept = function(me) {
+		decay.onWrinklerIntercept = function() {
 			Game.DropEgg(0.95);
-			if (Game.season == 'halloween') { Game.dropHalloweenCookie(me); }
+			if (Game.season == 'halloween') { Game.dropHalloweenCookie(this); }
 		}
-		decay.onWrinklerPop = function(me) {
+		decay.onWrinklerPop = function() {
 			Game.wrinklerPopped++;
-			decay.spawnWrinklerSoul(me.x, me.y, me.shiny, (5 * (me.shiny?0.5:1)) / Game.fps, (Math.random() - 0.5) * 6);
+			decay.spawnWrinklerSoul(this.x, this.y, this.shiny, (5 * (this.shiny?0.5:1)) / Game.fps, (Math.random() - 0.5) * 6);
 		}
 		replaceDesc('Wrinkler doormat', 'Wrinklers no longer spawn.<q>Quite possibly the cleanest doormat one will ever see.</q>');
 		replaceDesc('Unholy bait', 'Wrinklers have <b>10%</b> less health.<q>A nice snack to distract them during the OBLITERATION.</q>');
@@ -3099,7 +3179,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.purifyAll(strength, 1 - Math.pow(0.7, strength), 15); decay.stop(1, 'wSoulShiny');
 			} else if (obj.force == 'cookie storm drop') {
 				decay.purifyAll(Math.pow(strength, 0.01), 0.0001, 5); decay.stop(0.6, 'wSoulShiny'); decay.triggerNotif('stormDrop');
-			} else if (obj.force == '') {
+			} else if (obj.force == '' && (obj.type == 'reindeer' || obj.type == 'golden')) {
 				decay.purifyAll(strength, 1 - Math.pow(0.99, strength), 10); decay.triggerNotif("pesudonat");
 			}
 		}
@@ -3142,6 +3222,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Legacy')) { decay.triggerNotif('breakingPoint'); }
 			decay.assignThreshold();
 			decay.checkChallengeUnlocks();
+			decay.resetAllChallengesInternalStatuses();
 			decay.multList = [];
 			decay.wrinklerSpawnRate = decay.setWrinklerSpawnRate();
 
@@ -3625,8 +3706,8 @@ Game.registerMod("Kaizo Cookies", {
 			.replace(`Game.killBuff('Click frenzy'); decay.triggerNotif('dragonflight');`)
 			.replace(`if (Game.canLumps() && Math.random()<0.0005) list.push('free sugar lump');`, `if (Game.canLumps() && Math.random()<0.0005) { list.push('free sugar lump'); } if (Math.random()<Game.auraMult('Dragonflight')) { for (let i = 0; i < Game.gcBuffCount(); i++) { if (Math.random()<0.25) { list.push('dragonflight'); } } }`)
 			.replace('if ((me.wrath==0 && Math.random()<0.15) || Math.random()<0.05)', 'if ((me.wrath==0 && Math.random()<0.3) || Math.random()<0.1)')
-			.replace(`if (Game.Has('Get lucky')) effectDurMod*=2;`, `if (Game.Has('Get lucky')) effectDurMod*=1.6;`)
-			); //dragonflight rework
+			.replace(`if (Game.Has('Get lucky')) effectDurMod*=2;`, `if (Game.Has('Get lucky')) effectDurMod*=1.5;`)
+		); //dragonflight rework
 		eval('Game.shimmerTypes.golden.getMaxTime='+Game.shimmerTypes.golden.getMaxTime.toString().replace('15', '10')); 
 		eval('Game.shimmerTypes.golden.getMinTime='+Game.shimmerTypes.golden.getMinTime.toString().replace('5', '3.5'));
 		eval('Game.shimmerTypes.golden.getTimeMod='+Game.shimmerTypes.golden.getTimeMod.toString().replace('m/=2', 'm*=(1/1.5)').replace('m/=2', 'm*=(1/1.5)')); 
@@ -3634,7 +3715,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Lucky day'].basePrice /= 100;
 		replaceDesc('Serendipity', 'Golden cookies appear <b>50% more often</b> and stay <b>twice as long</b>.<br>Unlocks after clicking <b>3</b> naturally spawning golden cookies this ascension.<br>Note that while the effect is reduced, the base golden cookie spawn rate is increased to compensate.<q>What joy! Seven horseshoes!</q>');
 		Game.Upgrades['Serendipity'].basePrice /= 100;
-		replaceDesc('Get lucky', `Golden cookie effects last <b>60% longer</b>.<br>Unlocks after clicking <b>7</b> naturally spawning golden cookies this ascension.<q>You've been up all night, haven't you?</q>`)
+		replaceDesc('Get lucky', `Golden cookie effects last <b>50% longer</b>.<br>Unlocks after clicking <b>7</b> naturally spawning golden cookies this ascension.<q>You've been up all night, haven't you?</q>`)
 		Game.Upgrades['Get lucky'].basePrice /= 100;
 
 		//making buildings start with level 1
@@ -4272,7 +4353,7 @@ Game.registerMod("Kaizo Cookies", {
 					return -1;
 				}
 			}
-			gp.spells['resurrect abomination'].costMin = 12;
+			gp.spells['resurrect abomination'].costMin = 6;
 			gp.spells['resurrect abomination'].costPercent = 0.06;
 			eval('Game.SpawnWrinkler='+Game.SpawnWrinkler.toString().replace(' && Game.elderWrath>0', ''));
 
@@ -4350,8 +4431,8 @@ Game.registerMod("Kaizo Cookies", {
 				desc: loc('Halts decay for an especially long time. (each use is considered a distinct method)'),
 				failDesc: loc('Decay propagation is %1% faster for the next %2 minutes.', [50, 2]),
 				icon: [6, 0, kaizoCookies.images.custImg],
-				costMin: 10,
-				costPercent: 0.15,
+				costMin: 8,
+				costPercent: 0.25,
 				id: 10,
 				win: function() {
 					decay.halts['manifestSpring'].addChannel(new decay.haltChannel(decay.manifestSpringHaltParameters));
@@ -4547,7 +4628,7 @@ Game.registerMod("Kaizo Cookies", {
 			//Nerfing some plants effects
 			eval("M.computeEffs="+M.computeEffs.toString().replace("effs.cursorCps+=0.01*mult","effs.cursorCps+=0.005*mult"));
 			eval("M.computeEffs="+M.computeEffs.toString().replace("else if (name=='whiskerbloom') effs.milk+=0.002*mult;","else if (name=='whiskerbloom') effs.milk+=0.001*mult;"));
-			eval("M.computeEffs="+M.computeEffs.toString().replace("goldenClover') effs.goldenCookieFreq+=0.03*mult;","goldenClover') { effs.goldenCookieFreq+=0.03*mult; effs.goldenCookieEffDur*=1-0.015; effs.goldenCookieGain+=1.5; }"));
+			eval("M.computeEffs="+M.computeEffs.toString().replace("goldenClover') effs.goldenCookieFreq+=0.03*mult;","goldenClover') { effs.goldenCookieFreq+=0.03*mult; effs.goldenCookieEffDur*=1-0.015; effs.goldenCookieGain+=0.5; }"));
 				
 			eval("M.convert="+M.convert.toString().replace("Game.gainLumps(10);","Game.gainLumps(30);").replace(`M.unlockSeed(M.plants['bakerWheat']);`, `M.unlockProtectedSeeds();`));
 
@@ -4559,7 +4640,7 @@ Game.registerMod("Kaizo Cookies", {
 	        //Effect desc
 			M.plants['whiskerbloom'].effsStr='<div class="green">&bull;'+loc("milk effects")+' +0.05%</div>';
 			M.plants['glovemorel'].effsStr='<div class="green">&bull;'+loc("cookies/click")+' +4%</div><div class="green">&bull; '+loc("%1 CpS",Game.Objects['Cursor'].single)+' +0.5%</div><div class="red">&bull; '+loc("CpS")+' -1%</div>';
-			M.plants['goldenClover'].effsStr='<div class="green">&bull; '+loc("golden cookie frequency")+' +3%</div><div class="green">&bull; '+loc("golden cookie gains")+' +150%</div><div class="red">&bull; '+loc('golden cookie effect duration')+' -1.5%</div>';
+			M.plants['goldenClover'].effsStr='<div class="green">&bull; '+loc("golden cookie frequency")+' +3%</div><div class="green">&bull; '+loc("golden cookie gains")+' +50%</div><div class="red">&bull; '+loc('golden cookie effect duration')+' -1.5%</div>';
 
 			M.soils.dirt.tick = 2; M.soils.fertilizer.tick = 1; M.soils.clay.tick = 5; M.soils.pebbles.tick = 2; M.soils.woodchips.tick = 2;
 			M.soils.dirt.effsStr = '<div class="gray">&bull; '+loc("tick every %1",'<b>'+Game.sayTime(2*60*Game.fps)+'</b>')+'</div>';
@@ -4881,6 +4962,10 @@ Game.registerMod("Kaizo Cookies", {
 			.replace(`if (Game.goldenClicks>=27) Game.Unlock('Serendipity');`, '')
 			.replace(`if (Game.goldenClicks>=77) Game.Unlock('Get lucky');`, '')
 		);
+		replaceDesc('Decisive fate', 'The time to spawn golden cookies varies less.', true);
+		eval('Game.shimmerTypes.golden.getMaxTime='+Game.shimmerTypes.golden.getMaxTime.toString().replace('10;', '10; if (Game.Has("Decisive fate")) { m *= 0.75; }'));
+		eval('Game.shimmerTypes.golden.getMinTime='+Game.shimmerTypes.golden.getMinTime.toString().replace('3.5;', '3.5; if (Game.Has("Decisive fate")) { m *= 1.15; }'));
+		eval('Game.shimmerTypes.golden.reset='+Game.shimmerTypes.golden.reset.toString().replace(`this.last='';`, `this.last='multiply cookies';`));
 
         Game.Upgrades['Pure heart biscuits'].basePrice *=    1;
 		cookieChange('Pure heart biscuits', 4);
@@ -4969,7 +5054,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.UpdateMenu='+Game.UpdateMenu.toString()
 		.replace(
 			`loc("at %1% of its potential <b>(+%2% CpS)</b>",[Beautify(heavenlyMult*100,1),Beautify(decay.getCpSBoostFromPrestige(),1)])`, 
-			`'<div id="prestigePowerDisplay" style="margin-top: 3px;">'+decay.getPrestigeLevelUnleashText()+((Game.heavenlyMult>=1)?(' '+loc("at x%1 effect and count", Beautify(Game.heavenlyMult, 2))):'')+'</div>'`
+			`'<div id="prestigePowerDisplay" style="margin-top: 3px;">'+decay.getPrestigeLevelUnleashText()+((Game.heavenlyMult>=1)?(' '+loc("at x%1 effect and count", Beautify(Game.GetHeavenlyMultiplier(), 2))):'')+'</div>'`
 		));
 		eval('Game.CalculateGains='+Game.CalculateGains.toString()
 			.replace(`mult+=parseFloat(Game.prestige)*0.01*Game.heavenlyPower*Game.GetHeavenlyMultiplier();`, 'mult+=decay.getCpSBoostFromPrestige();')
@@ -5034,23 +5119,23 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('The latest building produces <b>%1%</b> more.');
 		addLoc('All buildings are <b>%1%</b> cheaper.');
 		addLoc('All upgrades are <b>%1%</b> cheaper.');
-		replaceDesc('Toy workshop', loc('All upgrades are <b>%1%</b> cheaper.', 50), true);
-		eval('Game.Upgrade.prototype.getPrice='+Game.Upgrade.prototype.getPrice.toString().replace(`if (Game.Has('Toy workshop')) price*=0.95;`, `if (Game.Has('Toy workshop')) price*=0.5;`));
+		replaceDesc('Toy workshop', loc('All upgrades are <b>%1%</b> cheaper.', 25), true);
+		eval('Game.Upgrade.prototype.getPrice='+Game.Upgrade.prototype.getPrice.toString().replace(`if (Game.Has('Toy workshop')) price*=0.95;`, `if (Game.Has('Toy workshop')) price*=0.75;`));
 		replaceDesc('Season savings', loc('All buildings are <b>%1%</b> cheaper.', 25), true);
 		replaceDesc('Naughty list', 'Grandmas are <b>twice</b> as efficient.<br>Grandmas are <b>100 times</b> cheaper.', true);
 		eval('Game.modifyBuildingPrice='+Game.modifyBuildingPrice.toString().replace(`if (Game.Has('Season savings')) price*=0.99;`, `if (Game.Has('Season savings')) price*=0.75; if (building.name=='Grandma' && Game.Has('Naughty list')) price *= 0.01;`))
-		replaceDesc('Santa\'s legacy', 'Cookie production multiplier <b>+6% per Santa\'s levels</b>.', true);
+		replaceDesc('Santa\'s legacy', 'Cookie production multiplier <b>+5% per Santa\'s levels</b>.', true);
 		replaceDesc('A lump of coal', loc('Cookie production multiplier <b>+%1%</b>.', 5), true);
 		replaceDesc('An itchy sweater', loc('Cookie production multiplier <b>+%1%</b>.', 5), true);
-		replaceDesc('Increased merriness', loc('Cookie production multiplier <b>+%1%</b>.', 35), true);
-		replaceDesc('Improved jolliness', loc('Cookie production multiplier <b>+%1%</b>.', 35), true);
+		replaceDesc('Increased merriness', loc('Cookie production multiplier <b>+%1%</b>.', 25), true);
+		replaceDesc('Improved jolliness', loc('Cookie production multiplier <b>+%1%</b>.', 25), true);
 		replaceDesc('Santa\'s dominion', 'Cookie production multiplier <b>+122%</b>.<br>All buildings are <b>1% cheaper</b>.<br>All upgrades are <b>2% cheaper</b>.', true);
 		eval('Game.CalculateGains='+Game.CalculateGains.toString()
-			.replace('mult*=1.15', 'mult*=1.35')
-			.replace('mult*=1.15', 'mult*=1.35')
+			.replace('mult*=1.15', 'mult*=1.25')
+			.replace('mult*=1.15', 'mult*=1.25')
 			.replace(`if (Game.Has('A lump of coal')) mult*=1.01;`, `if (Game.Has('A lump of coal')) mult*=1.05;`)
 			.replace(`if (Game.Has('An itchy sweater')) mult*=1.01;`, `if (Game.Has('An itchy sweater')) mult*=1.05;`)
-			.replace(`if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.03;`, `if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.06;`)
+			.replace(`if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.03;`, `if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.05;`)
 			.replace(`if (Game.Has('Santa\\'s dominion')) mult*=1.2;`, `if (Game.Has('Santa\\'s dominion')) mult*=2.22;`)
 		);
 		replaceDesc('Santa\'s helpers', 'Clicking is <b>50%</b> more powerful, and the six mouse efficiency quadrupling upgrades <b>multiply by 16</b> instead.', true);
@@ -5090,7 +5175,7 @@ Game.registerMod("Kaizo Cookies", {
         Dragon auras
         =======================================================================================*/
 		Game.getAuraUnlockCost = function(building) {
-			let amount = 100;
+			let amount = 100 + building.id * 5;
 			if (Game.ascensionMode == 42069 && decay.challengeStatus('easterTutorial')) { amount -= 20; }
 			if (decay.challengeStatus('comboDragonCursor')) { amount /= 2; }
 			if (decay.isConditional('comboOrbs')) { return 2; }
@@ -5099,12 +5184,12 @@ Game.registerMod("Kaizo Cookies", {
 			return Math.floor(amount);
 		}
 		Game.getBakeDragonCookieCost = function() {
-			let amount = 50;
+			let amount = 100;
 			if (Game.ascensionMode == 42069 && decay.challengeStatus('dualcast')) { amount /= 2; }
 			return amount;
 		}
 		Game.getDualwieldAuraCost = function() {
-			let amount = 200;
+			let amount = 300;
 			if (Game.ascensionMode == 42069 && decay.challengeStatus('dualcast')) { amount /= 2; }
 			return amount;
 		}
@@ -5285,7 +5370,7 @@ Game.registerMod("Kaizo Cookies", {
         auraDesc(2, "Clicking is <b>5%</b> more powerful."+'<br>'+"Click frenzy and Dragonflight is <b>50%</b> more powerful.", 'Aura: greatly boosted Click frenzy & Dragonflight');
 		auraDesc(5, "Buildings sell back for <b>50%</b> instead of 25% of their cost. <br>Selling buildings partially <b>halts decay</b> based on the cube root of the amount of buildings sold.", 'Aura: selling buildings halt decay');
 		auraDesc(6, "Get <b>1%</b> (multiplicative) closer to <b>+60%</b> golden cookie frequency for each <b>x1.02</b> CpS multiplier from your purity.<br>(Note: this effect reduces the initial amount of time on Golden cookie click)", 'Aura: golden cookie frequency buff based on decay');
-		auraDesc(7, "While not purifying decay, you accumulate <b>purification power</b> that will be spent in the next purification; the banked purification power is kept even when this aura is off.", 'Aura: accumulate purification power to boost the next purification');
+		auraDesc(7, "While not purifying decay, you accumulate <b>purification power</b> that will be spent in the next purification; the banked purification power is kept even when this aura is off.", 'Aura: passively accumulate purification power');
         auraDesc(8, "<b>+22%</b> prestige level effect and potential.", 'Aura: +22% prestige level effect and potential');
 		auraDesc(9, "Get <b>2.5%</b> (multiplicative) closer to <b>+125%</b> Golden cookie frequency for each <b>x0.5</b> CpS multiplier from your decay.<br>(Note: this effect reduces the initial amount of time on Golden cookie click)", 'Aura: great golden cookie frequency buff based on purity');
         auraDesc(11, "Golden cookies give <b>10%</b> more cookies."+'<br>'+"Golden cookies may trigger a <b>Dragon\'s hoard</b>.", 'Aura: golden cookies may trigger a Dragon\'s hoard.');
@@ -5765,7 +5850,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.powerClickReqs.push(total);
 				num *= decay.powerClickScaling;
 			}
-			decay.totalPowerLimit = decay.powerClickReqs[decay.powerClickReqs.length - 1];
+			decay.totalPowerLimit = decay.powerClickReqs[decay.PCCapacity - 1];
 		}
 		decay.PCCapacityIncreasers = [Game.Upgrades['Angels'], Game.Upgrades['Virtues'], Game.Upgrades['Cherubim'], Game.Upgrades['God']];
 		decay.PCBuffIncreasers = [Game.Upgrades['Belphegor'], Game.Upgrades['Mammon'], Game.Upgrades['Abaddon'], Game.Upgrades['Satan'], Game.Upgrades['Asmodeus'], Game.Upgrades['Beelzebub'], Game.Upgrades['Lucifer']];
@@ -5783,6 +5868,7 @@ Game.registerMod("Kaizo Cookies", {
 			decay.PCCapacity = decay.recalcPCCapacity();
 		} 
 		Game.registerHook('check', decay.loadPowerClicks);
+		decay.loadPowerClicks();
 		decay.spendPowerClick = function() {
 			//decreases power as if a power click is used
 			decay.tryUpdateTable = true;
@@ -5925,9 +6011,13 @@ Game.registerMod("Kaizo Cookies", {
 		decay.setPowerGainMult = function() {
 			let mult = 1;
 			for (let i in decay.POBoosters) {
-				if (decay.POBoosters[i].bought) { mult *= 1.4; }
+				if (decay.POBoosters[i].bought) { mult *= 1.5; }
 			}
 			return mult;
+		}
+		decay.maxPowerAndAllowClicks = function() {
+			decay.gainPower(1e6);
+			Game.gainBuff('powerSurge', 10000000);
 		}
 		
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("this.last=choice;","this.last=choice; var powerClick=false; if (decay.powerClicksOn() && decay.hasPowerClicks()) { decay.spendPowerClick(); powerClick=true; PlaySound('snd/powerShimmer.mp3',0.4); PlaySound('snd/powerClick'+choose([1,2,3])+'b.mp3',0.7-Math.random()*0.3); }"));
@@ -5941,15 +6031,15 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Twin Gates of Transcendence'].icon = [23, 2, kaizoCookies.images.custImg];
 		replaceDesc('Angels', 'Maximum power click capacity increased to <b>3</b>.<q>Lowest-ranking at the first sphere of pastry heaven, angels are tasked with delivering new recipes to the mortals they deem worthy.</q>');
 		Game.Upgrades['Angels'].basePrice *= 7**1;
-		replaceDesc('Archangels', 'You gain <b>40%</b> more power.<q>Members of the first sphere of pastry heaven, archangels are responsible for the smooth functioning of the world\'s largest bakeries.</q>');
+		replaceDesc('Archangels', 'You gain <b>50%</b> more power.<q>Members of the first sphere of pastry heaven, archangels are responsible for the smooth functioning of the world\'s largest bakeries.</q>');
 		Game.Upgrades['Archangels'].basePrice *= 7**2;
 		replaceDesc('Virtues', 'Maximum power click capacity increased to <b>4</b>.<q>Found at the second sphere of pastry heaven, virtues make use of their heavenly strength to push and drag the stars of the cosmos.</q>');
 		Game.Upgrades['Virtues'].basePrice *= 7**3;
-		replaceDesc('Dominions', 'You gain <b>40%</b> more power.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
+		replaceDesc('Dominions', 'You gain <b>50%</b> more power.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
 		Game.Upgrades['Dominions'].basePrice *= 7**4;
 		replaceDesc('Cherubim', 'Maximum power click capacity increased to <b>5</b>.<q>Sieging at the first sphere of pastry heaven, the four-faced cherubim serve as heavenly bouncers and bodyguards.</q>');
 		Game.Upgrades['Cherubim'].basePrice *= 7**5;
-		replaceDesc('Seraphim', 'You gain <b>40%</b> more power.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
+		replaceDesc('Seraphim', 'You gain <b>50%</b> more power.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
 		Game.Upgrades['Seraphim'].basePrice *= 7**6;
 		replaceDesc('God', 'Maximum power click capacity increased to <b>6</b>.<q>Like Santa, but less fun.</q>');
 		Game.Upgrades['God'].basePrice *= 7**7;
@@ -6517,7 +6607,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
-			me.hp -= 5;
+			me.hp -= 5 * (1 + Math.sqrt(Game.log10Cookies) / 3);
 			me.hp *= 0.9;
 			decay.stop(2.5, 'powerOrb');
 		}
@@ -6714,15 +6804,16 @@ Game.registerMod("Kaizo Cookies", {
 			return true;
 		}
 		decay.challenge.prototype.save = function() {
-			var str = this.complete.toString();
+			var str = this.complete + '^' + (this.cannotComplete?1:0);
 			if (this.checkVar.o) { str += '^'+'c'+this.checkVar.save(this.checkVar); }
 			return str;
 		}
 		decay.challenge.prototype.load = function(str) {
 			str = str.split('^'); 
 			if (isv(str[0])) { this.complete = parseInt(str[0]); }
-			if (str.length == 1) { return; }
-			str = str.slice(1, str.length);
+			if (isv(str[1]) && str[1][0] != 'c') { this.cannotComplete = parseInt(str[1]); }
+			if (str.length <= 2) { return; }
+			//str.splice(0, 2);
 
 			for (let i in str) {
 				if (str[i][0]=='c') { this.checkVar.load(this.checkVar, str[i].slice(1, str[i].length)); }
@@ -6731,6 +6822,18 @@ Game.registerMod("Kaizo Cookies", {
 		decay.challenge.prototype.wipe = function() {
 			this.complete = 0;
 			this.unlocked = false;
+		}
+		decay.challenge.prototype.reset = function() {
+			//on reincarnation
+			this.cannotComplete = false;
+			if (this.checkVar.o) {
+				this.checkVar.commitInit();
+			}
+		}
+		decay.resetAllChallengesInternalStatuses = function() {
+			for (let i in decay.challenges) {
+				decay.challenges[i].reset();
+			}
 		}
 		decay.totalChallenges = 0;
 		decay.challengesCompleted = 0;
@@ -6765,7 +6868,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in ch) {
 				if (!ch[i].unlocked) { continue; }
 				str2 += '<div class="singleChallenge'
-				if (ch[i].cannotComplete) { cannotCompleteWarning = true; str2 += ' cannotComplete'; } str2 += '"';
+				if (ch[i].cannotComplete && Game.ascensionMode == 42069) { cannotCompleteWarning = true; str2 += ' cannotComplete'; } str2 += '"';
 				if (decay.isConditional(ch[i].key)) {
 					str2 += ' id="activeConditional"';
 				} else {
@@ -6971,14 +7074,17 @@ Game.registerMod("Kaizo Cookies", {
 		//the first three are functions with the checker object passed into them, but load with an extra str argument
 		//init is an object where everything except for the reserved keys ('o', 'check', 'save', 'load') are copied into the object
 		decay.challengeChecker = function(check, save, load, init) {
-			for (let i in init) {
-				this[i] = init[i];
-			}
-
+			this.init = init;
+			this.commitInit();
 			this.o = true;
 			this.check = check;
 			this.save = save;
 			this.load = load;
+		}
+		decay.challengeChecker.prototype.commitInit = function() {
+			for (let i in this.init) {
+				this[i] = this.init[i];
+			}
 		}
 		//contains modules to put into challengeChecker
 		//put the raw reference into the first three arguments, then the return value of init into the init argument
@@ -7045,15 +7151,16 @@ Game.registerMod("Kaizo Cookies", {
 		new decay.challenge('sb3', decay.challengeDescModules.bakeFast(1e6, 15*60), function(c) { if (Game.TCount >= 15 * 60 * Game.fps) { c.cannotComplete = true; } return (Game.cookiesEarned >= 1e6); }, 'Speed baking III', function() { return false && decay.challengeUnlockModules.always; }, { onCompletion: function() { Game.Win('Speed baking III'); }, prereq: 'sb2', order: -1 });
 		
 		addLoc('(Heavenly) Enchanted permaslot I');
-		new decay.challenge(1, decay.challengeDescModules.bakeAndKeep(1e18, 60), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e18, 60 * Game.fps)), loc('(Heavenly) Enchanted permaslot I'), decay.challengeUnlockModules.vial, { prereq: 'combo1' }); addLoc('(Heavenly) Enchanted permaslot II');
+		new decay.challenge(1, decay.challengeDescModules.bakeAndKeep(1e14, 60), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e14, 60 * Game.fps)), loc('(Heavenly) Enchanted permaslot I'), decay.challengeUnlockModules.vial, { prereq: 'combo1' }); addLoc('(Heavenly) Enchanted permaslot II');
 		new decay.challenge(2, decay.challengeDescModules.bakeAndKeep(1e21, 70), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e21, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot II'), decay.challengeUnlockModules.vial, { prereq: 1 }); addLoc('(Heavenly) Enchanted permaslot III');
 		new decay.challenge(3, decay.challengeDescModules.bakeAndKeep(1e24, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e24, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot III'), decay.challengeUnlockModules.box, { prereq: 2 }); addLoc('(Heavenly) Enchanted permaslot IV');
 		new decay.challenge(4, decay.challengeDescModules.bakeAndKeep(1e27, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e27, 75 * Game.fps)), loc('(Heavenly) Enchanted permaslot IV'), decay.challengeUnlockModules.box, { prereq: 3 }); addLoc('(Heavenly) Enchanted permaslot V');
 		new decay.challenge(5, decay.challengeDescModules.bakeAndKeep(1e30, 30), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e30, 30 * Game.fps)), loc('(Heavenly) Enchanted permaslot V'), decay.challengeUnlockModules.truck, { prereq: 4 });
 		
-		addLoc('Bake <b>%1</b> with <b>no</b> normal upgrades except for the upgrades in the enchanted permanent upgrade slots.');
+		addLoc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.');
 		addLoc('<b>Halved</b> flavored cookie cost');
-		new decay.challenge('hc', loc('Bake <b>%1</b> with <b>no</b> normal upgrades except for the upgrades in the enchanted permanent upgrade slots.', Beautify(1e6)+loc(' cookies')), function() { var h = 0; for (let i in Game.EnchantedPermanentUpgradeSlots) { if (Game.EnchantedPermanentUpgradeSlots != -1) { h++; } } return Boolean(Game.cookiesEarned >= 1e6) && !Math.max(0, Game.UpgradesOwned - h); }, loc('<b>Halved</b> flavored cookie cost')+'<br>'+loc('Hardcore'), decay.challengeUnlockModules.vial, { prereq: 'combo1', onCompletion: function() { Game.Win('Hardcore'); } });
+		new decay.challenge('hc', loc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.', Beautify(1e9)+loc(' cookies')), function() { return Game.cookiesEarned >= 1e9; }, loc('<b>Halved</b> flavored cookie cost')+'<br>'+loc('Hardcore'), decay.challengeUnlockModules.vial, { prereq: 'combo1', onCompletion: function() { Game.Win('Hardcore'); } });
+		eval('Game.Upgrade.prototype.buy='+Game.Upgrade.prototype.buy.toString().replace('Game.Spend(price);', 'Game.Spend(price); decay.challenges.hc.cannotComplete = true;'))
 		
 		addLoc('Use the Elder Pledge <b>3 times</b>.');
 		new decay.challenge('pledge', loc('Use the Elder Pledge <b>3 times</b>.'), function() { return Game.pledges>=3; }, 'Research is <b>twice</b> as fast', decay.challengeUnlockModules.vial, { prereq: 'combo1' });
@@ -7412,33 +7519,33 @@ Game.registerMod("Kaizo Cookies", {
 		//comboing tutorial
 		addLoc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.');
 		addLoc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)')
-		addLoc('Click frenzy from Force the Hand of Fate chance <b>%1</b> --> <b>%2</b>');
+		addLoc('Click frenzy from Force the Hand of Fate Grimoire spell chance <b>%1</b> --> <b>%2</b>');
 		addLoc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run');
-		new decay.challenge('combo1', loc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.', Game.sayTime(10 * 60 * Game.fps)) + '<br>' + loc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.cannotComplete = true; } return Game.hasBuff('Click frenzy'); }, function(hide) { return loc('Click frenzy from Force the Hand of Fate chance <b>%1</b> --> <b>%2</b>', ['50%', '60%']) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'CpS']) + (hide?'':(' ' + loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 15, 0) / 4 + 1))+'%'))); }, decay.challengeUnlockModules.vial);
+		new decay.challenge('combo1', loc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.', Game.sayTime(10 * 60 * Game.fps)) + '<br>' + loc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.cannotComplete = true; } return Game.hasBuff('Click frenzy'); }, function(hide) { return loc('Click frenzy from Force the Hand of Fate Grimoire spell chance <b>%1</b> --> <b>%2</b>', ['50%', '60%']) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'CpS']) + (hide?'':(' ' + loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1))+'%'))); }, decay.challengeUnlockModules.vial);
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`!Game.hasBuff('Dragonflight')`, `false`));
 		
 		addLoc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.');
-		addLoc('(Golden cookies not spawning fast enough? Maybe your permanent upgrade slots can help with that...)');
+		//addLoc('(Golden cookies not spawning fast enough? Maybe your permanent upgrade slots can help with that...)');
 		addLoc('(does not contribute to future click power multiplier checks)');
-		addLoc('The Get lucky upgrade no longer resets on ascension');
+		addLoc('The Lucky day upgrade no longer resets on ascension');
 		addLoc('(Currently: <b>%1</b>)');
-		new decay.challenge('combo2', loc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.', Game.sayTime(6 * 60 * Game.fps)) + '<br>' + loc('(Golden cookies not spawning fast enough? Maybe your permanent upgrade slots can help with that...)'), function(c) { if (Game.TCount >= 360 * Game.fps) { c.cannotComplete = true; } return (Game.hasBuff('Click frenzy') && Game.hasBuff('Frenzy')); }, function(hide) { return loc('The Get lucky upgrade no longer resets on ascension') + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(1818) + '%', 'click power']) + ' ' + loc('(does not contribute to future click power multiplier checks)') + (hide?'':(' '+loc('(Currently: <b>%1</b>)', '+'+Beautify(1818 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1))+'%'))) }, decay.challengeUnlockModules.vial, { onCompletion: function() { decay.triggerNotif('combos'); }, prereq: 'combo1' });
+		new decay.challenge('combo2', loc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.', Game.sayTime(4.5 * 60 * Game.fps, -1)), function(c) { if (Game.TCount >= 4.5 * 60 * Game.fps) { c.cannotComplete = true; } return (Game.hasBuff('Click frenzy') && Game.hasBuff('Frenzy')); }, function(hide) { return loc('The Lucky day upgrade no longer resets on ascension') + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(1818) + '%', 'click power']) + ' ' + loc('(does not contribute to future click power multiplier checks)') + (hide?'':(' '+loc('(Currently: <b>%1</b>)', '+'+Beautify(1818 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1))+'%'))) }, decay.challengeUnlockModules.vial, { onCompletion: function() { decay.triggerNotif('combos'); }, prereq: 'combo1' });
 		Game.registerHook('cookiesPerClick', function(out) { if (decay.challengeStatus('combo2')) { return out * (1 + 18.18 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1)); } return out; });
+		eval('Game.Reset='+Game.Reset.toString().replace(`Game.gainedPrestige=0;`, `Game.gainedPrestige=0; var hasLucky = false; if (Game.Has('Lucky day')) { hasLucky = true; }`).replace(`BeautifyAll();`, `if (!hard && hasLucky && decay.challengeStatus('combo2')) { Game.Upgrades['Lucky day'].earn(); } BeautifyAll();`));
 		
 		addLoc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.');
 		addLoc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps');
-		new decay.challenge('combo3', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(2500), Game.sayTime(5 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 300 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 2500); }, function(hide) { return loc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps', 10) + '<br>' + loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '2') + (hide?'':(' '+loc('(Currently: <b>%1</b>)', '+'+Beautify(2727 / (Math.max(Game.log10Cookies - 9, 0) / 6 + 1))+'%'))); }, decay.challengeUnlockModules.vial, { prereq: 'combo2' });
+		new decay.challenge('combo3', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(2500), Game.sayTime(4 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 240 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 2500); }, function(hide) { return loc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps', 10) + '<br>' + loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '2'); }, decay.challengeUnlockModules.vial, { prereq: 'combo2' });
 		//eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`if (Game.Has('Dragon fang')) mult*=1.03;`, `if (Game.Has('Dragon fang')) mult*=1.03; if (decay.challengeStatus('combo3')) { mult *= (1 + 27.27 / (Math.max(Game.log10Cookies - 9, 0) / 6 + 1)); }`));
 		Game.clickMult = 1;
 		eval('Game.mouseCps='+Game.mouseCps.toString().replace('var out=mult*Game.ComputeCps', 'Game.clickMult = mult; var out=mult*Game.ComputeCps'));
-		eval('Game.Reset='+Game.Reset.toString().replace(`Game.gainedPrestige=0;`, `Game.gainedPrestige=0; var hasLucky = false; if (Game.Has('Get lucky')) { hasLucky = true; }`).replace(`BeautifyAll();`, `if (!hard && hasLucky && decay.challengeStatus('combo2')) { Game.Upgrades['Get lucky'].earn(); } BeautifyAll();`));
 		
 		addLoc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)');
 		addLoc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.');
 		addLoc('All dragon auras cost <b>half</b> as much buildings to unlock');
-		new decay.challenge('combo4', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(50000), Game.sayTime(10 * 60 * Game.fps)]) + '<br>' + loc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 50000); }, loc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.', 'Thumbcorn') + '<br>' + loc('Click frenzy from Force the Hand of Fate chance <b>%1</b> --> <b>%2</b>', ['60%', '70%']), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
-		addLoc('Get a click power multiplier of at least <b>x%1</b> with only one buff active. Then, obtain a Dragon harvest while Dragonflight is not active.');
-		new decay.challenge('comboDragonCursor', loc('Get a click power multiplier of at least <b>x%1</b> with only one buff active. Then, obtain a Dragon harvest while Dragonflight is not active.', [Beautify(1282)]), new decay.challengeChecker(function(t) { if (t.cpcValid && Game.hasBuff('Dragon Harvest')) { t.cpcValid = false; return true; } if (Game.clickMult >= 1282 && !Game.hasBuff('Dragonflight') && Game.buffCount() <= 1) { t.cpcValid = true; } else { t.cpcValid = false; } return false; }, function() { return ''; }, function() { }, { cpcValid: false }), loc('All dragon auras cost <b>half</b> as much buildings to unlock'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
+		new decay.challenge('combo4', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(50000), Game.sayTime(10 * 60 * Game.fps)]) + '<br>' + loc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 50000); }, loc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.', 'Thumbcorn') + '<br>' + loc('Click frenzy from Force the Hand of Fate Grimoire spell chance <b>%1</b> --> <b>%2</b>', ['60%', '70%']), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
+		addLoc('Get a click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, obtain a Dragon harvest while Dragonflight is <b>not</b> active.');
+		new decay.challenge('comboDragonCursor', loc('Get a click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, obtain a Dragon harvest while Dragonflight is <b>not</b> active.', [Beautify(1282)]), new decay.challengeChecker(function(t) { if (t.cpcValid && Game.hasBuff('Dragon Harvest')) { t.cpcValid = false; return true; } if (Game.clickMult >= 1282 && !Game.hasBuff('Dragonflight') && Game.buffCount() <= 1 && !Game.Has('Santa\'s helpers')) { t.cpcValid = true; } else { t.cpcValid = false; } return false; }, function() { return ''; }, function() { }, { cpcValid: false }), loc('All dragon auras cost <b>half</b> as much buildings to unlock'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
 		
 		addLoc('Obtain a click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.');
 		addLoc('The Golden switch is <b>%1%</b> cheaper.');
@@ -7995,7 +8102,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.upgrades.push(new Game.Achievement('Glimmering hope', 'Obtain a CpS multiplier from decay of <b>-99%</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Glimmering hope'].order = 7500.2;
 			this.upgrades.push(new Game.Achievement('Saving grace', 'Obtain a CpS multiplier from decay of <b>-99.99%</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Saving grace'].order = 7500.3;
 			this.upgrades.push(new Game.Achievement('Last chance', 'Obtain a CpS multiplier from decay of <b>1 / 1 quinquinquagintillion</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Last chance'].order = 7500.4;
-			this.upgrades.push(new Game.Achievement('Ultimate death', 'Reach <b>infinite decay</b>.<q>Almost as bad as ascending at 1.</q>', [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Ultimate death'].order = 8080;
+			this.upgrades.push(new Game.Achievement('Ultimate death', 'Reach <b>infinite decay</b>.<div class="line"></div>Obtaining this achievement purifies <b>all</b> of your decay.<q>Almost as bad as ascending at 1.</q>', [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Ultimate death'].order = 8080;
 			this.upgrades.push(new Game.Achievement('Magmaball effect', 'Reach a decay rates multiplier of at least <b>x3</b> from your momentum.<q>The snowball effect, but bad.</q>', [2, 1, kaizoCookies.images.custImg])); Game.Achievements['Magmaball effect'].order = 7510.1;
 			this.upgrades.push(new Game.Achievement('Fast (but you wish it wasn\'t)', 'Reach a decay rates multiplier of at least <b>x6</b> from your momentum.<q>Another one of those at x12!</q>', [2, 1, kaizoCookies.images.custImg])); Game.Achievements['Fast (but you wish it wasn\'t)'].order = 7510.2;
 			this.upgrades.push(new Game.Achievement('Unstoppable', 'Reach a decay rates multiplier of at least <b>x12</b> from your momentum.<q>Did you do it via the hard way, or the smart way?</q>', [2, 1, kaizoCookies.images.custImg])); Game.Achievements['Unstoppable'].order = 7510.3;
@@ -8315,7 +8422,7 @@ Game.registerMod("Kaizo Cookies", {
 		str += decay.seFrees[decay.seFrees.length - 1];
 
 		str += '/' + decay.getCurrentCovenantMode() + '/' + this.saveBackupStats() + '/' + decay.saveNGMInfo() + '/' + decay.gamePausedCount + '/' + decay.heavenlyKeyCharge;
-		str += '/' + decay.saveUtenglobe() + '/' + decay.saveMaterialCounts();
+		str += '/' + decay.saveUtenglobe() + '/' + decay.saveMaterialCounts() + '/' + decay.saveHaltValues();
         return str;
     },
 	loadStr: '',
@@ -8432,7 +8539,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		strIn = str[11].split(',');
 		for (let i = 0; i < strIn.length; i++) {
-			if (isv(strIn[i])) { kaizoCookies.upgrades[i].won = strIn[i]; }
+			if (isv(strIn[i])) { kaizoCookies.upgrades[i].won = parseInt(strIn[i]); }
 		}
 		Game.recalcAchievCount();
 		
@@ -8471,6 +8578,8 @@ Game.registerMod("Kaizo Cookies", {
 
 		strIn = str[19];
 		if (isv(strIn)) { decay.power = parseFloat(strIn); }
+		decay.loadPowerClicks();
+		decay.buildPowerClickReqs();
 
 		strIn = str[20];
 		if (isv(strIn)) { decay.timePlayed = parseFloat(strIn); }
@@ -8509,6 +8618,8 @@ Game.registerMod("Kaizo Cookies", {
 		if (isv(str[29])) { decay.loadUtenglobe(str[29]); }
 
 		if (isv(str[30])) { decay.loadMaterialCounts(str[30]); }
+
+		if (isv(str[31])) { decay.loadHaltValues(str[31]); }
 		
     	Game.storeToRefresh=1;
 
