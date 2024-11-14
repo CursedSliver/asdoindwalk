@@ -2117,7 +2117,7 @@ Game.registerMod("Kaizo Cookies", {
 				else if (godLvl == 3) { mult *= (1 + 0.2); }
 			}
 			if (decay.challengeStatus('buildingsAlternate')) { mult *= 1/0.8; }
-			return Math.min(Math.sqrt(Game.log10Cookies), (Game.Has('Legacy')?10:3)) * 0.0015 * (1 / mult) + 1 / Math.max(5, base * mult / Math.pow((Math.log(1 / Math.min(1, decay.gen)) / Math.log(decay.wrinklerApproachFactor)), decay.wrinklerApproachPow));
+			return Math.min(Math.sqrt(Game.log10Cookies + 9), (Game.Has('Legacy')?10:3)) * 0.00125 * (1 / mult) + 1 / Math.max(5, base * mult / Math.pow((Math.log(1 / Math.min(1, decay.gen)) / Math.log(decay.wrinklerApproachFactor)), decay.wrinklerApproachPow));
 		};
 		decay.wrinklerSpawnRateMap = { 
 			//all values below are log10 of cookie count
@@ -3606,7 +3606,7 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('%1x CpS multiplier');
 			addLoc('-%1 Frenzy duration!'); addLoc('-%1 Dragon Harvest duration!');
 			eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString()
-				 .replace(`buff=Game.gainBuff('frenzy',Math.ceil(77*effectDurMod),7);`, `if (me.canBoostFrenzy && Game.hasBuff('Frenzy')) { let F = Game.hasBuff('Frenzy'); if (F.multCpS >= 7 * 10) { popup=loc('Frenzy strength maximum reached'); } if (F.multCpS < 7 * 5) { popup=loc("Frenzy strengthened!")+'<br><small>'+loc("+%1!",loc("%1x CpS multiplier", Math.min(7 * 0.25, 7 * 5 - F.multCpS)))+'</small><br><small>'+loc("-%1 Frenzy duration!", Game.sayTime(F.time / 2, -1))+'</small>'; F.multCpS = Math.min(7 * 5, F.multCpS + 0.25 * 7); F.time /= 2; F.time = Math.floor(F.time); } } else { buff=Game.gainBuff('frenzy',Math.ceil(77*(Game.Has('Chance encounter')?1.4:1)*effectDurMod),7); }`)
+				 .replace(`buff=Game.gainBuff('frenzy',Math.ceil(77*effectDurMod),7);`, `if (me.canBoostFrenzy && Game.hasBuff('Frenzy')) { let F = Game.hasBuff('Frenzy'); if (F.multCpS >= 7 * 10) { popup=loc('Frenzy strength maximum reached'); } if (F.multCpS < 7 * 5) { popup=loc("Frenzy strengthened!")+'<br><small>'+loc("+%1!",loc("%1x CpS multiplier", Math.min(7 * 0.25, 7 * 5 - F.multCpS)))+'</small><br><small>'+loc("-%1 Frenzy duration!", Game.sayTime(F.time / 2, -1))+'</small>'; F.multCpS = Math.min(7 * 5, F.multCpS + 0.25 * 7); F.time /= 2; F.time = Math.floor(F.time); } } else { buff=Game.gainBuff('frenzy',Math.ceil(77*(Game.Has('Chance encounter')?1.35:1)*effectDurMod),7); }`)
 				 .replace(`buff=Game.gainBuff('dragon harvest',Math.ceil(60*effectDurMod),15);`, `if (me.canBoostDH && Game.hasBuff('Dragon Harvest')) { let DH = Game.hasBuff('Dragon Harvest'); let DHBase = (Game.Has('Dragon Fang')?15:17); if (DH.multCpS >= DHBase * 3.5) { popup=loc('Dragon Harvest strength maximum reached!'); } if (DH.multCpS < DHBase * 3.5) { popup=loc("Dragon Harvest strengthened!")+'<br><small>'+loc("+%1!",loc("%1x CpS multiplier", Math.min(DHBase * 1.5, DHBase * 3.5 - DH.multCpS)))+'</small><br><small>'+loc("-%1 Dragon Harvest duration!", Game.sayTime(DH.time / 2, -1))+'</small>'; DH.multCpS = Math.min(DHBase * 3.5, DH.multCpS + DHBase * 1.5); DH.time /= 2; DH.time = Math.floor(DH.time); } } else { buff=Game.gainBuff('dragon harvest',Math.ceil(60*effectDurMod),15); }`)
 			);
 			new decay.covenantMode('gardenTick', 'artifical lights', 'Claiming shiny wrinkler souls have a <b>50%</b> chance to trigger a garden tick with <b>3x mutation rates</b> instead of spawning a golden cookie.<q>An unholy mass, glowing as bright as the sun.</q>', function() { return decay.utenglobeUnlocked; });
@@ -5120,7 +5120,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (Game.goldenClicksLocal>=3) { Game.Unlock('Serendipity'); }
 			if (Game.goldenClicksLocal>=7) { Game.Unlock('Get lucky'); }
-			if (Game.goldenClicksLocal>=27) { Game.Unlock('Chance encounter'); }
+			if (Game.goldenClicksLocal>=27 && Game.cookiesEarned > 1e50) { Game.Unlock('Chance encounter'); }
 		}
 		Game.registerHook('check', decay.checkGCUpgradeUnlocks);
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString()
@@ -5155,9 +5155,9 @@ Game.registerMod("Kaizo Cookies", {
 		replaceDesc('Heavenly bakery', 'Increase the maximum amount of unleashed prestige levels to <b>'+Beautify(10000)+'</b>.<q>Also sells godly cakes and divine pastries. The pretzels aren\'t too bad either.</q>');
 		Game.Upgrades['Heavenly bakery'].basePrice = 1.11111111111e14;
 		replaceDesc('Heavenly confectionery', 'Increase the maximum amount of unleashed prestige levels to <b>'+Beautify(100000)+'</b>.<q>They say angel bakers work there. They take angel lunch breaks and sometimes go on angel strikes.</q>');
-		Game.Upgrades['Heavenly confectionery'].basePrice = 1.11111111111e19;
+		Game.Upgrades['Heavenly confectionery'].basePrice = 1.11111111111e20;
 		replaceDesc('Heavenly key', 'Increase the maximum amount of unleashed prestige levels to <b>'+Beautify(1e6)+'</b>, and also allows you to charge this upgrade over time by sustaining purity, unleashing <b>even more</b> prestige levels.<br>The speed of charging also scales with prestige effect multipliers.<q>This is the key to the pearly (and tasty) gates of pastry heaven, allowing you to access your entire stockpile of heavenly chips for baking purposes.<br>May you use them wisely.</q>');
-		Game.Upgrades['Heavenly key'].basePrice = 1.11111111111e26;
+		Game.Upgrades['Heavenly key'].basePrice = 1.11111111111e27;
 		replaceAchievDesc('Wholesome', 'Purchase the <b>Heavenly key</b>, the portal to infinite power.');
 		//now Game.GetHeavenlyMultiplier only accounts for multipliers beyond the unlocking upgrades, such as lucky payout and dotjeiess
 		Game.activePrestigeCount = 0;
@@ -7319,7 +7319,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('(Heavenly) Enchanted permaslot I');
 		new decay.challenge(1, decay.challengeDescModules.bakeAndKeep(1e14, 60), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e14, 60 * Game.fps)), loc('(Heavenly) Enchanted permaslot I'), decay.challengeUnlockModules.vial, { prereq: 'combo1' }); addLoc('(Heavenly) Enchanted permaslot II');
-		new decay.challenge(2, decay.challengeDescModules.bakeAndKeep(1e21, 70), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e21, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot II'), decay.challengeUnlockModules.vial, { prereq: 1 }); addLoc('(Heavenly) Enchanted permaslot III');
+		new decay.challenge(2, decay.challengeDescModules.bakeAndKeep(1e22, 70), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e22, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot II'), decay.challengeUnlockModules.vial, { prereq: 1 }); addLoc('(Heavenly) Enchanted permaslot III');
 		new decay.challenge(3, decay.challengeDescModules.bakeAndKeep(1e24, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e24, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot III'), decay.challengeUnlockModules.box, { prereq: 2 }); addLoc('(Heavenly) Enchanted permaslot IV');
 		new decay.challenge(4, decay.challengeDescModules.bakeAndKeep(1e27, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e27, 75 * Game.fps)), loc('(Heavenly) Enchanted permaslot IV'), decay.challengeUnlockModules.box, { prereq: 3 }); addLoc('(Heavenly) Enchanted permaslot V');
 		new decay.challenge(5, decay.challengeDescModules.bakeAndKeep(1e30, 30), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e30, 30 * Game.fps)), loc('(Heavenly) Enchanted permaslot V'), decay.challengeUnlockModules.truck, { prereq: 4 });
@@ -8201,7 +8201,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			this.achievements.push(new Game.Upgrade('Touch of nature', 'Big cookie clicks have a <b>1%</b> chance to purify a small amount of decay.<q>Within this mouse... is the power to stop your misery!</q>', 1e57, [11, 4, kaizoCookies.images.custImg])); Game.last.order = 160;
 
-			this.achievements.push(new Game.Upgrade('Chance encounter', 'Frenzy from golden cookies last <b>40%</b> longer.<br>Unlocks after clicking <b>27</b> naturally spawning golden cookies this ascension.<q>May chance be on your side.</q>', 777.777777e12, [11, 3, kaizoCookies.images.custImg])); Game.last.order = 5000.1;
+			this.achievements.push(new Game.Upgrade('Chance encounter', 'Frenzy from golden cookies last <b>35%</b> longer.<br>Unlocks after clicking <b>27</b> naturally spawning golden cookies this ascension.<q>May chance be on your side.</q>', 777.777777e45, [11, 3, kaizoCookies.images.custImg])); Game.last.order = 5000.1;
 
 			this.achievements.push(new Game.Upgrade('Lucky radar', 'Golden cookie gain is <b>doubled</b>.<br>Golden cookie gain refers to any effect from golden cookies that involves directly creating some amount of cookies, such as Lucky.<q>Really helpful for finding those lucky cookies that just won\'t come out of the abyss.</q>', 7.777e9, [10, 14])); Game.last.order = 4950;
 			this.achievements.push(new Game.Upgrade('Shimmering encapsulation', 'Golden cookie gain is <b>doubled</b>.<br>Golden cookie gain refers to any effect from golden cookies that involves directly creating some amount of cookies, such as Lucky.<q>The essence of golden cookies, redistributed.</q>', 7.777e12, [10, 2, kaizoCookies.images.custImg])); Game.last.order = 4951;
