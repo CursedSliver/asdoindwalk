@@ -485,7 +485,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.cookiesEarned <= decay.featureUnlockThresholds.momentum) { decay.momentumUnlocked = false; } else { decay.momentumUnlocked = true; }
 			if (decay.momentum < 1) { decay.momentum = 1; }
 			if (decay.infReached) { decay.onInf(); decay.infReached = false; }
-			if (!Game.OnAscend) {
+			if (!Game.OnAscend && !Game.AscendTimer) {
 				const t = decay.getTickspeed();
 				decay.rateTS = t;
 				decay.purityToDecayPow = decay.getPurityToDecayPow();
@@ -1607,7 +1607,7 @@ Game.registerMod("Kaizo Cookies", {
 		l('sectionLeft').appendChild(newDiv);
 		decay.setWidget = function() {
 			const avail = decay.unlocked || decay.momentumUnlocked || (Game.ascensionMode === 42069);
-			if (!decay.prefs.widget || !avail) { l('decayWidget').style = 'display:none;'; return false; }
+			if (!decay.prefs.widget || !avail || Game.AscendTimer) { l('decayWidget').style = 'display:none;'; return false; }
 			if (!decay.unlocked) { l('decayCpsMult').style = 'display:none'; } else { l('decayCpsMult').style = ''; }
 			if (!decay.momentumUnlocked) { l('decayMomentum').style = 'display:none'; } else { l('decayMomentum').style = ''; }
 			if (Game.ascensionMode !== 42069) { l('decayAcceleration').style = 'display:none'; } else { l('decayAcceleration').style = ''; }
@@ -1943,7 +1943,7 @@ Game.registerMod("Kaizo Cookies", {
 				Game.OnAscend=0;Game.removeClass('ascending');
 				Game.addClass('ascendIntro');
 				//trigger the ascend animation
-				Game.AscendTimer=1;
+				Game.AscendTimer=1; Crumbs.killAllFallingCookies();
 				Game.killShimmers();
 				l('toggleBox').style.display='none';
 				l('toggleBox').innerHTML='';
@@ -2291,7 +2291,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (this.dead) { return; }
 			this.scaleX = (this.size * 0.2 + 0.4) * (1+0.02*Math.sin(Game.T*0.2+Number(this.index)*2));
 			this.scaleY = (this.size * 0.2 + 0.4) * (1+0.025*Math.sin(Game.T*0.2-2+Number(this.index)*2));
-			
+
 			const pos = Crumbs.h.rv(this.rad, 0, 116 + this.dist * 72); //108 pixels
 			this.x = this.leftSection.offsetWidth / 2 + pos[0]; this.y = this.leftSection.offsetHeight * 0.4 + pos[1];
 			this.rotation = Math.PI * 2 - this.rad;
