@@ -1320,7 +1320,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			shinySoulEffect: {
 				title: 'Reflective blessings',
-				desc: 'Upon claiming a shiny wrinkler\'s soul, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS (including any buffs that may be active), for up to TRIPLE your bank! You might be able to do something with this information...',
+				desc: 'Upon claiming a shiny wrinkler\'s soul, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS (including any buffs that may be active), for up to DOUBLE your bank! You might be able to do something with this information...',
 				icon: [10, 3, kaizoCookies.images.custImg]
 			},
 			accExtras: {
@@ -2832,7 +2832,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		});
 		addLoc('Reflective blessing!');
-		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*30`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies * 2, Game.cookiesPs * 300 * (Game.resets>0?0.5:1)) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
+		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*30`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, mult * Game.cookiesPs * 300 * (Game.resets>0?0.5:1)) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
 		decay.soulClaimCount = 0;
 		decay.shinySoulClaimCount = 0;
 		decay.soulClaimAuraPower = 0;
@@ -4642,7 +4642,7 @@ Game.registerMod("Kaizo Cookies", {
 				desc: loc('Halts decay for an especially long time. (each use is considered a distinct method)'),
 				failDesc: loc('Decay propagation is %1% faster for the next %2 minutes.', [50, 2]),
 				icon: [6, 0, kaizoCookies.images.custImg],
-				costMin: 8,
+				costMin: 18,
 				costPercent: 0.25,
 				id: 10,
 				win: function() {
@@ -4888,7 +4888,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			eval('M.unlockSeed='+M.unlockSeed.toString().replace('me.unlocked=1;', 'me.unlocked=1; decay.triggerNotif("garden"); '));
 
-			eval('M.computeEffs='+M.computeEffs.toString().replace('buildingCost:1,', 'buildingCost:1, wrinklerApproach:1, wrathReplace:1, haltPower:1, decayRate:1, decayMomentum:1').replace(`else if (name=='wardlichen') {effs.wrinklerSpawn*=1-0.15*mult;effs.wrathCookieFreq*=1-0.02*mult;}`, `else if (name=='wardlichen') {effs.haltPower+=0.02*mult; effs.wrathReplace*=1-0.02*mult;}`).replace(`else if (name=='wrinklegill') {effs.wrinklerSpawn+=0.02*mult;effs.wrinklerEat+=0.01*mult;}`,`else if (name=='wrinklegill') {effs.wrinklerApproach*=1-0.05*mult;}`).replace(`effs.wrathCookieGain+=0.01*mult;effs.wrathCookieFreq+=0.01*mult;`,`effs.wrinklerApproach*=1-0.02*mult; effs.haltPower+=0.01*mult;`).replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieFreq+=0.01*mult;effs.itemDrops+=0.01*mult;`, `effs.decayRate *= 1 - 0.02*mult; effs.decayMomentum *= 1 - 0.02*mult;`).replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieEffDur+=0.001*mult;`, `effs.goldenCookieGain+=3.89*mult;effs.goldenCookieEffDur+=0.001*mult;`).replace(`'shriekbulb') {effs.cps*=1-0.02*mult;}`, `'shriekbulb') {effs.cps*=1-0.02*mult;} else if (name=='tidygrass') { effs.decayMomentum *= 1 - 0.05*mult; } else if (name=='everdaisy') { effs.decayRate *= 1 - 0.03*mult; }`).replace(`else if (name=='whiteChocoroot') effs.goldenCookieGain+=0.01*mult;`, `else if (name=='whiteChocoroot') effs.goldenCookieGain+=1.88*mult;`));
+			eval('M.computeEffs='+M.computeEffs.toString().replace('buildingCost:1,', 'buildingCost:1, wrinklerApproach:1, wrathReplace:1, haltPower:1, decayRate:1, decayMomentum:1').replace(`else if (name=='wardlichen') {effs.wrinklerSpawn*=1-0.15*mult;effs.wrathCookieFreq*=1-0.02*mult;}`, `else if (name=='wardlichen') {effs.haltPower+=0.02*mult; effs.wrathReplace*=1-0.02*mult;}`).replace(`else if (name=='wrinklegill') {effs.wrinklerSpawn+=0.02*mult;effs.wrinklerEat+=0.01*mult;}`,`else if (name=='wrinklegill') {effs.wrinklerApproach*=1-0.05*mult;}`).replace(`effs.wrathCookieGain+=0.01*mult;effs.wrathCookieFreq+=0.01*mult;`,`effs.wrinklerApproach*=1-0.02*mult; effs.haltPower+=0.01*mult;`).replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieFreq+=0.01*mult;effs.itemDrops+=0.01*mult;`, `effs.decayRate *= 1 - 0.02*mult; effs.decayMomentum *= 1 - 0.02*mult;`).replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieEffDur+=0.001*mult;`, `effs.goldenCookieGain+=0.389*mult;effs.goldenCookieEffDur+=0.001*mult;`).replace(`'shriekbulb') {effs.cps*=1-0.02*mult;}`, `'shriekbulb') {effs.cps*=1-0.02*mult;} else if (name=='tidygrass') { effs.decayMomentum *= 1 - 0.05*mult; } else if (name=='everdaisy') { effs.decayRate *= 1 - 0.03*mult; }`).replace(`else if (name=='whiteChocoroot') effs.goldenCookieGain+=0.01*mult;`, `else if (name=='whiteChocoroot') effs.goldenCookieGain+=1.88*mult;`));
 			addLoc('all decay-halting sources\' effect');
 			addLoc('wrath cookies replacement');
 			addLoc('wrinklers approach speed');
@@ -6893,9 +6893,9 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.PickAscensionMode='+Game.PickAscensionMode.toString().replace(`background-position:'+(-icon[0]*48)+'px '+(-icon[1]*48)+'px;`, `'+writeIcon(icon)+'`));
 
 		eval('Game.Logic='+Game.Logic.toString().replace("if (Game.Has('Legacy') && Game.ascensionMode!=1)", "if (Game.Has('Legacy') && Game.ascensionMode!=1 && Game.ascensionMode!=42069)"));
-		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*35) Game.Win('Speed baking I');", "//if (timePlayed<=1000*60*35) Game.Win('Speed baking I');"));
-		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*25) Game.Win('Speed baking II');", "//if (timePlayed<=1000*60*25) Game.Win('Speed baking II');"));
-		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*15) Game.Win('Speed baking III');", "//if (timePlayed<=1000*60*35) Game.Win('Speed baking I');"));
+		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*35) Game.Win('Speed baking I');", "if (Game.TCount<=1000*60*35*Game.fps && Game.ascensionMode==1) Game.Win('Speed baking I');"));
+		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*25) Game.Win('Speed baking II');", "if (Game.TCount<=1000*60*25*Game.fps && Game.ascensionMode==1) Game.Win('Speed baking II');"));
+		//eval('Game.Logic='+Game.Logic.toString().replace("if (timePlayed<=1000*60*15) Game.Win('Speed baking III');", "if (Game.TCount<=1000*60*35*Game.fps && Game.ascensionMode==1) Game.Win('Speed baking I');"));
 
 		eval('Game.Reset='+Game.Reset.toString().replace('if (Game.permanentUpgrades[i]!=-1)', 'if (Game.permanentUpgrades[i]!=-1 && parseFloat(i) != 3 && parseFloat(i) != 4)'));
 		Game.Upgrades['Permanent upgrade slot IV'].showIf = function() { return false; }
