@@ -2498,8 +2498,8 @@ Game.registerMod("Kaizo Cookies", {
 
 				for (let i in allWrinklers) {
 					if (allWrinklers[i] == this) { continue; }
-					decay.damageWrinkler.call(allWrinklers[i], 24 * shinyMult);
-					if (allWrinklers[i].size > 0) { decay.damageWrinkler.call(allWrinklers[i], 24 * shinyMult); }
+					decay.damageWrinkler.call(allWrinklers[i], 24 * specialMult);
+					if (allWrinklers[i].size > 0) { decay.damageWrinkler.call(allWrinklers[i], 24 * specialMult); }
 					allWrinklers[i].dist += 0.2;
 				}
 				return;
@@ -2690,11 +2690,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			this.dxExport = p.dx; 
 			this.dyExport = p.dy; //spagetti code go br
-			if (!(decay.utenglobeStorage[(this.shiny?'shinyS':'s')+'oul'].canDeposit() && this.inMilk) && (this.y < -50 
-				|| this.y > Crumbs.getCanvasByScope('left').canvas.height + 10 
-				|| ((this.x < 0 || this.x > Crumbs.getCanvasByScope('left').canvas.width) && this.inMilk) 
-				|| (this.x < -50 || this.x > Crumbs.getCanvasByScope('left').canvas.width + 50)))
-				{ this.die(); }
+			if (this.y < -50) { this.die(); }
 			if (Crumbs.t - this.t > 20 * Game.fps) { decay.triggerNotif('soulExpiry'); this.die(); }
 		}, { dy: 0, dx: 0, ddy: 10 / Game.fps });
 		decay.wSoulClaim = new Crumbs.behavior(function() {
@@ -4634,7 +4630,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.halts['manifestSpring'] = new decay.haltChannelGroup();
 			decay.manifestSpringHaltParameters = {
 				autoExpire: true,
-				halt: 45,
+				halt: 4,
+				decMult: 0.1,
 				power: 1
 			}
 			gp.spells['manifest spring'] = {
@@ -8385,7 +8382,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			this.checkPolargurt = function() {
 				for (let i = 0; i < this.polargurtUpgrades.length; i++) {
-					if (Game.log10Cookies > 2 + i * 1 && Game.ObjectsById[i].bought > 0) { 
+					if (Game.log10Cookies > 3 + i * 1 && Game.ObjectsById[i].bought > 0) { 
 						Game.Unlock(this.polargurtUpgrades[i].name); 
 					}
 				}
