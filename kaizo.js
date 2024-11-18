@@ -4,6 +4,9 @@ var kaizoCookies = null;
 
 var kaizoWarning = true;
 
+//integration
+if (typeof Cookieclysm === 'undefined') { window.Cookieclysm = null; }
+
 //additional helper functions
 var upgradeDescsToReplace = [];
 
@@ -21,9 +24,7 @@ function replaceAchievDesc(name, toReplaceWith) {
 	Game.Achievements[name].desc = toReplaceWith; 
 	Game.Achievements[name].ddesc = toReplaceWith;
 }
-function addLoc(str, str2) {
-	locStrings[str] = str2??str;
-}
+function addLoc(s,t){locStrings[s]=t??s;}
 function auraDesc(id, str, actionStr) {
 	addLoc(str);
 	Game.dragonAuras[id].desc=loc(str);
@@ -644,7 +645,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (decay.isConditional('godz')) { tickSpeed *= (1 + Game.BuildingsOwned * 0.01); } else if (Game.hasBuff('Devastation').arg2) { tickSpeed *= Game.hasBuff('Devastation').arg2; }
 			if (decay.covenantStatus('wrathBan')) { tickSpeed *= 1.1; }
-			tickSpeed *= Math.pow(2, Math.max(0, Game.gcBuffCount() - 1));
+			//tickSpeed *= Math.pow(2, Math.max(0, Game.gcBuffCount() - 1));
 			if (Game.hasBuff('Storm of creation').arg1) { tickSpeed *= 1 - Game.hasBuff('Storm of creation').arg1; }
 			if (Game.hasBuff('Unending flow').arg1) { tickSpeed *= 1 - Game.hasBuff('Unending flow').arg1; }
 			if (Game.hasBuff('Stagnant body').arg1) { tickSpeed *= 1 + Game.hasBuff('Stagnant body').arg1; }
@@ -665,7 +666,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.getPurityToDecayPow = function() {
 			var base = 2;
-			base += 0.25 * Math.max(0, Game.gcBuffCount() - 1);
+			//base += 0.25 * Math.max(0, Game.gcBuffCount() - 1);
 			if (Game.Has('Unshackled Purity')) { base *= decay.unshackledPurityMult; }
 			return base;
 		}
@@ -1039,7 +1040,7 @@ Game.registerMod("Kaizo Cookies", {
 				shiny: 5555555555,
 				momentum: 5.555e33,
 				leading: 5.555e51,
-				bomberNat: 5.555e24,
+				bomberNat: 5.555e26,
 				phantom: 5.555e42,
 				armored: 5.555e33,
 			},
@@ -1050,7 +1051,7 @@ Game.registerMod("Kaizo Cookies", {
 				momentum: 5.555e24,
 				shiny: 55555555,
 				leading: 5.555e18,
-				bomberNat: 5.555e1,
+				bomberNat: 5.555e21,
 				phantom: 5.555e30,
 				armored: 5.555e27,
 			}
@@ -1206,7 +1207,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			multipleBuffs: {
 				title: 'Buff stacking',
-				desc: 'Stacking more than one Golden cookie buff slightly increases your decay\'s momentum (feature unlocked at 5.555 quintillion cookies baked), but makes the decay rate increase with purity scale significantly harder.',
+				desc: 'THIS FEATURE HAS BEEN REMOVED.',
 				icon: [23, 6]
 			},
 			fthof: {
@@ -1574,9 +1575,9 @@ Game.registerMod("Kaizo Cookies", {
 		Game.UpdateMenu();
 		Game.getWithered = function() {
 			if (Game.cpsSucked > 0.99) {
-				return Beautify(Math.round((1 / (1 - Game.cpsSucked)) - 1), 0)+' / '+Beautify(Math.round(1 / (1 - Game.cpsSucked)), 0);
+				return SimpleBeautify(Math.round((1 / (1 - Game.cpsSucked)) - 1), 0)+' / '+Beautify(Math.round(1 / (1 - Game.cpsSucked)), 0);
 			} else {
-				return Beautify(Math.round(Game.cpsSucked*100),1)+'%';
+				return SimpleBeautify(Math.round(Game.cpsSucked*100),1)+'%';
 			}
 		}
 		addLoc('additionally: ');
@@ -2767,16 +2768,18 @@ Game.registerMod("Kaizo Cookies", {
 			return Crumbs.spawn(s);
 		}
 		decay.halts['wSoul'] = new decay.haltChannel({
-			keep: 0.7,
+			keep: 1.5,
 			overtimeLimit: 8,
 			overtimeEfficiency: 0.9,
+			decMult: 1.5,
 			power: 1.2,
 			factor: 0.6
 		});
 		decay.halts['wSoulShiny'] = new decay.haltChannel({
-			keep: 0.7,
+			keep: 1.5,
 			overtimeLimit: 12,
 			overtimeEfficiency: 1,
+			decMult: 1.5,
 			power: 1.2,
 			factor: 0.5
 		});
@@ -6836,7 +6839,7 @@ Game.registerMod("Kaizo Cookies", {
 			
 			me.hp -= 5 * (1 + Math.sqrt(Game.log10Cookies) / 3);
 			me.hp *= 0.9;
-			decay.stop(2.5, 'powerOrb');
+			//decay.stop(2.5, 'powerOrb');
 		}
 		decay.powerOrb.prototype.onBounce = function() {
 			this.times.sinceLastBounce = 0;
@@ -7013,7 +7016,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (this.repeatable) { this.complete++; } else { this.complete = 1; }
 			decay.getCompletionCount();
 			if (!silent) { 
-				Game.Notify(loc('Challenge complete!'), loc('You completed challenge <b>%1</b>!', this.name), this.icon, 20, false, true);
+				Game.Notify(loc('Challenge complete!'), loc('You completed challenge <b>%1</b>!', this.name), this.icon??([12, 6]), 20, false, true);
 			}
 			if (this.onCompletion) { this.onCompletion(); }
 			kaizoCookies.checkChallengeAchievs();
@@ -7114,7 +7117,7 @@ Game.registerMod("Kaizo Cookies", {
 			let cannotCompleteWarning = false;
 			let ch = decay.sortChallenges();
 			for (let i in ch) {
-				if (!ch[i].unlocked || (ch[i].complete && !decay.showCompletedChallenges) || (!ch[i].complete && !decay.showIncompleteChallenges)) { continue; }
+				if ((!ch[i].unlocked || (ch[i].complete && !decay.showCompletedChallenges) || (!ch[i].complete && !decay.showIncompleteChallenges)) && !decay.isConditional(ch[i].key)) { continue; }
 				str2 += '<div class="'+(ch[i].rewardEnabled?'singleChallenge':'singleChallenge rewardDisabled');
 				if (ch[i].cannotComplete && !ch[i].complete && Game.ascensionMode == 42069) { cannotCompleteWarning = true; str2 += ' cannotComplete'; } 
 				str2 += '" '+(ch[i].complete?(Game.clickStr+'="if (Game.keys[16]) { decay.challenges[\''+ch[i].key+'\'].toggleReward(); }"'):'');
@@ -7406,14 +7409,14 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('(Heavenly) Enchanted permaslot I');
 		new decay.challenge(1, decay.challengeDescModules.bakeAndKeep(1e18, 60), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e18, 60 * Game.fps)), loc('(Heavenly) Enchanted permaslot I'), decay.challengeUnlockModules.vial, { prereq: 'combo1' }); addLoc('(Heavenly) Enchanted permaslot II');
-		new decay.challenge(2, decay.challengeDescModules.bakeAndKeep(1e22, 70), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e22, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot II'), decay.challengeUnlockModules.vial, { prereq: 1 }); addLoc('(Heavenly) Enchanted permaslot III');
+		new decay.challenge(2, decay.challengeDescModules.bakeAndKeep(1e24, 70), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e24, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot II'), decay.challengeUnlockModules.vial, { prereq: 1 }); addLoc('(Heavenly) Enchanted permaslot III');
 		new decay.challenge(3, decay.challengeDescModules.bakeAndKeep(1e24, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e24, 70 * Game.fps)), loc('(Heavenly) Enchanted permaslot III'), decay.challengeUnlockModules.box, { prereq: 2 }); addLoc('(Heavenly) Enchanted permaslot IV');
 		new decay.challenge(4, decay.challengeDescModules.bakeAndKeep(1e27, 75), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e27, 75 * Game.fps)), loc('(Heavenly) Enchanted permaslot IV'), decay.challengeUnlockModules.box, { prereq: 3 }); addLoc('(Heavenly) Enchanted permaslot V');
 		new decay.challenge(5, decay.challengeDescModules.bakeAndKeep(1e30, 30), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e30, 30 * Game.fps)), loc('(Heavenly) Enchanted permaslot V'), decay.challengeUnlockModules.truck, { prereq: 4 });
 		
 		addLoc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.');
 		addLoc('<b>Halved</b> flavored cookie cost');
-		new decay.challenge('hc', loc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.', Beautify(1e11)+loc(' cookies')), function() { return Game.cookiesEarned >= 1e11; }, loc('<b>Halved</b> flavored cookie cost')+'<br>'+loc('Hardcore'), decay.challengeUnlockModules.vial, { prereq: 'combo1', onCompletion: function() { Game.Win('Hardcore'); } });
+		new decay.challenge('hc', loc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.', loc('%1 cookie', Beautify(1e12))), function() { return Game.cookiesEarned >= 1e12; }, loc('<b>Halved</b> flavored cookie cost')+'<br>'+loc('Hardcore'), decay.challengeUnlockModules.vial, { prereq: 'combo1', onCompletion: function() { Game.Win('Hardcore'); } });
 		eval('Game.Upgrade.prototype.buy='+Game.Upgrade.prototype.buy.toString().replace('Game.Spend(price);', 'Game.Spend(price); decay.challenges.hc.cannotComplete = true;'))
 		
 		addLoc('Activate the Elder Pledge in the first <b>%1</b> of the run.');
@@ -7734,7 +7737,7 @@ Game.registerMod("Kaizo Cookies", {
 		new decay.typingAction('slot % into % position', function(c) { if (!pp) { return; } const a = c[0].join(''); const b = c[1].join(''); var d = -1; if (b=='diamond') { d = 0; } else if (b=='ruby') { d = 1; } else if (b=='jade') { d = 2; } else if (b=='roster') { d = -1; } else { return true; } if (Game.godsPrimaryNameToCode[a]) { decay.gameCan.slotGods = true; pp.dragging = pp.gods[Game.godsPrimaryNameToCode[a]]; pp.slotHovered = d; pp.dropGod(); pp.slotHovered = -1; decay.gameCan.slotGods = false; } }, 'slots the corresponding god into the corresponding slot, or puts it back into the roster', 'slot [god primary name] to [diamond/ruby/jade/roster] slot<br>(primary name excludes the title, e.g. "Mokalsium, Mother Spirit" to "mokalsium")', true);
 		new decay.typingAction('take loan %', function(c) { if (!sp) { return; } if (c[0].length > 1) { return true; } const a = parseInt(c[0][0]); var sp = Game.Objects.Bank.minigame; if (a>3 || a<1) { return true; /*no checks for loan unlocks here for funny*/} decay.gameCan.takeLoans = true; sp.takeLoan(a); decay.gameCan.takeLoans = false; }, 'takes the loan in the Stock market, if available', 'take loan [loan number]', true);
 		new decay.typingAction('hire a broker', function() { if (!sp) { return; } decay.gameCan.buyBrokers = true; l('bankBrokersBuy').click(); decay.gameCan.buyBrokers = false; }, 'hires a broker in the Stock market');
-		Game.manipGoods = function(action, amount, name) {
+		decay.manipGoods = function(action, amount, name) {
 			if (!Game.Objects.Bank.minigameLoaded) { return true; }
 			if (!(action=='buy' || action=='sell')) { return true; }
 			if (amount=='all' || amount=='max') { amount = '10000'; } 
@@ -7752,7 +7755,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			return false;
 		}
-		new decay.typingAction('stock % % of %', function(c) { if (!sp) { return; } const x = c[0].join(''); const y = c[1].join(''); const z = c[2].join(''); if (z.length>20) { return true; } decay.gameCan.buyGoods = true; decay.gameCan.sellGoods = true; const toReturn = Game.manipGoods(x, y, z); decay.gameCan.buyGoods = false; decay.gameCan.sellGoods = false; return toReturn; }, 'buys or sells that quantity of a goods in the Stock market', 'stock [buy/sell] [1/10/100/max/all] of [the goods\' proper name]', true);
+		new decay.typingAction('stock % % of %', function(c) { if (!sp) { return; } const x = c[0].join(''); const y = c[1].join(''); const z = c[2].join(''); if (z.length>20) { return true; } decay.gameCan.buyGoods = true; decay.gameCan.sellGoods = true; const toReturn = decay.manipGoods(x, y, z); decay.gameCan.buyGoods = false; decay.gameCan.sellGoods = false; return toReturn; }, 'buys or sells that quantity of a goods in the Stock market', 'stock [buy/sell] [1/10/100/max/all] of [the goods\' proper name]', true);
 		new decay.typingAction('upgrade your office', function() { if (!sp) { return; } decay.gameCan.upgradeOffice = true; l('bankOfficeUpgrade').click(); decay.gameCan.upgradeOffice = false; }, 'upgrades the office in the Stock market');
 		new decay.typingAction('change tickspeed', function() { if (!sp) { return; } decay.gameCan.changeTickspeed = true; sp.changeTickspeed(); decay.gameCan.changeTickspeed = false; }, 'changes the tickspeed in the Stock market');
 		new decay.typingAction('refill magic', function() { if (!gp) { return; } decay.gameCan.refillMinigames = true; l('grimoireLumpRefill').click(); decay.gameCan.refillMinigames = false; }, 'refills magic in the Grimoire using a sugar lump');
@@ -7793,7 +7796,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.');
 		addLoc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps');
-		new decay.challenge('combo3', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(2500), Game.sayTime(4 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 240 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 2500); }, function(hide) { return loc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps', 10) + '<br>' + loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '2'); }, decay.challengeUnlockModules.vial, { prereq: 'combo2' });
+		new decay.challenge('combo3', loc('Get a click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(7000), Game.sayTime(3.5 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 210 * Game.fps) { c.cannotComplete = true; } return (Game.clickMult >= 7000); }, function(hide) { return loc('Slotting gods in the Pantheon has a <b>%1%</b> chance to not use any worship swaps', 10) + '<br>' + loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '2'); }, decay.challengeUnlockModules.vial, { prereq: 'combo2' });
 		//eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`if (Game.Has('Dragon fang')) mult*=1.03;`, `if (Game.Has('Dragon fang')) mult*=1.03; if (decay.challengeStatus('combo3')) { mult *= (1 + 27.27 / (Math.max(Game.log10Cookies - 9, 0) / 6 + 1)); }`));
 		Game.clickMult = 1;
 		eval('Game.mouseCps='+Game.mouseCps.toString().replace('var out=mult*Game.ComputeCps', 'Game.clickMult = mult; var out=mult*Game.ComputeCps'));
