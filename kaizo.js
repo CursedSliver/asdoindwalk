@@ -1040,7 +1040,7 @@ Game.registerMod("Kaizo Cookies", {
 				shiny: 5555555555,
 				momentum: 5.555e33,
 				leading: 5.555e51,
-				bomberNat: 5.555e26,
+				bomberNat: 5.555e27,
 				phantom: 5.555e42,
 				armored: 5.555e33,
 			},
@@ -1051,7 +1051,7 @@ Game.registerMod("Kaizo Cookies", {
 				momentum: 5.555e24,
 				shiny: 55555555,
 				leading: 5.555e18,
-				bomberNat: 5.555e21,
+				bomberNat: 5.555e24,
 				phantom: 5.555e30,
 				armored: 5.555e27,
 			}
@@ -5313,8 +5313,8 @@ Game.registerMod("Kaizo Cookies", {
 		//santa changes
 		eval('Game.UpgradeSanta='+Game.UpgradeSanta.toString()
 			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
-			.replace('Game.cookies>moni', 'Game.cookies>moni && decay.utenglobeStorage.soul.amount >= Game.santaSoulReqs[Game.santaLevel] && decay.utenglobeStorage.shinySoul.amount >= Game.santaShinySoulReqs[Game.santaLevel]')
-			.replace('Game.Spend(moni);', 'Game.Spend(moni); decay.utenglobeStorage.soul.lose(Game.santaSoulReqs[Game.santaLevel]); decay.utenglobeStorage.shinySoul.lose(Game.santaShinySoulReqs[Game.santaLevel]);')
+			.replace('Game.cookies>moni', 'Game.cookies>moni && decay.utenglobeStorage.soul.amount >= (Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls")) && decay.utenglobeStorage.shinySoul.amount >= Game.santaShinySoulReqs[Game.santaLevel]')
+			.replace('Game.Spend(moni);', 'Game.Spend(moni); decay.utenglobeStorage.soul.lose((Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls"))); decay.utenglobeStorage.shinySoul.lose(Game.santaShinySoulReqs[Game.santaLevel]);')
 		);
 		addLoc('%1 soul', ['%1 soul', '%1 souls']);
 		addLoc('%1 shiny soul', ['%1 shiny soul', '%1 shiny souls']);
@@ -5322,7 +5322,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.santaShinySoulReqs = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 4];
 		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString()
 			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
-			.replace(`'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+loc("sacrifice %1",'<div'+(Game.cookies>moni?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(Math.pow(Game.santaLevel+1,Game.santaLevel+1)))+'</div>')+'</div>'+`, `'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+'<div'+((Game.cookies>moni&&decay.utenglobeStorage.soul.amount>=Game.santaSoulReqs[Game.santaLevel]&&decay.utenglobeStorage.shinySoul.amount>=Game.santaShinySoulReqs[Game.santaLevel])?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(moni))+'<br>'+loc('%1 soul',LBeautify(Game.santaSoulReqs[Game.santaLevel]))+(Game.santaShinySoulReqs[Game.santaLevel]>0?('<br>'+loc('%1 shiny soul',LBeautify(Game.santaShinySoulReqs[Game.santaLevel]))):'')+'</div></div>'+`)
+			.replace(`'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+loc("sacrifice %1",'<div'+(Game.cookies>moni?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(Math.pow(Game.santaLevel+1,Game.santaLevel+1)))+'</div>')+'</div>'+`, `'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+'<div'+((Game.cookies>moni&&decay.utenglobeStorage.soul.amount>=(Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls"))&&decay.utenglobeStorage.shinySoul.amount>=Game.santaShinySoulReqs[Game.santaLevel])?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(moni))+'<br>'+((Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls") > 0)?loc('%1 soul',LBeautify((Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls")))):'')+(Game.santaShinySoulReqs[Game.santaLevel]>0?('<br>'+loc('%1 shiny soul',LBeautify(Game.santaShinySoulReqs[Game.santaLevel]))):'')+'</div></div>'+`)
 		);
 		addLoc('Also makes all santa\'s gifts <b>%1</b> times cheaper.');
 		replaceDesc('Season switcher', 'Allow you to <b>trigger seasonal events</b> at will, for a price.' + '<br>' + loc('Also makes all santa\'s gifts <b>%1</b> times cheaper.', Beautify(1e9)) + '<q>' + 'There will always be time.' + '</q>');
@@ -7432,7 +7432,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('Wrinklers approach the big cookie <b>%1</b> slower');
 		addLoc('Only buy every other building type, starting from Grandmas, and bake <b>%1</b>.');
-		new decay.challenge('buildingsAlternate', loc('Only buy every other building type, starting from Grandmas, and bake <b>%1</b>.', loc('%1 cookie', Beautify(1e17))), function() { return Game.cookiesEarned >= 1e14; }, loc('Wrinklers approach the big cookie <b>%1</b> slower', '10%'), decay.challengeUnlockModules.vial, { prereq: 'hc', order: decay.challenges.hc.order + 0.5 });
+		new decay.challenge('buildingsAlternate', loc('Only buy every other building type, starting from Grandmas, and bake <b>%1</b>.', loc('%1 cookie', Beautify(1e18))), function() { return Game.cookiesEarned >= 1e18; }, loc('Wrinklers approach the big cookie <b>%1</b> slower', '10%'), decay.challengeUnlockModules.vial, { prereq: 'hc', order: decay.challenges.hc.order + 0.5 });
 
 		addLoc('Bake <b>%1</b> without popping any wrinklers.');
 		addLoc('Your clicks are <b>%1</b> more effective against wrinklers');
@@ -7898,7 +7898,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.accBuffAsymptotePow = 0.025; //unused; closer this is to 0 (always positive), the slower the asymptomatic multiplier picks up
 		decay.accBuffAsymptoteThreshold = 0; //unused; when decay is below this point, stop calculating the asymptomatic multiplier and assume the full multiplier, switching to the log method for increasing the speed
 		decay.updateAcc = function() {
-			const amount = decay.accInc * Math.pow((1 - 1 / (decay.acceleration * decay.accSmoothMultFactor + decay.accSmoothBuffer)), decay.accSmoothFactor) * decay.getAccTickspeed() * (decay.isConditional('reversedAcc')?-1:1) + (decay.isConditional('reversedAcc')?(0.001 / Game.fps):0);
+			const amount = decay.accInc * Math.min(Math.pow((1 - 1 / (decay.acceleration * decay.accSmoothMultFactor + decay.accSmoothBuffer)), decay.accSmoothFactor), ((decay.acceleration > decay.accToRequiredHaltMinimum)?0.5:1)) * decay.getAccTickspeed() * (decay.isConditional('reversedAcc')?-1:1) + (decay.isConditional('reversedAcc')?(0.001 / Game.fps):0);
 			if (decay.gen >= 1) {
 				return amount * Math.pow(1 / decay.gen, decay.accIncPowOnPurity);
 			} else {
@@ -7918,7 +7918,7 @@ Game.registerMod("Kaizo Cookies", {
 			return tickSpeed;
 		}
 		decay.recalcAccStats = function() {
-			decay.accInc = 0.001 / Game.fps;
+			decay.accInc = 0.00135 / Game.fps;
 			decay.accBuffAsymptoteThreshold = decay.accBuffAsymptotePow / 6;
 			decay.startingAcc = 1.1;
 
@@ -8390,6 +8390,12 @@ Game.registerMod("Kaizo Cookies", {
 					}
 				}
 			}
+
+			this.achievements.push(new Game.Upgrade('Wrinkly balls', 'Evolving Santa requires <b>1 less</b> normal wrinkler soul per level.<q>A set of 14 cute - albeit disgusting - balls of wrinkler conglomerate, they are often used as a substitute for wrinkler souls.', 2222, [11, 0, kaizoCookies.images.custImg])); Game.last.pool = 'prestige';
+			Game.PrestigeUpgrades.push(Game.last);
+			Game.last.parents = [Game.Upgrades['Season switcher']];
+			Game.last.posX = Game.Upgrades['Season switcher'].posX;
+			Game.last.posY = Game.Upgrades['Season switcher'].posY + 150;
 
 			this.upgrades = []; //:ortroll:
 
