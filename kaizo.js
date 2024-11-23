@@ -138,6 +138,18 @@ function avgColors(arr, returnOpacity) {
 	}
 	return [toReturn[0] / length, toReturn[1] / length, toReturn[2] / length, (returnOpacity?Math.min(toReturn[3], 1):1)];
 }
+function colorToArray(color) {
+    if (!/^#[0-9a-fA-F]{8}$/.test(color)) {
+        throw new Error("Invalid color format. Use #RRGGBBAA.");
+    }
+    
+    const red = parseInt(color.slice(1, 3), 16);
+    const green = parseInt(color.slice(3, 5), 16);
+    const blue = parseInt(color.slice(5, 7), 16);
+    const opacity = parseInt(color.slice(7, 9), 16);
+
+    return [red, green, blue, opacity];
+}
 function colorCycleFrame(prev, post, fraction) {
 	//"prev" and "post" must be arrays with 3 numbers for rgb
 	prev[3] = prev[3] ?? 1;
@@ -561,6 +573,8 @@ Game.registerMod("Kaizo Cookies", {
 			}
 
 			decay.updatePowerOrbs();
+			if (!Game.hasBuff('Power poked')) { decay.powerPokedStack = 0; }
+			decay.powerClickToLeftSectionSpeed = decay.setSymptomsFromPowerClicks();
 
 			decay.updateCovenant();
 
@@ -747,7 +761,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.haltChannel = function(obj) {
 			this.decMult = 1; //multiplier to decrease
 			this.overtimeLimit = 10; 
-			this.factor = 0.15; //more = faster that decay recovers from decreasing effective halt
+			this.factor = 0.2; //more = faster that decay recovers from decreasing effective halt
 			this.keep = 0.35; //fraction of halt each stop kept as overtime
 			this.tickspeedPow = 0.25; //represents the amount that the current tickspeed affects its effectiveness, more = more effect
 			this.overtimeDec = 0.25; //fraction of normal decHalt applied to overtime when normal halt is in effect
@@ -901,7 +915,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.work = function(amount) {
 			//working increases fatigue
-			if (Game.cookiesEarned < decay.featureUnlockThresholds.fatigue) { return; }
+			if (Game.cookiesEarned < decay.featureUnlockThresholds.fatigue || Game.powerPokedStack > 0) { return; }
 			if (!amount) { amount = 1; }
 			decay.fatigue += amount;
 			if (decay.fatigue >= decay.fatigueMax && !decay.exhaustion) { decay.fatigue = 0; decay.exhaust(); }
@@ -937,7 +951,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in Game.buffs) { if (decay.gcBuffs.includes(Game.buffs[i].type.name)) { count++; } }
 			return count;
 		}
-		decay.leftSectionSpeed = function(source) { return decay.symptomsFromFatigue(source) * (1 + Game.gcBuffCount() * 0.2); }
+		decay.leftSectionSpeed = function(source) { return decay.symptomsFromFatigue(source) * decay.powerClickToLeftSectionSpeed * (1 + Game.gcBuffCount() * 0.2); }
 		Game.milkX = 0;
 		Game.showerY = 0;
 		Game.cursorR = 0;
@@ -1042,7 +1056,7 @@ Game.registerMod("Kaizo Cookies", {
 				shiny: 5555555555,
 				momentum: 5.555e33,
 				leading: 5.555e51,
-				bomberNat: 5.555e25,
+				bomberNat: 5.555e24,
 				phantom: 5.555e42,
 				armored: 5.555e33,
 			},
@@ -1286,7 +1300,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			powerOrb: {
 				title: 'Power orbs',
-				desc: 'This is the power orb that the Power click heavenly upgrade was talking about! Clicking the power orbs will prevent your power from decreasing - note, however, that power orbs will eventually leave if you ignore them.',
+				desc: 'This is the power orb that the Power click heavenly upgrade was talking about! Clicking the power orbs will prevent your power from decreasing - note, however, that power orbs will eventually leave if you ignore them.<br>Another note: easy clicks and easy wrinklers are disabled while power clicks are enabled.',
 				icon: 0
 			},
 			dragonflight: {
@@ -1656,6 +1670,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (!decay.prefs.scrollClick && !decay.prefs.scrollWrinklers && !decay.prefs.touchpad) { this.noDraw = true; } else { this.noDraw = false; }
 				this.x = this.scope.mouseX;
 				this.y = this.scope.mouseY;
+				if (Game.hasBuff('Power surge')) { this.scaleX = 0.05; this.scaleY = 0.05; return; }
 				if (Game.Scroll != 0 || (decay.prefs.touchpad && Game.keys[65])) {
 					this.scaleX = 0.2;
 					this.scaleY = 0.2;
@@ -2303,7 +2318,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.x = this.leftSection.offsetWidth / 2 + pos[0]; this.y = this.leftSection.offsetHeight * 0.4 + pos[1];
 			this.rotation = Math.PI * 2 - this.rad;
 			if (this.getComponent('pointerInteractive').hovered) {
-				if (Date.now() - decay.lastWrinklerScroll > 100 && ((decay.prefs.scrollWrinklers && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad))) { 
+				if (Date.now() - decay.lastWrinklerScroll > 100 && !Game.hasBuff('Power surge') && ((decay.prefs.scrollWrinklers && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad))) { 
 					decay.onWrinklerClick.call(this);
 					//console.log(Date.now() - decay.lastWrinklerClick);
 					decay.lastWrinklerClick = Date.now();
@@ -2349,7 +2364,7 @@ Game.registerMod("Kaizo Cookies", {
             }
             if (this.explosionProgress >= 1) { decay.wrinklerExplosion.call(this); }
 			if (Math.random()<0.01 && !Game.prefs.notScary) this.hurt=Math.max(this.hurt,Math.random() * 10);
-			this.hurt = Math.max(this.hurt - 60 / Game.fps, 0);
+			this.hurt = Math.max(this.hurt - 60 / Game.fps / (1 + decay.powerPokedStack), 0);
 		});
 		decay.wrinklerParticles = new Crumbs.behavior(function() { 
 			if (Game.prefs.particles) {
@@ -2581,9 +2596,9 @@ Game.registerMod("Kaizo Cookies", {
 			else { Game.Popup('<div style="font-size:80%;">' + loc('Decay amplified!') + '</div>', Game.mouseX, Game.mouseY); decay.amplifyAll(1.5, 0.15); decay.triggerNotif('wrinklerAmplify'); }
             Game.cookies = Math.max(0, Game.cookies - this.sucked);
             if (!this.bomber) { Game.gainBuff('clot', 66, 0.5); }
-            Game.gainBuff('coagulated', (this.bomber?8:30));
-            Game.gainBuff('cursed', (this.bomber?4:8));
-            if (this.bomber) { Game.gainBuff('distorted', 24); }
+            Game.gainBuff('coagulated', (this.bomber?6:30));
+            Game.gainBuff('cursed', (this.bomber?3:8));
+            if (this.bomber) { Game.gainBuff('distorted', 30); }
 
             decay.spawnWrinklerbits(this, 16, 2, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
 
@@ -2706,7 +2721,7 @@ Game.registerMod("Kaizo Cookies", {
 			let obj = { bomber: true };
 			obj.size = decay.getCurrentWrinklerSize(Math.random() * 100);
 			if (obj.size <= 14) { 
-				obj.size = Math.round(Math.max(obj.size - Math.min(Math.max(Math.pow(14 - obj.size, 0.4), 0), 5) - 1, 0)); 
+				obj.size = Math.round(Math.max(obj.size - Math.min(Math.max(Math.pow(14 - obj.size, 0.6), 0), 5) - 1, 0)); 
 			} else {
 				obj.size = Math.max(obj.size - 1, 0);
 			}
@@ -2894,6 +2909,11 @@ Game.registerMod("Kaizo Cookies", {
 			this.expandSpeed *= this.expandFriction;
 			this.currentWidth -= this.thinningSpeed;
 			this.thinningSpeed += this.thinningAcceleration;
+			if (this.afterimages && Game.T % this.afterimageInterval == 0 && this.expandSpeed * Game.fps > this.currentWidth) {
+				const h = Crumbs.spawn(decay.soulClaimAuraTemplate, this.afterimages);
+				h.currentWidth = this.currentWidth;
+				h.currentSize = this.currentSize;
+			}
 			if (this.currentWidth <= 0) { this.die(); }
 		});
 		decay.soulClaimAuraFunction = function(m, ctx) {
@@ -2904,28 +2924,35 @@ Game.registerMod("Kaizo Cookies", {
 			ctx.stroke();
 			//ctx.closePath();
 		}
+		decay.soulClaimAuraTemplate = {
+			scope: 'left',
+			behaviors: [new Crumbs.behaviorInstance(Crumbs.objectBehaviors.centerOnBigCookie), new Crumbs.behaviorInstance(decay.soulClaimAuraBehavior)],
+			components: new Crumbs.component.canvasManipulator({ function: decay.soulClaimAuraFunction }),
+			order: 100,
+			color: '#fff',
+			expandSpeed: 400 / Game.fps,
+			expandFriction: 0.75,
+			thinningSpeed: 12 / Game.fps,
+			thinningAcceleration: 6 / Game.fps,
+			currentSize: 128,
+			currentWidth: 10
+		}
 		decay.createSoulClaimAura = function(soul) {
 			const s = soul.shiny;
 			const o = {
-				scope: 'left',
-				behaviors: [new Crumbs.behaviorInstance(Crumbs.objectBehaviors.centerOnBigCookie), new Crumbs.behaviorInstance(decay.soulClaimAuraBehavior)],
-				components: new Crumbs.component.canvasManipulator({ function: decay.soulClaimAuraFunction }),
-				order: 100,
 				color: (s?'#fffd7b':'#7bf6ff'),
 				expandSpeed: ((s?512:384) + 16 * (soul.shiny?decay.shinySoulClaimAuraPower:decay.soulClaimAuraPower)) / Game.fps,
 				expandFriction: (s?0.85:0.75),
 				thinningSpeed: (s?1:12) / Game.fps,
 				thinningAcceleration: (s?1:6) / (1 + (soul.shiny?decay.shinySoulClaimAuraPower:decay.soulClaimAuraPower) / 10) / Game.fps,
-				currentSize: 128,
-				currentWidth: 10
 			};
-			Crumbs.spawn(o);
+			Crumbs.spawn(decay.soulClaimAuraTemplate, o);
 			if (soul.shiny) {
 				o.expandSpeed *= 0.25;
 				o.expandFriction = 0.9;
 				o.currentWidth = 5;
 				o.currentSize = 12;
-				Crumbs.spawn(o);
+				Crumbs.spawn(decay.soulClaimAuraTemplate, o);
 			}
 			if (soul.shiny) {
 				decay.shinySoulClaimAuraPower += 0.5 * Game.fps;
@@ -3018,7 +3045,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.updateWrinklers = function() {
 			const d = Game.hasBuff('Distorted');
-			if (Math.random() < decay.wrinklerSpawnRate * (d?3:1) / (Math.pow(decay.wrinklersN, (d?0.25:0.5)) + 1)) {
+			if (Math.random() < (1 - Math.pow(1 - decay.wrinklerSpawnRate, (d?3:1))) / (Math.pow(decay.wrinklersN, (d?0.1:0.5)) + 1)) {
 				if ((Math.random() < 1 - 1 / Math.pow(-(decay.times.sinceWrinklerSpawn / Game.fps) * Math.log10(decay.gen) + 1, 0.15)) || (decay.gen >= 1 && Math.random() < 1 - 1 / Math.pow((decay.times.sinceWrinklerSpawn / Game.fps) + 1, 0.075)) || Math.random() < 0.15) {
 					if (!(d && Math.random() < 0.15)) { decay.spawnWrinklerLead(); }
 				} 
@@ -3479,7 +3506,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.registerHook('click', decay.clickBCStop);
 		Game.lastClickCount = Date.now();
 		eval('Game.Logic='+Game.Logic.toString()
-			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && ((decay.prefs.scrollClick && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad)) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105) { Game.ClickCookie(); }`)
+			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && !Game.hasBuff('Power surge') && ((decay.prefs.scrollClick && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad)) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105) { Game.ClickCookie(); }`)
 			.replace(`Beautify(Game.prestige)]);`, `Beautify(decay.getCpSBoostFromPrestige())]);`)
 		);
 		Game.registerHook('click', function() {
@@ -4708,8 +4735,9 @@ Game.registerMod("Kaizo Cookies", {
 			decay.halts['manifestSpring'] = new decay.haltChannelGroup();
 			decay.manifestSpringHaltParameters = {
 				autoExpire: true,
-				halt: 4,
-				decMult: 0.1,
+				keep: 0,
+				halt: 3,
+				decMult: 0.05,
 				power: 1
 			}
 			gp.spells['manifest spring'] = {
@@ -6135,8 +6163,8 @@ Game.registerMod("Kaizo Cookies", {
 		});
 
 		decay.power = 0;
-		decay.firstPowerClickReq = 100;
-		decay.powerClickScaling = 2;
+		decay.firstPowerClickReq = 250;
+		decay.powerClickScaling = 1.5;
 		decay.powerClickReqs = [];
 		decay.powerSurgeTime = 5 * Game.fps;
 		decay.absPCMaxCapacity = 6;
@@ -6189,9 +6217,9 @@ Game.registerMod("Kaizo Cookies", {
 			decay.power = decay.totalPowerLimit; return true;
 		}
 		decay.getPowerPokedDuration = function() {
-			var base = 15;
-			if (Game.Has('Chimera')) { base *= 1.5; }
-			if (decay.challengeStatus('power')) { base *= 1.5; }
+			var base = 20;
+			//if (Game.Has('Chimera')) { base *= 1.5; }
+			//if (decay.challengeStatus('power')) { base *= 1.5; }
 			if (Game.Has('Ichor syrup')) { base *= 1.07; }
 			if (Game.Has('Fern tea')) { base *= 1.03; }
 			if (Game.Has('Fortune #102')) { base *= 1.1; }
@@ -6207,6 +6235,20 @@ Game.registerMod("Kaizo Cookies", {
 
 			return base * Game.fps;
 		}
+		decay.powerPokedStack = 0;
+		decay.rainbowCycleFull = [
+			//https://cssgradient.io
+			[255, 0, 0],
+			[255, 154, 0],
+			[208, 222, 33],
+			[79, 220, 74],
+			[63, 218, 216],
+			[47, 201, 226],
+			[28, 127, 238],
+			[95, 21, 242],
+			[186, 12, 248],
+			[251, 7, 217]
+		];
 		addLoc('The duration of Power poked and Power surge <b>+%1%</b>');
 		replaceDesc('Ichor syrup', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 7)+'<br>'+loc("Sugar lumps mature <b>%1</b> sooner.",Game.sayTime(7*60*Game.fps))+'<br>'+loc("Dropped by %1 plants.",loc("Ichorpuff").toLowerCase())+'<q>Tastes like candy. The smell is another story.</q>');
 		replaceDesc('Fern tea', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 3)+'<br>'+loc("Dropped by %1 plants.",loc("Drowsyfern").toLowerCase())+'<q>A chemically complex natural beverage, this soothing concoction has been used by mathematicians to solve equations in their sleep.</q>');
@@ -6224,7 +6266,8 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in decay.PCBuffIncreasers) {
 				if (decay.PCBuffIncreasers[i].bought) { amountBought++; }
 			}
-			const power = 1.06 + 0.04 * amountBought;
+			if (Game.Has('Chimera')) { amountBought++; }
+			const power = 1.1 + 0.05 * amountBought;
 			let dur = decay.getPowerPokedDuration();
 			if (Game.hasBuff('Power poked')) {
 				let buff = Game.hasBuff('Power poked');
@@ -6233,10 +6276,45 @@ Game.registerMod("Kaizo Cookies", {
 				buff.arg1 *= power;
 				//if (buff.arg2 >= 2) { decay.purifyAll(0.5 + buff.arg2 * 0.5, 1 - Math.pow(0.7, buff.arg2), 50); }
 				buff.arg2 += 1;
+				buff.desc = loc('Prestige effect x%1 for %2!', [Beautify(buff.arg1, 2), Game.sayTime(buff.time, -1)])
 			} else { 
 				Game.gainBuff('powerClick', dur, power, 1); 
 			}
+			const effectivePos = decay.powerPokedStack * 1.15;
+			const colors = colorCycleFrame(decay.rainbowCycleFull[Math.floor(effectivePos)], decay.rainbowCycleFull[Math.floor(effectivePos) + 1], effectivePos % 1);
+			Crumbs.spawn(decay.soulClaimAuraTemplate, {
+				color: 'rgb('+colors[0]+','+colors[1]+','+colors[2]+')',
+				currentWidth: 12 + decay.powerPokedStack,
+				thinningAcceleration: 0.1 / Game.fps,
+				thinningSpeed: 0.1,
+				expandFriction: 0.9 + decay.powerPokedStack * 0.01,
+				expandSpeed: 400 * (1 + decay.powerPokedStack * 0.05) / Game.fps,
+				afterimages: {
+					thinningAcceleration: 3 / Game.fps,
+					thinningSpeed: 3 / Game.fps,
+					expandFriction: 0.3,
+					expandSpeed: 300 / Game.fps,
+					color: 'rgb('+colors[0]+','+colors[1]+','+colors[2]+')'
+				},
+				afterimageInterval: Game.fps / 6
+			});
+			decay.powerPokedStack++;
 			Game.gainBuff('powerSurge', decay.getPowerSurgeDur());
+
+			for (let i = 0; i < randomFloor((1 + Math.random() * 0.25) * (25 + 10 * decay.powerPokedStack)); i++) {
+				const xd = (Math.random() * 10 - 5);
+				const yd = -(Math.random() * 6 - 1);
+				if (Math.abs(xd) + Math.abs(yd) < 3) { continue; }
+				Crumbs.spawnFallingCookie(0, 0, yd * (2 + decay.powerPokedStack * 0.4), xd * (1 + decay.powerPokedStack * 0.2), 6, null, true, 1, 2);
+			}
+
+			const wList = Crumbs.getObjects('w');
+			for (let i in wList) {
+				wList[i].dist += 0.15;
+				wList[i].hurt = Math.max(wList[i].hurt, 100);
+				wList[i].findChild('wc').alpha = 0;
+				wList[i].findChild('wc').t = Crumbs.t;
+			}
 
 			let halt = 2;
 			//if (Game.Has('Chimera') && decay.gen < 1) { halt *= 1 / Math.pow(decay.gen, 0.1); halt = Math.min(halt, 10); }
@@ -6247,6 +6325,15 @@ Game.registerMod("Kaizo Cookies", {
 			channel.power = 1 + amountBought * 0.25;
 			decay.halts.powerClick.addChannel(channel);
 		}
+		decay.powerClickToLeftSectionSpeed = 1;
+		decay.setSymptomsFromPowerClicks = function() {
+			if (decay.times.sincePowerClick / Game.fps >= 4 * (1 + 0.6 * decay.powerPokedStack)) { return 1; }
+			return 1 + Math.pow(Math.max(Math.min(4 * (1 + 0.6 * decay.powerPokedStack) - decay.times.sincePowerClick / Game.fps, 2 * (1 + 0.3 * decay.powerPokedStack)), 0), 0.5);
+		}
+		eval('Game.Logic='+Game.Logic.toString()
+			.replace('if (Game.BigCookieState==1) Game.BigCookieSizeT=Math.pow(0.98, 1 + Math.pow(Math.max(1 - (decay.times.sincePowerClick / Game.fps), 0), 0.33) * (decay.powerPokedStack?(18 + 3 * decay.powerPokedStack):0));')
+			.replace('else if (Game.BigCookieState==2) Game.BigCookieSizeT=1.05;', 'else if (Game.BigCookieState==2) Game.BigCookieSizeT=Math.pow(1.05, 1 + Math.pow(Math.max(1 - decay.times.sincePowerClick / Game.fps, 0), 0.33) * (decay.powerPokedStack?(6 + decay.powerPokedStack):0));')
+		);
 		decay.PCOnBigCookie = function() {
 			if (Game.hasBuff('Power surge') && decay.spendPowerClick()) { decay.performPowerClick(); return 10; }
 			return 1;
@@ -6320,6 +6407,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in decay.POBoosters) {
 				if (decay.POBoosters[i].bought) { mult *= 1.5; }
 			}
+			if (decay.challengeStatus('power')) { mult *= 1.5; }
 			return mult;
 		}
 		decay.maxPowerAndAllowClicks = function() {
@@ -6331,7 +6419,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("else mult*=Game.eff('wrathCookieGain');","else mult*=Game.eff('wrathCookieGain'); if (powerClick) { effectDurMod*=decay.PCOnGCDuration; mult*=decay.PCOnGCDuration*50; } "));		
 	
-		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>2x</b> more power. You start with a maximum storage capacity of <b>2</b> power clicks.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds. Successfully using power clicks refresh that buff, and power orbs fall when you click with some power stored. <br>&bull; accumulated power naturally degrades over time, which can eventually result in losing your stored power clicks. <br>&bull; each power click stops decay for an <b>extended</b> period of time with each activation being considered a <b>distinct method</b>, and creates a buff that boost prestige effect by <b>+6%</b> for <b>15 seconds</b> (strength stacks with each use).<br>&bull; while either buff is active, you cannot gain or lose power. <br>&bull; in addition, power clicks can be used on wrinklers to destroy a large amount of wrinklers at once.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
+		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>1.5x</b> more power. You start with a maximum storage capacity of <b>2</b> power clicks.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds. Successfully using power clicks refresh that buff, and power orbs fall when you click with some power stored. <br>&bull; accumulated power naturally degrades over time, which can eventually result in losing your stored power clicks. <br>&bull; each power click stops decay for an <b>extended</b> period of time with each activation being considered a <b>distinct method</b>, and creates a buff that boost prestige effect by <b>+10%</b> for <b>20 seconds</b> (strength stacks with each use).<br>&bull; while either buff is active, you cannot gain or lose power. <br>&bull; in addition, power clicks can be used on wrinklers to destroy a large amount of wrinklers at once.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
 		//Game.Upgrades['Twin Gates of Transcendence'].dname="Power clicks"; moved to after upgrade localization
 		addLoc('Power clicks');
 		addLoc('This is your power gauge, representing the amount of power clicks you have as well as the amount of power you will need to get to your next power click. <br>For more information, refer to the Power clicks heavenly upgrade.');
@@ -6350,21 +6438,21 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Seraphim'].basePrice *= 7**6;
 		replaceDesc('God', 'Maximum power click capacity increased to <b>6</b>.<q>Like Santa, but less fun.</q>');
 		Game.Upgrades['God'].basePrice *= 7**7;
-		replaceDesc('Belphegor', 'Power click halts decay even harder and its buff is increased to <b>+10%</b> prestige effect.<q>A demon of shortcuts and laziness, Belphegor commands machines to do work in his stead.</q>');
+		replaceDesc('Belphegor', 'Power click halts decay even harder and its buff is increased to <b>+15%</b> prestige effect.<q>A demon of shortcuts and laziness, Belphegor commands machines to do work in his stead.</q>');
 		Game.Upgrades['Belphegor'].basePrice *= 7**1;
-		replaceDesc('Mammon', 'Power click halts decay even harder and its buff is increased to <b>+14%</b> prestige effect.<q>The demonic embodiment of wealth, Mammon requests a tithe of blood and gold from all his worshippers.</q>');
+		replaceDesc('Mammon', 'Power click halts decay even harder and its buff is increased to <b>+20%</b> prestige effect.<q>The demonic embodiment of wealth, Mammon requests a tithe of blood and gold from all his worshippers.</q>');
 		Game.Upgrades['Mammon'].basePrice *= 7**2;
-        replaceDesc('Abaddon', 'Power click halts decay even harder and its buff is increased to <b>+18%</b> prestige effect.<q>Master of overindulgence, Abaddon governs the wrinkler brood and inspires their insatiability.</q>');
+        replaceDesc('Abaddon', 'Power click halts decay even harder and its buff is increased to <b>+25%</b> prestige effect.<q>Master of overindulgence, Abaddon governs the wrinkler brood and inspires their insatiability.</q>');
 		Game.Upgrades['Abaddon'].basePrice *= 7**3;
-		replaceDesc('Satan', 'Power click halts decay even harder and its buff is increased to <b>+22%</b> prestige effect.<q>The counterpoint to everything righteous, this demon represents the nefarious influence of deceit and temptation.</q>');
+		replaceDesc('Satan', 'Power click halts decay even harder and its buff is increased to <b>+30%</b> prestige effect.<q>The counterpoint to everything righteous, this demon represents the nefarious influence of deceit and temptation.</q>');
 		Game.Upgrades['Satan'].basePrice *= 7**4;
-		replaceDesc('Asmodeus', 'Power click halts decay even harder and its buff is increased to <b>+26%</b> prestige effect.<q>This demon with three monstrous heads draws his power from the all-consuming desire for cookies and all things sweet.</q>');
+		replaceDesc('Asmodeus', 'Power click halts decay even harder and its buff is increased to <b>+35%</b> prestige effect.<q>This demon with three monstrous heads draws his power from the all-consuming desire for cookies and all things sweet.</q>');
 		Game.Upgrades['Asmodeus'].basePrice *= 7**5;
-		replaceDesc('Beelzebub', 'Power click halts decay even harder and its buff is increased to <b>+30%</b> prestige effect.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
+		replaceDesc('Beelzebub', 'Power click halts decay even harder and its buff is increased to <b>+40%</b> prestige effect.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
 		Game.Upgrades['Beelzebub'].basePrice *= 7**6;
-		replaceDesc('Lucifer', 'Power click halts decay even harder and its buff is increased to <b>+34%</b> prestige effect.<q>Also known as the Lightbringer, this infernal prince\'s tremendous ego caused him to be cast down from pastry heaven.</q>');
+		replaceDesc('Lucifer', 'Power click halts decay even harder and its buff is increased to <b>+45%</b> prestige effect.<q>Also known as the Lightbringer, this infernal prince\'s tremendous ego caused him to be cast down from pastry heaven.</q>');
 		Game.Upgrades['Lucifer'].basePrice *= 7**7;
-		replaceDesc('Chimera', 'Allows power clicks to be done on golden cookies, which increases its effect duration by <b>30%</b>.<br>Power poked buff duration <b>+50%</b>.<q>More than the sum of its parts.</q>');
+		replaceDesc('Chimera', 'Allows power clicks to be done on golden cookies, which increases its effect duration by <b>30%</b>.<br>Power poked buff increases prestige effect by another <b>5%</b>.<q>More than the sum of its parts.</q>');
 		Game.Upgrades['Chimera'].basePrice *= 7**6;
 		Game.Upgrades['Synergies Vol. I'].basePrice = 2222222;
 		Game.Upgrades['Synergies Vol. II'].basePrice = 2222222222;
@@ -7845,7 +7933,8 @@ Game.registerMod("Kaizo Cookies", {
 
 		addLoc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.');
 		addLoc('Power poked duration <b>+%1%</b>.');
-		new decay.challenge('power', loc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.', Beautify(1e16)), function() { return (Game.cookiesEarned >= 1e16) }, loc('Power poked duration <b>+%1%</b>.', '50'), decay.challengeUnlockModules.box, {conditional: true, prereq: 'gswitch', init: function() { decay.setGaugeColor('powerGradientRed'); }, reset: function() { decay.setGaugeColor('powerGradientBlue');} });
+		addLoc('Power poked strength <b>+%1%</b>.');
+		new decay.challenge('power', loc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.', Beautify(1e16)), function() { return (Game.cookiesEarned >= 1e16) }, loc('Power poked strength <b>+%1%</b>.', '10') + '<br>' + loc('You gain <b>+%1%</b> power.', 50), decay.challengeUnlockModules.box, {conditional: true, prereq: 'gswitch', init: function() { decay.setGaugeColor('powerGradientRed'); }, reset: function() { decay.setGaugeColor('powerGradientBlue');} });
 		
 		addLoc('Bake <b>%1</b>.');
 		new decay.challenge('bakeR', function(c) { return loc('Bake <b>%1</b>.', Beautify(1e12 * Math.pow(100, c)))+(c?'<br>'+loc('Completions: ')+'<b>'+Beautify(c)+'</b>':''); }, function(c) { return (Game.cookiesEarned >= 1e12 * Math.pow(100, c.complete)); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.05'), decay.challengeUnlockModules.truck, { order: 1000, prereq: 5, repeatable: true });
