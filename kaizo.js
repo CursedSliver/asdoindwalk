@@ -541,7 +541,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (Game.pledgeT > 0) {
 				var strength = Game.getPledgeStrength();
-				decay.purifyAll(strength[0], strength[1], strength[2], 'pledge');
+				decay.purifyAll(strength[0], strength[1], strength[2], true);
 			}
 			if (Game.pledgeC > 0) {
 				Game.pledgeC--;
@@ -718,7 +718,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (decay.mults[buildId] > cap && !uncapped) { decay.mults[buildId] = cap; }
 		}
-		decay.purifyAll = function(mult, close, cap, id) {
+		decay.purifyAll = function(mult, close, cap, invisPurify) {
 			if (typeof id === 'undefined') { id = ''; }
 			mult *= decay.getPurificationMult();
 			var u = false;
@@ -737,6 +737,20 @@ Game.registerMod("Kaizo Cookies", {
 					Game.gainBuff('creation storm', 64, 0.12);
 				}
 			}
+
+			if (!invisPurify) {
+				let color = colorCycleFrame([51, 255, 68], [20, 255, 193], close);
+				Crumbs.spawn(decay.soulClaimAuraTemplate, {
+					expandSpeed: 50 * (1 + mult) / Game.fps,
+					expandFriction: Math.pow(0.8, 1 / Math.sqrt(mult + 1)),
+					thinningSpeed: 1 / Game.fps,
+					thinningAcceleration: (0.3 / Math.pow(mult + 1, 0.2)) / Game.fps,
+					currentWidth: 2 + 4 * mult,
+					color: 'rgb('+color[0]+','+color[1]+','+color[2]+')'
+				});
+				Game.BigCookieState = 2;
+				decay.bounceBackIn = 0.4 * Game.fps;
+			}	
 		}
 		decay.getPurificationMult = function() {
 			var mult = 1;
@@ -761,12 +775,12 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.haltChannel = function(obj) {
 			this.decMult = 1; //multiplier to decrease
-			this.overtimeLimit = 12; 
+			this.overtimeLimit = 15; 
 			this.factor = 0.2; //more = faster that decay recovers from decreasing effective halt
-			this.keep = 0.2; //fraction of halt each stop kept as overtime
+			this.keep = 0.35; //fraction of halt each stop kept as overtime
 			this.tickspeedPow = 0.25; //represents the amount that the current tickspeed affects its effectiveness, more = more effect
 			this.overtimeDec = 0.25; //fraction of normal decHalt applied to overtime when normal halt is in effect
-			this.overtimeEfficiency = 0.2; //overtime multiplier
+			this.overtimeEfficiency = 0.25; //overtime multiplier
 			this.power = 1; //the amount of effective halt that "1" is equivalent to
 			this.haltMax = 1; //power but more finnicky, the upper cap of halt
 
@@ -2245,7 +2259,7 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		decay.setWrinklerLossMult = function() {
 			let m = 1;
-			if (Game.Has('Sacrilegious corruption')) { m *= 0.8; }
+			if (Game.Has('Sacrilegious corruption')) { m *= 0.8; } //funny easter egg from a bygone time
 			return m;
 		}
 		addLoc('%1 to exploding');
@@ -2699,7 +2713,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (rand > 90 && Game.log10Cookies > 48) { size++; }
 			if (rand > 60) { size++; } 
 			if (rand > 25 && Game.log10Cookies > 24) { size++; }
-			if (size > 1 && Game.Has('Elder spice') && Math.random() < 0.07) { size--; } 
+			//if (size > 1 && Game.Has('Elder spice') && Math.random() < 0.07) { size--; } 
 			return size;
 		}
 		decay.spawnWrinklerLead = function() {
@@ -2873,8 +2887,9 @@ Game.registerMod("Kaizo Cookies", {
 		decay.onWSoulClaim = function(me) {
 			let stopMult = 1;
 			if (me.shiny) { stopMult *= 2; }
+			if (decay.exhaustion && Game.Has('Elder spice')) { stopMult *= 1.15; }
 			if (Game.Has('Santaic zoom')) { stopMult *= 1 + Game.santaLevel * 0.03; }
-			decay.stop(3 * stopMult, (me.shiny?'wSoulShiny':'wSoul')); 
+			decay.stop(2.2 * stopMult, (me.shiny?'wSoulShiny':'wSoul')); 
 			decay.gainPower(10 * ((me.shiny)?3:1));
 			decay.createSoulClaimAura(me);
 			decay.times.sinceSoulClaim = 0;
@@ -3084,14 +3099,17 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.season == 'halloween') { Game.dropHalloweenCookie(this); }
 		}
 		decay.onWrinklerPop = function() {
-			Game.wrinklerPopped++;
+			Game.wrinklersPopped++;
 			decay.spawnWrinklerSoul(this.x, this.y, this.shiny, (5 * (this.shiny?0.5:1)) / Game.fps, (Math.random() - 0.5) * 6);
+			if (Game.Has('Sacrilegious corruption') && Math.random() < 0.1) { 
+				decay.spawnWrinklerSoul(this.x, this.y, this.shiny, (7 * (this.shiny?0.5:1)) / Game.fps, (Math.random() - 0.5) * 9);
+			}
 		}
 		replaceDesc('Wrinkler doormat', 'Wrinklers no longer spawn.<q>Quite possibly the cleanest doormat one will ever see.</q>');
 		replaceDesc('Unholy bait', 'Wrinklers have <b>10%</b> less health.<q>A nice snack to distract them during the OBLITERATION.</q>');
 		replaceDesc('Wrinklerspawn', 'Wrinklers are <b>5%</b> slower.<q>Really, it just makes the big cookie seem more crowded than it actually is.</q>');
-		replaceDesc('Sacrilegious corruption', 'Wrinklers lose <b>20%</b> less cookies on pop.<q>Ah yes, mankind\'s best friend: words.</q>');
-		replaceDesc('Elder spice', 'Each wrinkler has a <b>7%</b> chance to start with <b>1</b> less layer.<q>What a lovely smell!</q>');
+		replaceDesc('Sacrilegious corruption', 'Wrinklers have a <b>10%</b> chance to drop <b>two</b> souls instead of one.<q>Ah yes, mankind\'s best friend: words.</q>');
+		replaceDesc('Elder spice', 'While exhausted, wrinkler souls halt decay for <b>15%</b> longer..<q>What a lovely smell!</q>');
 		eval('Game.UpdateWrinklers='+Game.UpdateWrinklers.toString().replace('var xBase=0;', 'decay.updateWrinklers(); return;'));
 		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace('var suckRate=1/20;', 'var suckRate=1/2; sucking = decay.compileSucking();').replace('Game.cpsSucked=Math.min(1,sucking*suckRate);', 'Game.cpsSucked=1 - Math.min(1,Math.pow(suckRate, sucking));'));
 		Game.registerHook('cookiesPerClick', function(val) { return val * (1 - Game.cpsSucked); }); //withering affects clicking
@@ -4646,6 +4664,8 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('Those Power orbs are quite a headache...');
 			gp.spells['haggler\'s charm'].desc = loc('Summons a power orb if there aren\'t any currently present, and continuously attracts every present power orb to your mouse for the next %1 seconds.', 10);
 			gp.spells['haggler\'s charm'].failDesc = loc('Continuously heals and speeds up every present power orb for the next %1 seconds.', 20);
+			gp.spells['haggler\'s charm'].costMin = 20;
+			gp.spells['haggler\'s charm'].costPercent = 0.2;
 			eval(`gp.spells["haggler's charm"].win=`+gp.spells['haggler\'s charm'].win.toString().replace('loc("Upgrades are cheaper!")', 'loc("Come, power orbs! Come!")').replace("('haggler luck',60,2);", '("haggler luck",10,2); if (decay.powerOrbsN <= 0 && Game.Has("Twin Gates of Transcendence")) { new decay.powerOrb(); }'));
 			eval(`gp.spells["haggler's charm"].fail=`+gp.spells['haggler\'s charm'].fail.toString().replace('loc("Upgrades are pricier!")', 'loc("Better luck next time...")').replace('60*60,2);', '20,2);'));
 			eval(`Game.buffTypesByName['haggler luck'].func=`+Game.buffTypesByName['haggler luck'].func.toString().replace(`loc("All upgrades are %1% cheaper for %2!",[pow,Game.sayTime(time*Game.fps,-1)])`, `loc("Bending Power orbs to your will.")`));
@@ -6393,9 +6413,7 @@ Game.registerMod("Kaizo Cookies", {
 				wList[i].findChild('wc').t = Crumbs.t;
 			}
 
-			let halt = 2;
 			//if (Game.Has('Chimera') && decay.gen < 1) { halt *= 1 / Math.pow(decay.gen, 0.1); halt = Math.min(halt, 10); }
-			halt *= 1 + (amountBought * 0.5);
 
 			let channel = new decay.haltChannel(decay.powerClickHaltParameters);
 			channel.halt = 2 * (1 + amountBought * 0.5);
@@ -7683,7 +7701,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		addLoc('Bake <b>%1</b> without popping any wrinklers.');
 		addLoc('Your clicks are <b>%1</b> more effective against wrinklers');
-		new decay.challenge('wrinkler1', loc('Bake <b>%1</b> without popping any wrinklers.', Beautify(1e14)), function() { return (Game.cookiesEarned >= 1e14 && Game.wrinklersPopped); }, loc('Your clicks are <b>%1</b> more effective against wrinklers', '10%'), decay.challengeUnlockModules.vial, { prereq: ['hc', 'combo1'] });
+		new decay.challenge('wrinkler1', loc('Bake <b>%1</b> without popping any wrinklers.', Beautify(1e20)), function(c) { if (Game.wrinklersPopped) { c.cannotComplete = true; } return (Game.cookiesEarned >= 1e20); }, loc('Your clicks are <b>%1</b> more effective against wrinklers', '10%'), decay.challengeUnlockModules.vial, { prereq: ['hc', 'combo1'] });
 
 		addLoc('Bake <b>%1</b> without clicking any golden cookies.');
 		addLoc('Golden cookies are <b>%1</b> more effective in purifying decay');
@@ -8115,7 +8133,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('With less than <b>%1x</b> acceleration, increase decay by <b>%2</b> times over the course of an Elder Pledge purification');
 		let researchCheckObj = {
 			check: function(t) {
-				if (decay.acceleration <= 2) { t.challengeObj.cannotComplete = true; return; }
+				if (decay.acceleration <= 1.5) { t.challengeObj.cannotComplete = true; return; }
 				if (Game.pledgeT > 0) { t.mostDecay = Math.max(decay.gen, t.mostDecay); } else { t.mostDecay = 0; }
 				if (decay.gen / t.mostDecay <= 1/10000) { return true; }
 			},
@@ -8125,7 +8143,7 @@ Game.registerMod("Kaizo Cookies", {
 				mostDecay: 0
 			}
 		}
-		new decay.challenge('research', loc('With less than <b>%1x</b> acceleration, increase decay by <b>%2</b> times over the course of an Elder Pledge purification', [2, Beautify(10000)]), decay.quickCheck(researchCheckObj, researchCheckObj.init), loc('Each research upgrade gives <b>+%1%</b> CpS.', Beautify(2)), decay.challengeUnlockModules.vial, { prereq: ['wrinkler1', 'purity1'] });
+		new decay.challenge('research', loc('With less than <b>%1x</b> acceleration, increase decay by <b>%2</b> times over the course of an Elder Pledge purification', [1.5, Beautify(10000)]), decay.quickCheck(researchCheckObj, researchCheckObj.init), loc('Each research upgrade gives <b>+%1%</b> CpS.', Beautify(2)), decay.challengeUnlockModules.vial, { prereq: ['wrinkler1', 'purity1'] });
 		addLoc('With <b>Challenge %1</b> completed: <b>+%2%</b> CpS');
 		for (let i in Game.UpgradesByPool['tech']) {
 			Game.UpgradesByPool['tech'][i].descFunc = function() {
