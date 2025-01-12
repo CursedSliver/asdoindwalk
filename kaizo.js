@@ -314,6 +314,7 @@ Game.registerMod("Kaizo Cookies", {
 			AddEvent(window,'keydown',function(e){
 				if (!PauseGame) { return; }
 				let hasTriggered = false;
+				e.preventDefault();
     			if (e.key.toLowerCase()=='c' && (e.ctrlKey || Game.keys[17])) { hasTriggered = true; } 
 				if (e.key.toLowerCase()=='p' && (e.ctrlKey || Game.keys[17])) { hasTriggered = true; } 
 				
