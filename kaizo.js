@@ -408,7 +408,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.haltDecMin = 0.05; //minimum value of decay.decHalt
 		decay.fatigue = 0; //at 1000, become fatigued
 		decay.fatigueMax = 1000; //the point in which you become exhausted
-		decay.clickWork = 1; //the base amount of work that each click does
+		decay.clickWork = 0.9; //the base amount of work that each click does
 		decay.workProgressMult = 1; //the multiplier to work done (each click) via progression (e.g. cookies earned this ascend)
 		decay.exhaustion = 0; //buff like timer that counts down by 1 every frame, represents the fatigued state of being unable to halt decay via clicking
 		decay.exhaustionBegin = 30 * Game.fps; //the initial amount of exhaustion set
@@ -511,7 +511,7 @@ Game.registerMod("Kaizo Cookies", {
 			Game.TCount++;
 			Game.log10Cookies = Math.log10(Game.cookiesEarned + 10);
 			if (Game.cookiesEarned <= decay.featureUnlockThresholds.rate) { decay.unlocked = false; return false; } else { decay.unlocked = true; Game.Win('Unnatural resistance'); }
-			if (Game.cookiesEarned <= decay.featureUnlockThresholds.momentum) { decay.momentumUnlocked = false; } else if (!decay.momentumUnlocked) { decay.momentumUnlocked = true; decay.times.sinceMomentumUnlock = 0; Game.Win('Mass x velocity'); }
+			if (Game.cookiesEarned <= decay.featureUnlockThresholds.momentum) { decay.momentumUnlocked = false; } else if (!decay.momentumUnlocked) { /* decay.momentumUnlocked = true; decay.times.sinceMomentumUnlock = 0; Game.Win('Mass x velocity'); */ }
 			if (decay.momentum < 1) { decay.momentum = 1; }
 			if (decay.infReached) { decay.onInf(); decay.infReached = false; }
 			if (!Game.OnAscend && !Game.AscendTimer) {
@@ -1867,9 +1867,9 @@ Game.registerMod("Kaizo Cookies", {
 			dh *= Math.max(1 / d, decay.haltDecMin);
 			decay.decHalt = dh;
 
-			decay.workProgressMult = 0.8 / d;
-			decay.workProgressMult *= 1 + Math.pow(Game.log10Cookies, 0.25) / 6;
+			decay.workProgressMult = 1;
 			/*
+			decay.workProgressMult *= 1 + Math.pow(Game.log10Cookies, 0.25) / 6;
 			decay.workProgressMult *= 1 + Math.pow(Math.max(Game.log10Cookies - 18, 1), 0.5) / 12;
 			decay.workProgressMult *= 1 + Math.pow(Math.max(Game.log10Cookies / 3 - 15, 1), 0.75) / 24;
 			decay.workProgressMult *= 1 + Math.log2(decay.acceleration); 
@@ -6737,7 +6737,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Beezlebulb')) { baseDamage *= 1.125; }
 			if (decay.challengeStatus('powerClickWrinklers')) { baseDamage *= 1.1; }
 
-			decay.damageWrinkler.call(this, baseDamage * 7.5 * decay.getSpecialProtectMult.call(this), true);
+			decay.damageWrinkler.call(this, baseDamage * 12 * decay.getSpecialProtectMult.call(this), true);
 			let allWrinklers = Crumbs.getObjects('w');
 			this.dist += 0.5;
 			this.hurt += 200;
