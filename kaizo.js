@@ -9236,7 +9236,7 @@ Game.registerMod("Kaizo Cookies", {
 			} 
 
 			if (Game.Objects['Cursor'].amount > 0) {
-				const mult = (Game.resets>0?1:10);
+				const mult = (Game.resets>0?1:4);
 				if (Game.cookieClicks > 100 * mult) { Game.Unlock('Muscle relaxant'); }
 				if (Game.cookieClicks > 300 * mult) { Game.Unlock('Trigger fingers'); }
 				if (Game.cookieClicks > 500 * mult) { Game.Unlock('Non-euclidean baking trays'); }
