@@ -314,9 +314,8 @@ Game.registerMod("Kaizo Cookies", {
 			AddEvent(window,'keydown',function(e){
 				if (!PauseGame) { return; }
 				let hasTriggered = false;
-				e.preventDefault();
     			if (e.key.toLowerCase()=='c' && (e.ctrlKey || Game.keys[17])) { hasTriggered = true; } 
-				if (e.key.toLowerCase()=='p' && (e.ctrlKey || Game.keys[17])) { hasTriggered = true; } 
+				if (e.key.toLowerCase()=='p' && (e.ctrlKey || Game.keys[17])) { e.preventDefault(); hasTriggered = true; } 
 				
 				if (!hasTriggered) { return; }
 				kaizoCookies.togglePause();
@@ -424,7 +423,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.momentumFactor = 2; //the more this is, the less powerful momentum is (very strongly affects momentum)
 		decay.momentumIncFactor = 1.5; //the larger, the less momentum increases (straight mult)
 		decay.momentumLogInc = 2.5; //directly affects momentum increase (instead of momentum interpretation)
-		decay.clickHaltBaseTime = 0.75; //amount of halting applied with no bonuses per click
+		decay.clickHaltBaseTime = 0.6; //amount of halting applied with no bonuses per click
 		decay.purityToDecayPow = 1.5; //purity multiplies decay rate to this power
 		decay.purityToMomentumPow = 2; //purity multiplies decay momentum to this power
 		decay.unshackledPurityMult = 0.75; //unshackled purity upgrade
@@ -584,7 +583,6 @@ Game.registerMod("Kaizo Cookies", {
 			}
 
 			decay.updatePowerOrbs();
-			if (!Game.hasBuff('Power poked')) { decay.powerPokedStack = 0; }
 			decay.powerClickToLeftSectionSpeed = decay.setSymptomsFromPowerClicks();
 
 			decay.updateCovenant();
@@ -761,6 +759,8 @@ Game.registerMod("Kaizo Cookies", {
 				Game.BigCookieState = 2;
 				decay.bounceBackIn = 0.4 * Game.fps;
 			}	
+
+			if (Game.Has('Cherubim')) { decay.gainPower(Math.pow(3 * (mult - 1), 3)); }
 		}
 		decay.getPurificationMult = function() {
 			var mult = 1;
@@ -821,6 +821,10 @@ Game.registerMod("Kaizo Cookies", {
 			return Math.min(Math.pow(this.halt + this.overtime * this.overtimeEfficiency, this.factor), this.haltMax) * this.power;
 		}
 		decay.halts['click'] = new decay.haltChannel({});
+		Crumbs.fallingCookieOnclick = function() {
+			if (Game.prefs.particles) { Crumbs.spawnFallingCookie(0, -64, 0, 0, 2, 'fallingCookie', false, 1, 0); }
+			Crumbs.spawnFallingCookie(0, 0, Math.random()*-2-2, Math.random()*4-2, 1, 'clickedCookie', true, Math.pow(decay.halts.click.overtime / decay.halts.click.overtimeLimit, 1) * 1.25 * (Math.random() * 0.2 + 0.9), 20);
+		}
 		decay.halts['others'] = new decay.haltChannel({
 			keep: 0, //no overtime
 			tickspeedPow: 0
@@ -947,7 +951,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.work = function(amount) {
 			//working increases fatigue
-			if (Game.cookiesEarned < decay.featureUnlockThresholds.fatigue || Game.powerPokedStack > 0) { return; }
+			if (Game.cookiesEarned < decay.featureUnlockThresholds.fatigue || Game.hasBuff('Power poked')) { return; }
 			if (!amount) { amount = 1; }
 			decay.fatigue += amount;
 			if (decay.fatigue >= decay.fatigueMax && !decay.exhaustion) { decay.fatigue = 0; decay.exhaust(); }
@@ -1218,7 +1222,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.notifs = {
 			initiate: {
 				title: 'decay',
-				desc: function() { return loc('Due to aging and corruption in your facilities, CpS continuously decreases over time. You can temporarily stop it from decreasing with certain actions, such as clicking the big cookie; or purify the decay\'s effects by, for example, clicking a Golden or Wrath cookie.'); },
+				desc: 'Due to aging and corruption in your facilities, CpS continuously decreases over time. You can temporarily stop it from decreasing with certain actions, such as clicking the big cookie; the size of the cookie particles that come out while clicking the big cookie can indicate how much time left you have until decay starts picking back up again.',
 				icon: [3, 1, kaizoCookies.images.custImg]
 			},
 			achievement: {
@@ -1269,7 +1273,8 @@ Game.registerMod("Kaizo Cookies", {
 			fthof: {
 				title: 'Force the Hand of Fate',
 				desc: 'Notice: Force the Hand of Fate has its pool modified and have elder frenzy removed. Planners may not be accurate. <br>Also, Golden cookies spawned by it do not purify decay, and chance of good buffs are reduced before your first ascension.',
-				icon: [22, 11]
+				icon: [22, 11],
+				noPause: true
 			},
 			purityCap: {
 				title: 'Purity limit',
@@ -1409,7 +1414,14 @@ Game.registerMod("Kaizo Cookies", {
 			options: {
 				title: 'Options',
 				desc: 'Look into the options menu for accessibility options (especially if you play on a touchpad), the ability to pause the game, and to replay these informational notifications!<br>Also, a tip: try scrolling while hovering over the big cookie or a wrinkler.',
-				icon: 0
+				icon: 0,
+				noPause: true
+			},
+			purify: {
+				title: 'Purification',
+				desc: 'Clicking Golden or Wrath cookies can purify decay, essentially reversing its effects.',
+				icon: [10, 4, kaizoCookies.images.custImg],
+				noPause: true
 			}
 		}
 		for (let i in decay.notifs) {
@@ -1420,14 +1432,13 @@ Game.registerMod("Kaizo Cookies", {
 		} //it's always nice to support localizations
 		addLoc('Momentum is only unlocked after obtaining at least %1 cookies this ascension. Before it\'s unlocked, momentum boosts do nothing.');
 		addLoc('While some golden cookies, such as those spawned by Dragon Orbs - share the same pool as a naturally spawned Golden cookie, they are not all the same! Namely, non-forced Golden cookies that don\'t contribute to the Golden cookies clicked stat will purify decay with greatly reduced efficiency. This applies to Dragon Orbs, Lucky day fortune, and one of the spawns from Distilled essence of redoubled luck.');
-		addLoc('Due to aging and corruption in your facilities, CpS continuously decreases over time. You can temporarily stop it from decreasing with certain actions, such as clicking the big cookie; or purify the decay\'s effects by, for example, clicking a Golden or Wrath cookie.');
 		addLoc('Did you know that each big cookie click or wrinkler pop, in addition to immediately stopping decay, also adds a fraction of the halting duration to an overtime meter? The overtime meter kicks in a bit after you stop clicking/popping, and while it is less effective than normal halting, you can accumulate as much of it as you want as long as you keep clicking, up to a cap that scales with the halting strength of the halting method you used.<br>(You can trigger this notification in options to see your current overtime value.)');
 		addLoc('Current overhead: <b>%1</b>.');
 		decay.notifsLoaded = false;
 		decay.triggerNotif = function(key, bypass) {
 			if (!decay.notifsLoaded) { return; }
 			if (typeof decay.prefs.preventNotifs[decay.notifs[key].pref] === 'undefined') { console.log('Corresponding pref not found. Input: '+key); return false; }
-			if (decay.prefs.preventNotifs[decay.notifs[key].pref]) { if (typeof bypass === 'undefined' || !bypass) { return false; } } else { decay.autoPauseGame(); }
+			if (decay.prefs.preventNotifs[decay.notifs[key].pref]) { if (typeof bypass === 'undefined' || !bypass) { return false; } } else if (!decay.notifs[key].noPause) { decay.autoPauseGame(); }
 			Game.Notify(decay.notifs[key].title, (typeof decay.notifs[key].desc == 'function')?(decay.notifs[key].desc()):(decay.notifs[key].desc), decay.notifs[key].icon, 1e21, false, true);
 			decay.prefs.preventNotifs[decay.notifs[key].pref] = true;
 			decay.hasEncounteredNotif = true; 
@@ -1460,7 +1471,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		}
 		eval('Game.Win='+Game.Win.toString().replace('Game.recalculateGains=1;', 'decay.onWin(what); Game.recalculateGains=1;'));
-		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes["golden"].popFunc.toString().replace("if (me.wrath) Game.Win('Wrath cookie');", "if (me.wrath) { decay.triggerNotif('wrath'); Game.Win('Wrath cookie'); }"));
+		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes["golden"].popFunc.toString().replace("if (me.wrath) Game.Win('Wrath cookie');", "if (me.wrath) { decay.triggerNotif('wrath'); Game.Win('Wrath cookie'); } decay.triggerNotif('purify');"));
 
 		allValues('decay init');
 
@@ -2663,25 +2674,14 @@ Game.registerMod("Kaizo Cookies", {
                 decay.spawnWrinklerbits(this, 3 + Math.floor(Math.random() * 3), 1);
             }
 		}
+		decay.getSpecialProtectMult = function() {
+			return (this.shiny?0.5:1) * (this.bomber?2:1);
+		}
 		decay.onWrinklerClick = function() {
-			const specialMult = (this.shiny?0.5:1) * (this.bomber?2:1) * (decay.challengeStatus('powerClickWrinklers')?1.1:1);
-			if (Game.hasBuff('Power surge') && decay.spendPowerClick()) {
-				decay.damageWrinkler.call(this, 150 * specialMult, true);
-				let allWrinklers = Crumbs.getObjects('w');
-				this.dist += 0.5;
-
-				decay.spawnWrinklerbits(this, 16, 4, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
-
-				for (let i in allWrinklers) {
-					if (allWrinklers[i] == this) { continue; }
-					decay.damageWrinkler.call(allWrinklers[i], 24 * specialMult, false, true);
-					if (allWrinklers[i].size > 0) { decay.damageWrinkler.call(allWrinklers[i], 24 * specialMult, false, true); }
-					allWrinklers[i].dist += 0.2;
-					allWrinklers[i].hurt = Math.max(allWrinklers[i].hurt, 100);
-				}
-				return;
+			if (decay.powerClicksOn() && decay.spendPowerClick()) {
+				decay.performPowerWrinklerClick.call(this);
 			}
-			decay.damageWrinkler.call(this, decay.wrinklerResistance * specialMult);
+			decay.damageWrinkler.call(this, decay.wrinklerResistance * decay.getSpecialProtectMult.call(this));
 		}
 		addLoc('Decay amplified!');
         decay.wrinklerDeath = function(noSpawnGore) {
@@ -3813,6 +3813,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		}
 		decay.clickBCStop = function() {
+			if (!decay.unlocked) { return; }
 			let base = decay.clickHaltBaseTime;
 			let offbrandAdd = 1;
 			for (let i in decay.offBrandFingers) {
@@ -3840,7 +3841,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.bounceBackInForce = 0;
 		Game.lastClickCount = Date.now();
 		eval('Game.Logic='+Game.Logic.toString()
-			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && !(decay.powerClicksOn() && decay.power >= decay.firstPowerClickReq) && !decay.isConditional('reindeer') && ((decay.prefs.scrollClick && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad)) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105) { Game.ClickCookie(); Game.BigCookieState = 1; decay.bounceBackInForce = 1 + randomFloor(Math.random()); }`)
+			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && !(decay.powerClicksOn() && Game.Has('Mammon') && decay.power >= decay.firstPowerClickReq) && !decay.isConditional('reindeer') && ((decay.prefs.scrollClick && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad)) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105) { Game.ClickCookie(); Game.BigCookieState = 1; decay.bounceBackInForce = 1 + randomFloor(Math.random()); }`)
 			.replace(`Beautify(Game.prestige)]);`, `Beautify(decay.getCpSBoostFromPrestige())]);`)
 		);
 		Game.registerHook('logic', function() {
@@ -3958,7 +3959,7 @@ Game.registerMod("Kaizo Cookies", {
 			replaceAchievDesc('Elder slumber', 'Use the Elder Pledge to purify decay <b>5 times</b> in a run.<q>purity transcends<br>all<br>evil</q>');
 			replaceAchievDesc('Elder calm', 'Unlock the Elder Covenant.<q>our final gift...<br>use it...<br>well...</q>');
 
-			replaceDesc('Elder Pledge', 'Purifies the decay, at least for a short while.<br>Price is equal to 5 minutes of highest CpS reached this ascension.<q>Incredible power lies within.</q>');
+			replaceDesc('Elder Pledge', 'Purifies the decay, at least for a short while.<br>Price is equal to 5 minutes of highest raw CpS reached this ascension.<q>Incredible power lies within.</q>');
 			decay.halts['pledge'] = new decay.haltChannel({
 				keep: 10,
 				overtimeLimit: 100,
@@ -3996,7 +3997,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (Game.Has('Communal brainsweep')) {
 					dur *= 1.2;
 				}
-				if (Game.has('Unshackled Elder Pledge')) { dur *= 1.25; }
+				if (Game.Has('Unshackled Elder Pledge')) { dur *= 1.25; }
 				return dur;
 			}
 			Game.getPledgeStrength = function () {
@@ -4856,8 +4857,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.getCFChance = function() { 
 			if (Game.resets < 1) { return 0.25 * Math.pow(0.6, Game.gcBuffCount()); }
 			let chance = 0.75;
-			if (decay.challengeStatus('combo1')) { chance += (Game.hasAchiev('A wizard is you')?0.2:0.1); }
-			if (decay.challengeStatus('combo4')) { chance += 0.15; }
+			if (decay.challengeStatus('combo1')) { chance += (Game.hasAchiev('A wizard is you')?0.3:0.15); }
+			if (decay.challengeStatus('combo4')) { chance += 0.1; }
 			chance += decay.challengeStatus('allBuffStackR') * 0.02;
 			if (decay.isConditional('dualcast')) { chance += 2; }
 
@@ -4935,8 +4936,8 @@ Game.registerMod("Kaizo Cookies", {
 			eval('gp.spells["hand of fate"].fail='+gp.spells["hand of fate"].fail.toString().replace(`if (Math.random()<0.1) choices.push('cursed finger','blood frenzy');`, `if (Math.random()<0.1) choices.push('cursed finger'); decay.triggerNotif("fthof");`));
 			/*makes it so that the tooltips can support custom icons*/eval('gp.spellTooltip='+replaceAll('M.', 'gp.', gp.spellTooltip.toString()));
 			eval('gp.spellTooltip='+gp.spellTooltip.toString().replace(`background-position:'+(-me.icon[0]*48)+'px '+(-me.icon[1]*48)+'px;`, `'+writeIcon(me.icon)+'`));
-            addLoc('Each golden cookie buff active makes clicking buffs less likely.');
-			gp.spells['hand of fate'].desc=loc("Summon a random golden cookie. Each existing golden cookie makes this spell +%1% more likely to backfire.",15) + ' ' + loc('Each golden cookie buff active makes clicking buffs less likely.');
+            addLoc('Each golden cookie buff active reduces the chance of clicking buffs.');
+			gp.spells['hand of fate'].desc=loc("Summon a random golden cookie. Each existing golden cookie makes this spell +%1% more likely to backfire.",15) + ' ' + loc('Each golden cookie buff active reduces the chance of clicking buffs.');
 			addLoc('Obtaining this achievement also makes the second part of challenge reward <b>%1</b> twice as powerful.'); replaceAchievDesc('A wizard is you', loc('Cast <b>%1</b> spells.', 999) + '<div class="line"></div>' + loc('Obtaining this achievement also makes the second part of challenge reward <b>%1</b> twice as powerful.', decay.challenges.combo1.name) + '<q>I\'m a what?</q>');
 			addLoc('Summons a power orb if there aren\'t any currently present, and continuously attracts every present power orb to your mouse for the next %1 seconds.');
 			addLoc('Continuously heals and speeds up every present power orb for the next %1 seconds.');
@@ -6558,11 +6559,11 @@ Game.registerMod("Kaizo Cookies", {
 
 		decay.power = 0;
 		decay.firstPowerClickReq = 250;
-		decay.powerClickScaling = 0.3;
+		decay.powerClickScaling = 0.4;
 		decay.powerClickReqs = [];
 		decay.powerSurgeTime = 10 * Game.fps;
 		decay.absPCMaxCapacity = 6;
-		decay.PCCapacity = 2; //power click capacity
+		decay.PCCapacity = 1; //power click capacity
 		decay.PCOnGCDuration = 1.3; //the effect of power clicks on golden cookie effect duration (multiplier)
 		decay.PCMultOnClick = 10; //the multiplier to cookie gain on power click
 		decay.powerLossLimit = 7200 * Game.fps; //amount of frames before power loss starts to happen
@@ -6581,14 +6582,11 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			decay.totalPowerLimit = decay.powerClickReqs[decay.PCCapacity - 1];
 		}
-		decay.PCCapacityIncreasers = [Game.Upgrades['Angels'], Game.Upgrades['Virtues'], Game.Upgrades['Cherubim'], Game.Upgrades['God']];
-		decay.PCBuffIncreasers = [Game.Upgrades['Belphegor'], Game.Upgrades['Mammon'], Game.Upgrades['Abaddon'], Game.Upgrades['Satan'], Game.Upgrades['Asmodeus'], Game.Upgrades['Beelzebub'], Game.Upgrades['Lucifer']];
-		decay.POBoosters = [Game.Upgrades['Archangels'], Game.Upgrades['Dominions'], Game.Upgrades['Seraphim']];
 		decay.recalcPCCapacity = function() {
-			var base = 2;
-			for (let i in decay.PCCapacityIncreasers) {
-				if (decay.PCCapacityIncreasers[i].bought) { base++; }
-			}
+			var base = 1;
+			if (Game.Has('Angels')) { base++; }
+			if (Game.Has('Cherubim')) { base++; }
+			if (Game.Has('God')) { base += 2; }
 			return base;
 		}
 		decay.loadPowerClicks = function() {
@@ -6612,11 +6610,11 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.getPowerPokedDuration = function() {
 			var base = 20;
-			//if (Game.Has('Chimera')) { base *= 1.5; }
 			//if (decay.challengeStatus('power')) { base *= 1.5; }
 			if (Game.Has('Ichor syrup')) { base *= 1.07; }
 			if (Game.Has('Fern tea')) { base *= 1.03; }
 			if (Game.Has('Fortune #102')) { base *= 1.1; }
+			if (Game.Has('Asmodeus')) { base *= 1.5; }
 			
 			return base * Game.fps;
 		}
@@ -6648,33 +6646,41 @@ Game.registerMod("Kaizo Cookies", {
 		replaceDesc('Fern tea', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 3)+'<br>'+loc("Dropped by %1 plants.",loc("Drowsyfern").toLowerCase())+'<q>A chemically complex natural beverage, this soothing concoction has been used by mathematicians to solve equations in their sleep.</q>');
 		replaceDesc('Fortune #102', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 10)+'<br>'+'<q>Help, I\'m trapped in a '+(App?'computer':'browser')+' game!</q>');
 		decay.halts['powerClick'] = new decay.haltChannelGroup();
+		decay.halts['powerClickBase'] = new decay.haltChannel({
+			keep: 100,
+			overtimeLimit: 1000,
+			overtimeEfficiency: 1,
+			power: 0.5,
+			decMult: 0.2
+		});
 		decay.powerClickHaltParameters = {
 			autoExpire: true,
 			halt: 1,
-			power: 1,
+			power: 0.5,
 			decMult: 0.2
 		}
 		decay.performPowerClick = function() {
 			//function is specifically for activating on clicking big cookie, not anything else
-			let amountBought = 0;
-			for (let i in decay.PCBuffIncreasers) {
-				if (decay.PCBuffIncreasers[i].bought) { amountBought++; }
+			if (!Game.Has('Mammon')) { return; }
+
+			if (decay.powerPokedStack < decay.PCCapacity) {
+				let channel = new decay.haltChannel(decay.powerClickHaltParameters);
+				channel.halt = (decay.halts.powerClick.channels.length?decay.halts.powerClick.channels[decay.halts.powerClick.channels.length - 1].halt:0) + 4 * ((decay.isConditional('power'))?0.25:1);
+				decay.halts.powerClick.addChannel(channel);
+				decay.stop(channel.halt * 0.01, 'powerClickBase');
 			}
-			if (Game.Has('Chimera')) { amountBought++; }
-			const power = 1.1 + 0.05 * amountBought;
-			let dur = decay.getPowerPokedDuration();
-			if (Game.hasBuff('Power poked')) {
-				let buff = Game.hasBuff('Power poked');
-				buff.time = dur;
-				buff.power *= power;
-				buff.arg1 *= power;
-				//if (buff.arg2 >= 2) { decay.purifyAll(0.5 + buff.arg2 * 0.5, 1 - Math.pow(0.7, buff.arg2), 50); }
-				buff.arg2 += 1;
-				buff.desc = loc('Prestige effect x%1 for %2!', [Beautify(buff.arg1, 2), Game.sayTime(buff.time, -1)])
-			} else { 
-				Game.gainBuff('powerClick', dur, power, 1); 
+			const originalStack = decay.powerPokedStack;
+			decay.powerPokedStack = Math.max(decay.halts.powerClick.channels.length, Game.hasBuff('Power poked')?Game.hasBuff('Power poked').arg2:0);
+			console.log(originalStack);
+
+			for (let i = 0; i < randomFloor((1 + Math.random() * 0.25) * (25 + 10 * decay.powerPokedStack)); i++) {
+				const xd = (Math.random() * 10 - 5);
+				const yd = -(Math.random() * 6 - 1);
+				if (Math.abs(xd) + Math.abs(yd) < 3) { continue; }
+				Crumbs.spawnFallingCookie(0, 0, yd * (2 + decay.powerPokedStack * 0.4), xd * (1 + decay.powerPokedStack * 0.2), 6, null, true, 1, 2);
 			}
-			const effectivePos = decay.powerPokedStack * 1.3;
+
+			const effectivePos = originalStack * 1.3;
 			const colors = colorCycleFrame(decay.rainbowCycleFull[Math.floor(effectivePos)], decay.rainbowCycleFull[Math.floor(effectivePos) + 1], effectivePos % 1);
 			Crumbs.spawn(decay.soulClaimAuraTemplate, {
 				color: 'rgb('+colors[0]+','+colors[1]+','+colors[2]+')',
@@ -6692,31 +6698,63 @@ Game.registerMod("Kaizo Cookies", {
 				},
 				afterimageInterval: Game.fps / 6
 			});
-			decay.powerPokedStack++;
+
 			Game.gainBuff('powerSurge', decay.getPowerSurgeDur());
 
-			for (let i = 0; i < randomFloor((1 + Math.random() * 0.25) * (25 + 10 * decay.powerPokedStack)); i++) {
-				const xd = (Math.random() * 10 - 5);
-				const yd = -(Math.random() * 6 - 1);
-				if (Math.abs(xd) + Math.abs(yd) < 3) { continue; }
-				Crumbs.spawnFallingCookie(0, 0, yd * (2 + decay.powerPokedStack * 0.4), xd * (1 + decay.powerPokedStack * 0.2), 6, null, true, 1, 2);
+			if (!Game.Has('Satan')) { return; }
+
+			let power = 1.2;
+			if (Game.Has('Lucifer')) { power += 0.25; }
+			if (Game.Has('Chimera')) { power += 0.15; }
+			let dur = decay.getPowerPokedDuration();
+			if (Game.hasBuff('Power poked') && originalStack < decay.PCCapacity) {
+				let buff = Game.hasBuff('Power poked');
+				buff.time = Math.max(dur, buff.time + dur / 2);
+				buff.power *= power;
+				buff.arg1 *= power;
+				//if (buff.arg2 >= 2) { decay.purifyAll(0.5 + buff.arg2 * 0.5, 1 - Math.pow(0.7, buff.arg2), 50); }
+				buff.arg2 += 1;
+				buff.desc = loc('Prestige effect x%1 for %2!', [Beautify(buff.arg1, 2), Game.sayTime(buff.time, -1)])
+			} else if (originalStack < decay.PCCapacity) { 
+				Game.gainBuff('powerClick', dur, power, 1); 
 			}
+
+			if (!Game.Has('Asmodeus')) { return; }
 
 			const wList = Crumbs.getObjects('w');
 			for (let i in wList) {
 				if (wList[i].bomber && wList[i].dist <= 0) { continue; }
-				wList[i].dist += 0.15;
+				wList[i].dist += 0.2 * (1 + Game.Has('Beelzebulb') * 0.125);
 				wList[i].hurt = Math.max(wList[i].hurt, 100);
 				wList[i].findChild('wc').alpha = 0;
 				wList[i].findChild('wc').t = Crumbs.t;
 			}
 
 			//if (Game.Has('Chimera') && decay.gen < 1) { halt *= 1 / Math.pow(decay.gen, 0.1); halt = Math.min(halt, 10); }
+		}
+		decay.performPowerWrinklerClick = function() {
+			let baseDamage = 20;
+			if (Game.Has('Beezlebulb')) { baseDamage *= 1.125; }
+			if (decay.challengeStatus('powerClickWrinklers')) { baseDamage *= 1.1; }
 
-			let channel = new decay.haltChannel(decay.powerClickHaltParameters);
-			channel.halt = (decay.halts.powerClick.channels.length?decay.halts.powerClick.channels[decay.halts.powerClick.channels.length - 1].halt:0) + 3 * (1 + amountBought * 0.2) * ((decay.isConditional('power')
-		)?0.25:1);
-			decay.halts.powerClick.addChannel(channel);
+			decay.damageWrinkler.call(this, baseDamage * 7.5 * decay.getSpecialProtectMult.call(this), true);
+			let allWrinklers = Crumbs.getObjects('w');
+			this.dist += 0.5;
+			this.hurt += 200;
+
+			for (let i in allWrinklers) {
+				if (allWrinklers[i] == this) { continue; }
+				const specialMult = decay.getSpecialProtectMult.call(allWrinklers[i]);
+				for (let i = 0; i < 2 + Game.Has('Belphegor') + Game.Has('Beelzebulb'); i++) {
+					if (!allWrinklers[i]?.dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
+					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.08; }
+				}
+				allWrinklers[i].hurt = Math.max(allWrinklers[i].hurt, 100);
+			}
+
+			decay.spawnWrinklerbits(this, 16, 4, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
+
+			return;
 		}
 		decay.powerClickToLeftSectionSpeed = 1;
 		decay.setSymptomsFromPowerClicks = function() {
@@ -6760,6 +6798,8 @@ Game.registerMod("Kaizo Cookies", {
 		//no decay.powerClick here for simplicity
 		decay.tryUpdateTable = true;
 		decay.updatePower = function() {
+			decay.powerPokedStack = Math.max(decay.halts.powerClick.channels.length, Game.hasBuff('Power poked')?Game.hasBuff('Power poked').arg2:0);
+
 			var p = decay.power;
 			var r = 0;
 			for (let i = 0; i < decay.powerClickReqs.length; i++) {
@@ -6788,7 +6828,7 @@ Game.registerMod("Kaizo Cookies", {
 			return Game.Has('Twin Gates of Transcendence');
 		}
 		decay.gainPower = function(amount) {
-			if (Game.hasBuff('Power poked') || !decay.powerUnlocked()) { return; }
+			if (!decay.powerUnlocked()) { return; }
 			amount *= decay.powerGainMult;
 			decay.power = Math.min(decay.power + amount, decay.totalPowerLimit);
 			decay.times.sincePowerGain = 0;
@@ -6797,9 +6837,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.powerGainMult = 1;
 		decay.setPowerGainMult = function() {
 			let mult = 1;
-			for (let i in decay.POBoosters) {
-				if (decay.POBoosters[i].bought) { mult *= 1.5; }
-			}
+			if (Game.Has('Archangels')) { mult *= 1.5; }
+			if (Game.Has('Seraphim')) { mult *= 1 + decay.currentPC * 0.15; }
 			if (decay.challengeStatus('power')) { mult *= 1.5; }
 			return mult;
 		}
@@ -6812,7 +6851,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("else mult*=Game.eff('wrathCookieGain');","else mult*=Game.eff('wrathCookieGain'); if (powerClick) { effectDurMod*=decay.PCOnGCDuration; mult*=decay.PCOnGCDuration*50; } "));		
 	
-		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>30%</b> more power. You start with a maximum storage capacity of <b>1</b> power click.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds; you can damage them by tapping the spacebar while hovering over them. Successfully using power clicks refresh that buff, and power orbs fall when you click with some power stored. <br>&bull; each power click stops decay for an <b>extended</b> period of time with each activation being considered a <b>distinct method</b>, and creates a buff that boost prestige effect by <b>+10%</b> for <b>20 seconds</b> (strength stacks with each use).<br>&bull; while the buff is active, you cannot gain power. <br>&bull; in addition, power clicks can be used on wrinklers to destroy a large amount of wrinklers at once.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
+		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>40%</b> more power. You start with a maximum storage capacity of <b>1</b> power click.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds; you can damage them by tapping the spacebar while hovering over them. <br>&bull; Power orbs fall when you click the big cookie with at least 1 power click worth of power stored. <br>&bull; Power clicks can be used on wrinklers to <b>instantly obliterate</b> the wrinkler clicked, and releases <b>two</b> consecutive shockwaves that each deal <b>massive damage</b> to <b>all wrinklers</b>, each shockwave destroying up to one layer.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
 		//Game.Upgrades['Twin Gates of Transcendence'].dname="Power clicks"; moved to after upgrade localization
 		addLoc('Power clicks');
 		addLoc('This is your power gauge, representing the amount of power clicks you have as well as the amount of power you will need to get to your next power click. <br>For more information, refer to the Power clicks heavenly upgrade.');
@@ -6821,31 +6860,31 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Angels'].basePrice *= 7**1;
 		replaceDesc('Archangels', 'You gain <b>50%</b> more power.<q>Members of the first sphere of pastry heaven, archangels are responsible for the smooth functioning of the world\'s largest bakeries.</q>');
 		Game.Upgrades['Archangels'].basePrice *= 7**2;
-		replaceDesc('Virtues', 'Maximum power click capacity increased to <b>3</b>.<q>Found at the second sphere of pastry heaven, virtues make use of their heavenly strength to push and drag the stars of the cosmos.</q>');
+		replaceDesc('Virtues', 'Power orbs spawn <b>twice</b> as often.<q>Found at the second sphere of pastry heaven, virtues make use of their heavenly strength to push and drag the stars of the cosmos.</q>');
 		Game.Upgrades['Virtues'].basePrice *= 7**3;
-		replaceDesc('Dominions', 'You gain <b>50%</b> more power.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
+		replaceDesc('Dominions', 'You deal <b>50%</b> more damage to Power orbs.<q>Ruling over the second sphere of pastry heaven, dominions hold a managerial position and are in charge of accounting and regulating schedules.</q>');
 		Game.Upgrades['Dominions'].basePrice *= 7**4;
-		replaceDesc('Cherubim', 'Maximum power click capacity increased to <b>4</b>.<q>Sieging at the first sphere of pastry heaven, the four-faced cherubim serve as heavenly bouncers and bodyguards.</q>');
+		replaceDesc('Cherubim', 'Maximum power click capacity increased to <b>3</b>, and makes purifying decay also grant power.<q>Sieging at the first sphere of pastry heaven, the four-faced cherubim serve as heavenly bouncers and bodyguards.</q>');
 		Game.Upgrades['Cherubim'].basePrice *= 7**5;
-		replaceDesc('Seraphim', 'You gain <b>50%</b> more power.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
+		replaceDesc('Seraphim', 'You gain <b>15%</b> more power for each full power click you have stored.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
 		Game.Upgrades['Seraphim'].basePrice *= 7**6;
 		replaceDesc('God', 'Maximum power click capacity increased to <b>5</b>.<q>Like Santa, but less fun.</q>');
 		Game.Upgrades['God'].basePrice *= 7**7;
-		replaceDesc('Belphegor', 'Power click halts decay longer and its buff is increased to <b>+15%</b> prestige effect.<q>A demon of shortcuts and laziness, Belphegor commands machines to do work in his stead.</q>');
+		replaceDesc('Belphegor', 'The shockwave from power clicking wrinklers repeats <b>one more time</b>.<q>A demon of shortcuts and laziness, Belphegor commands machines to do work in his stead.</q>');
 		Game.Upgrades['Belphegor'].basePrice *= 7**1;
-		replaceDesc('Mammon', 'Power click halts decay longer and its buff is increased to <b>+20%</b> prestige effect.<q>The demonic embodiment of wealth, Mammon requests a tithe of blood and gold from all his worshippers.</q>');
+		replaceDesc('Mammon', 'You can perform power clicks on the big cookie as well, which stops decay for an <b>extended</b> period of time with each activation being considered a <b>distinct method</b>.<q>The demonic embodiment of wealth, Mammon requests a tithe of blood and gold from all his worshippers.</q>');
 		Game.Upgrades['Mammon'].basePrice *= 7**2;
-        replaceDesc('Abaddon', 'Power click halts decay longer and its buff is increased to <b>+25%</b> prestige effect.<q>Master of overindulgence, Abaddon governs the wrinkler brood and inspires their insatiability.</q>');
+        replaceDesc('Abaddon', 'The shockwave from power clicking wrinklers also <b>knocks back</b> all wrinklers hit.<q>Master of overindulgence, Abaddon governs the wrinkler brood and inspires their insatiability.</q>');
 		Game.Upgrades['Abaddon'].basePrice *= 7**3;
-		replaceDesc('Satan', 'Power click halts decay longer and its buff is increased to <b>+30%</b> prestige effect.<q>The counterpoint to everything righteous, this demon represents the nefarious influence of deceit and temptation.</q>');
+		replaceDesc('Satan', 'Power clicking the big cookie renders it "Power poked", boosting prestige effect by <b>+20%</b> for <b>20 seconds</b> (strength stacks with each use) as well as preventing fatigue from building up while power poked.<q>The counterpoint to everything righteous, this demon represents the nefarious influence of deceit and temptation.</q>');
 		Game.Upgrades['Satan'].basePrice *= 7**4;
-		replaceDesc('Asmodeus', 'Power click halts decay longer and its buff is increased to <b>+35%</b> prestige effect.<q>This demon with three monstrous heads draws his power from the all-consuming desire for cookies and all things sweet.</q>');
+		replaceDesc('Asmodeus', 'Power poked effect lasts <b>50%</b> longer, and clicking on the big cookie also <b>knocks back</b> all wrinklers.<q>This demon with three monstrous heads draws his power from the all-consuming desire for cookies and all things sweet.</q>');
 		Game.Upgrades['Asmodeus'].basePrice *= 7**5;
-		replaceDesc('Beelzebub', 'Power click halts decay longer and its buff is increased to <b>+40%</b> prestige effect.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
+		replaceDesc('Beelzebub', 'Wrinkler click shockwaves trigger <b>one more time</b> and each shockwave is <b>12.5%</b> stronger.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
 		Game.Upgrades['Beelzebub'].basePrice *= 7**6;
-		replaceDesc('Lucifer', 'Power click halts decay longer and its buff is increased to <b>+45%</b> prestige effect.<q>Also known as the Lightbringer, this infernal prince\'s tremendous ego caused him to be cast down from pastry heaven.</q>');
+		replaceDesc('Lucifer', 'Power poked effect increased to <b>+45%</b> prestige effect.<q>Also known as the Lightbringer, this infernal prince\'s tremendous ego caused him to be cast down from pastry heaven.</q>');
 		Game.Upgrades['Lucifer'].basePrice *= 7**7;
-		replaceDesc('Chimera', 'Allows power clicks to be done on golden cookies, which increases its effect duration by <b>30%</b>.<br>Power poked buff increases prestige effect by another <b>5%</b>.<q>More than the sum of its parts.</q>');
+		replaceDesc('Chimera', 'Allows power clicks to be done on golden cookies, which increases its effect duration by <b>30%</b>.<br>Power poked buff increases prestige effect by another <b>15%</b>.<q>More than the sum of its parts.</q>');
 		Game.Upgrades['Chimera'].basePrice *= 7**6;
 		Game.Upgrades['Synergies Vol. I'].basePrice = 2222222;
 		Game.Upgrades['Synergies Vol. II'].basePrice = 2222222222;
@@ -7454,7 +7493,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
-			me.hp -= 5 * (1 + Math.sqrt(Game.log10Cookies) / 3);
+			me.hp -= 5 * (1 + Math.sqrt(Game.log10Cookies) / 5) * (Game.Has('Dominions')?1.5:1);
 			me.hp *= 0.9;
 			//decay.stop(2.5, 'powerOrb');
 		}
@@ -7491,8 +7530,9 @@ Game.registerMod("Kaizo Cookies", {
 		decay.spawnPowerOrbs = function() {
 			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power <= decay.powerClickReqs[0] || !decay.powerUnlocked()) { return; }
 
-			var inverseChance = 0.995;
-			if (decay.isConditional('typing') || decay.isConditional('typingR') || decay.isConditional('power') || decay.isConditional('powerClickWrinklers')) { inverseChance = Math.pow(inverseChance, 5); }
+			var inverseChance = 0.996;
+			if (Game.Has('Virtues')) { inverseChance = Math.pow(inverseChance, 2); }
+			if (decay.isConditional('typing') || decay.isConditional('typingR') || decay.isConditional('power') || decay.isConditional('powerClickWrinklers')) { inverseChance = Math.pow(inverseChance, 6); }
 			if (Math.random() < (1 - inverseChance)) {
 				new decay.powerOrb();
 			}
@@ -8430,7 +8470,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)')
 		addLoc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>');
 		addLoc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run');
-		new decay.challenge('combo1', loc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.', Game.sayTime(10 * 60 * Game.fps)) + '<br>' + loc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return Game.hasBuff('Click frenzy'); }, function(hide) { return loc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>', ['75%', '85%']) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'CpS']) + (hide?'':(' ' + loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1))+'%'))); }, decay.challengeUnlockModules.vial);
+		new decay.challenge('combo1', loc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.', Game.sayTime(10 * 60 * Game.fps)) + '<br>' + loc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return Game.hasBuff('Click frenzy'); }, function(hide) { return loc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>', ['75%', '90%']) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'CpS']) + (hide?'':(' ' + loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1))+'%'))); }, decay.challengeUnlockModules.vial);
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`!Game.hasBuff('Dragonflight')`, `false`));
 		
 		addLoc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.');
@@ -8450,7 +8490,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)');
 		addLoc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.');
-		new decay.challenge('combo4', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(50000), Game.sayTime(10 * 60 * Game.fps)]) + '<br>' + loc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return (Game.clickMult >= 50000); }, loc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.', 'Thumbcorn') + '<br>' + loc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>', ['85%', '100%']), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
+		new decay.challenge('combo4', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(50000), Game.sayTime(10 * 60 * Game.fps)]) + '<br>' + loc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return (Game.clickMult >= 50000); }, loc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.', 'Thumbcorn') + '<br>' + loc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>', ['90%', '100%']), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
 		addLoc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)');
 		addLoc('All dragon auras cost <b>50 less</b> buildings to unlock');
 		addLoc('Your dragon starts out hatched with the first aura unlocked');
