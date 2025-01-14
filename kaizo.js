@@ -853,6 +853,7 @@ Game.registerMod("Kaizo Cookies", {
 			return halt;
 		}
 		decay.stop = function(val, channel) {
+			if (!decay.unlocked) { return; }
 			val *= Game.eff('haltPower') * decay.getHaltMult();			
 			if (!channel) { channel = 'others'; }
 			decay.halts[channel].addHalt(val);
@@ -1237,7 +1238,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			wrinkler: {
 				title: 'Wrinklers',
-				desc: 'Wrinklers now spawn passively, approach the big cookie quicker the more decay you have, and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging them into it, temporarily stopping decay.<br>Also, the withering affects clicks, unlike in vanilla.',
+				desc: 'Wrinklers now spawn passively, approach the big cookie quicker the more decay you have, and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging them into it, temporarily stopping decay.',
 				icon: [19, 8]
 			},
 			wrath: {
@@ -1253,7 +1254,8 @@ Game.registerMod("Kaizo Cookies", {
 			decayII: {
 				title: 'decay: the return',
 				desc: 'The decay gets stronger as you progress through the game, but you also obtain more items to help you fight it as the game goes on. ',
-				icon: [3, 1, kaizoCookies.images.custImg]
+				icon: [3, 1, kaizoCookies.images.custImg],
+				noPause: true
 			},
 			veil: {
 				title: 'Shimmering Veil',
@@ -1343,7 +1345,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			powerOrb: {
 				title: 'Power orbs',
-				desc: 'This is the power orb that the Power click heavenly upgrade was talking about! Clicking the power orbs will prevent your power from decreasing - note, however, that power orbs will eventually leave if you ignore them.<br>Another note: easy clicks and easy wrinklers are disabled while you can perform a power click.',
+				desc: 'This is the power orb that the Power click heavenly upgrade was talking about! Easy clicks and easy wrinklers are disabled while you can perform a power click.',
 				icon: 0
 			},
 			dragonflight: {
@@ -1358,7 +1360,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			fatigue: {
 				title: 'Click fatigue',
-				desc: 'While clicking is a super effective way to stop decay, it isn\'t foolproof. As you click more and more, the magical power that resides within the act of clicking the big cookie needs to recharge more and more.<br>Sneaky tip: the darker the aura around the big cookie, the more fatigue you have.',
+				desc: 'While clicking is a super effective way to stop decay, it isn\'t foolproof. Once exhaustion sets in, you will need to find other ways to halt decay.',
 				icon: 0
 			},
 			degradation: {
@@ -1383,7 +1385,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			shinySoulEffect: {
 				title: 'Reflective blessings',
-				desc: 'Upon claiming a shiny wrinkler\'s soul, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS (including any buffs that may be active), for up to DOUBLE your bank! You might be able to do something with this information...<br>(also, a new pet has been unlocked! Check the bottom left of the window.)',
+				desc: 'Upon claiming a shiny wrinkler\'s soul, a golden cookie will spawn, yielding a Reflective blessing: giving you cookies scaling with your current CpS (including any buffs that may be active), for up to DOUBLE your bank! Do not underestimate them. <br>(also, a new pet has been unlocked! Check the bottom left of the window.)',
 				icon: [10, 3, kaizoCookies.images.custImg]
 			},
 			accExtras: {
@@ -1448,7 +1450,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.cookiesEarned > 555) { decay.triggerNotif('options'); }
 			if (decay.unlocked) { decay.triggerNotif('initiate'); }
 			if (decay.gen > 1.2) { decay.triggerNotif('purity'); }
-			if (decay.gen <= 0.5) { decay.triggerNotif('gpoc'); }
+			//if (decay.gen <= 0.5) { decay.triggerNotif('gpoc'); }
 			if (decay.incMult >= 0.04) { decay.triggerNotif('decayII'); }
 			//if (Game.buffCount() && decay.gen <= 0.5) { decay.triggerNotif('buff'); }
 			//if (Game.gcBuffCount() > 1) { decay.triggerNotif('multipleBuffs'); }
@@ -1829,10 +1831,9 @@ Game.registerMod("Kaizo Cookies", {
 		//decay scaling
 		decay.setRates = function() {
 			var d = 0.99;
-			d *= Math.pow(0.9965, Game.log10Cookies);
-			d *= Math.pow(0.9998, Math.log2(Math.max(Game.goldenClicksLocal - 77, 1)));
-			d *= Math.pow(0.9994, Math.max(Math.sqrt(Game.AchievementsOwned) - 4, 0));
-			d *= Math.pow(0.9992, Math.max(Math.pow(decay.getBuildingContribution(), 0.33) - 10, 0));
+			d *= Math.pow(0.996, Game.log10Cookies);
+			d *= Math.pow(0.9996, Math.max(Math.sqrt(Game.AchievementsOwned) - 4, 0));
+			d *= Math.pow(0.9995, Math.max(Math.pow(decay.getBuildingContribution(), 0.33) - 10, 0));
 			if (Game.Has('Legacy')) { d *= 0.98; }
 			if (Game.Has('Lucky day')) { d *= 0.995; }
 			if (Game.Has('Serendipity')) { d *= 0.995; }
@@ -2338,9 +2339,9 @@ Game.registerMod("Kaizo Cookies", {
 			0: 0,
 			3: 0.01,
 			5: 0.02,
-			7: 0.04,
-			9: 0.06,
-			12: 0.05,
+			7: 0.03,
+			9: 0.04,
+			12: 0.04,
 			21: 0.02,
 			27: 0.01,
 			48: 0.0075,
@@ -2598,10 +2599,10 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		};
 		decay.wrinklerSizeHPMap = {
-			0: 5,
-			1: 7.5,
-			2: 10,
-			3: 14,
+			0: 3,
+			1: 5,
+			2: 9,
+			3: 13,
 			4: 18,
 			5: 24,
 			6: 32,
@@ -4822,7 +4823,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		'<div class="subsection">'+
 		'<div class="title">Special Thanks</div>'+
-		'<div class="listing">Fillex (P for Pause)</div>'+
+		'<div class="listing">xxfillex (P for Pause)</div>'+
 		'<div class="listing">Helloperson (buffTimer)</div>'+
 		'<div class="listing">hz</div>'+
 		'<div class="listing">leoguy</div>'+
@@ -6724,7 +6725,7 @@ Game.registerMod("Kaizo Cookies", {
 			const wList = Crumbs.getObjects('w');
 			for (let i in wList) {
 				if (wList[i].bomber && wList[i].dist <= 0) { continue; }
-				wList[i].dist += 0.2 * (1 + Game.Has('Beelzebulb') * 0.125);
+				wList[i].dist += 0.2 * (1 + Game.Has('Beelzebub') * 0.125);
 				wList[i].hurt = Math.max(wList[i].hurt, 100);
 				wList[i].findChild('wc').alpha = 0;
 				wList[i].findChild('wc').t = Crumbs.t;
@@ -6745,7 +6746,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in allWrinklers) {
 				if (allWrinklers[i] == this) { continue; }
 				const specialMult = decay.getSpecialProtectMult.call(allWrinklers[i]);
-				for (let i = 0; i < 2 + Game.Has('Belphegor') + Game.Has('Beelzebulb'); i++) {
+				for (let i = 0; i < 2 + Game.Has('Belphegor') + Game.Has('Beelzebub'); i++) {
 					if (!allWrinklers[i]?.dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.08; }
 				}
@@ -6880,7 +6881,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Satan'].basePrice *= 7**4;
 		replaceDesc('Asmodeus', 'Power poked effect lasts <b>50%</b> longer, and clicking on the big cookie also <b>knocks back</b> all wrinklers.<q>This demon with three monstrous heads draws his power from the all-consuming desire for cookies and all things sweet.</q>');
 		Game.Upgrades['Asmodeus'].basePrice *= 7**5;
-		replaceDesc('Beelzebub', 'Wrinkler click shockwaves trigger <b>one more time</b> and each shockwave is <b>12.5%</b> stronger.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
+		replaceDesc('Beelzebub', 'Wrinkler click shockwaves trigger <b>one more time</b> and power clicking wrinklers deal <b>12.5%</b> more damage.<q>The festering incarnation of blight and disease, Beelzebub rules over the vast armies of pastry inferno.</q>');
 		Game.Upgrades['Beelzebub'].basePrice *= 7**6;
 		replaceDesc('Lucifer', 'Power poked effect increased to <b>+45%</b> prestige effect.<q>Also known as the Lightbringer, this infernal prince\'s tremendous ego caused him to be cast down from pastry heaven.</q>');
 		Game.Upgrades['Lucifer'].basePrice *= 7**7;
@@ -7546,8 +7547,8 @@ Game.registerMod("Kaizo Cookies", {
         Challenge mode
         =======================================================================================*/
 
-		addLoc('Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that becomes slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode.');
-		Game.ascensionModes[42069] = {name:'Unshackled decay',dname:loc("Unshackled decay"),desc:loc("Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that becomes slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode."),icon:[23,14,kaizoCookies.images.custImg]};
+		addLoc('Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that grows slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode.');
+		Game.ascensionModes[42069] = {name:'Unshackled decay',dname:loc("Unshackled decay"),desc:loc("Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that grows slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode."),icon:[23,14,kaizoCookies.images.custImg]};
 
 		eval('Game.PickAscensionMode='+Game.PickAscensionMode.toString().replace(`background-position:'+(-icon[0]*48)+'px '+(-icon[1]*48)+'px;`, `'+writeIcon(icon)+'`));
 
