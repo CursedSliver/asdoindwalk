@@ -1504,7 +1504,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.writeInfoSnippetButton = function(prefName, button) {
 			if (!decay.prefs.preventNotifs[decay.notifs[prefName].pref]) { return ''; }
-			return '<a class="smallFancyButton" id="'+button+'"'+Game.clickStr+'="decay.triggerNotif(\''+prefName+'\', true);">'+decay.notifs[prefName].title+'</a><br>';
+			return '<a class="smallFancyButton" style="margins: 5px; " id="'+button+'"'+Game.clickStr+'="decay.triggerNotif(\''+prefName+'\', true);">'+decay.notifs[prefName].title+'</a>';
 		}
 		addLoc('Ascend on infinite decay');
 		addLoc('Wipe save on infinite decay');
@@ -1529,6 +1529,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Shows your keyboard inputs in real time.');
 		addLoc('Competition mode');
 		addLoc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.');
+		injectCSS(`.block.infoSnippetBox { margin-top: 5px; text-align: center; }`);
 		decay.getPrefButtons = function() {
 			var str = '';
 			//str += decay.writePrefButton('ascendOnInf', 'AscOnInfDecayButton', loc('Ascend on infinite decay')+' ON', loc('Ascend on infinite decay')+' OFF')+'<label>('+loc("Upon reaching infinite decay, ascend without gaining any prestige or heavenly chips")+')</label><br>';
@@ -1541,7 +1542,7 @@ Game.registerMod("Kaizo Cookies", {
 			str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 			str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time.')+')</label><br>';
 			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.')+')</label><br>';
-			str += 'Replay information snippets:<br>';
+			str += '<div class="line"></div><b>Replay information snippets:</b><br><div class="block infoSnippetBox">';
 			var str2 = '';
 			for (let i in decay.notifs) {
 				str2 += decay.writeInfoSnippetButton(i, i+' Button')+'';
@@ -1549,7 +1550,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (str2 == '') {
 				str2 = loc('<b>none.</b><br><small>(You can see and replay information snippets you\'ve collected throughout the game here. The first one occurs at 5,555 cookies baked this ascension.)</small>');
 			}
-			return str + str2;
+			return str + str2 + '</div>';
 		}
 		eval('Game.UpdateMenu='+Game.UpdateMenu.toString()
 			 .replace(`rs; game will reload")+')</label><br>'+`, `rs; game will reload")+')</label><br>'+decay.getPrefButtons()+`)
@@ -2093,7 +2094,7 @@ Game.registerMod("Kaizo Cookies", {
 							'<div style="min-width:200px;text-align:center;">Abandon the current run; you will not ascend, you will lose your current progress, but you will keep anything ascending normally keeps.</div>'
 							,'bottom-right')+
 				'>Give up</a>';
-			Game.Prompt(str,[['Ascend','Game.ClosePrompt();if (decay.broken == 1) { Game.Ascend(1); } else { decay.ascendIn = 300 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br','Cancel'],Game.UpdateLegacyPrompt,'legacyPrompt');
+			Game.Prompt(str,[['Ascend','Game.ClosePrompt();if (decay.broken == 1) { Game.Ascend(1); } else { decay.ascendIn = 90 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br','Cancel'],Game.UpdateLegacyPrompt,'legacyPrompt');
 			l('promptOption0').className='option framed large title';
 			l('promptOption0').style='margin:16px;padding:8px 16px;animation:rainbowCycle 5s infinite ease-in-out,pucker 0.2s ease-out;box-shadow:0px 0px 0px 1px #000,0px 0px 1px 2px currentcolor;background:linear-gradient(to bottom,transparent 0%,currentColor 500%);width:auto;text-align:center;';
 			l('promptOption0').style.display='none';
@@ -2102,13 +2103,14 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		addLoc('Due to the fact that <b>decay has progressed past its breaking point</b>, it take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.');
+		addLoc('Ascending right now is STRONGLY DISCOURAGED because you will not get much prestige if you do so.');
 		Game.UpdateLegacyPrompt=function()
 		{
 			if (!l('legacyPromptData')) return 0;
 			l('legacyPromptData').innerHTML=
 				'<div class="icon" style="pointer-event:none;transform:scale(2);opacity:0.25;position:absolute;right:-8px;bottom:-8px;background-position:'+(-19*48)+'px '+(-7*48)+'px;"></div>'+
                 loc("Do you REALLY want to ascend?<div class=\"line\"></div>You will lose your progress and start over from scratch.<div class=\"line\"></div>All your cookies will be converted into prestige and heavenly chips.")+'<div class="line"></div>'+(Game.canLumps()?loc("You will keep your achievements, building levels and sugar lumps."):loc("You will keep your achievements."))+
-				'<div class="line"></div>'+((decay.broken>1)?('<div class="listing"></div>'+loc('Due to the fact that <b>decay has progressed past its breaking point</b>, it take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.', Game.sayTime(300 * Game.fps))):'');
+				'<div class="line"></div>'+((Math.pow(Game.cookiesEarned / Game.firstHC, 1 / Game.HCfactor) < 440 && Game.resets == 0)?('<div class="listing"><b>'+loc('Ascending right now is STRONGLY DISCOURAGED because you will not get much prestige if you do so.')+'</b></div>'):'')+((decay.broken>1)?('<div class="listing">'+loc('Due to the fact that <b>decay has progressed past its breaking point</b>, it take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.', Game.sayTime(90 * Game.fps))+'</div>'):'');
 		}
 
 		Game.Ascend = function(bypass) {
@@ -2608,11 +2610,14 @@ Game.registerMod("Kaizo Cookies", {
 			6: 32,
 			7: 42,
 			8: 54,
-			9: 68
+			9: 68,
+			10: 84,
+			11: 102,
+			12: 122,
 		}
 		decay.wrinklerHPFromSize = function(size) {
-			if (size <= 9) { return decay.wrinklerSizeHPMap[size]; }
-			return 16 * size - 76;
+			if (size <= 12) { return decay.wrinklerSizeHPMap[size]; }
+			return 20 * size - 118;
 		}
 		Game.dropHalloweenCookie = function(me) {
 			var failRate=0.95;
@@ -3908,7 +3913,7 @@ Game.registerMod("Kaizo Cookies", {
 		//breaking point
 		replaceDesc('Legacy', "This is the first heavenly upgrade; it unlocks the <b>Heavenly chips</b> system.<div class=\"line\"></div>Each time you ascend, the cookies you made in your past life are turned into <b>heavenly chips</b> and <b>prestige</b>.<div class=\"line\"></div><b>Heavenly chips</b> can be spent on a variety of permanent transcendental upgrades.<div class=\"line\"></div>Your <b>prestige level</b> also gives you a permanent <b>+1% CpS</b> per level.<div class=\"line\"></div>Your wrinkler movement speed becomes capped at <b>-90%</b> decay and any decay after -90% starts <b>breaking decay</b>: simply clicking will no longer suffice, ascending is no longer immediate, and you gain a decay propagation increase that scales with current decay.<div class=\"line\"></div>In addition, wrinklers have also inherited a part of the power, and popping any that has already reached the big cookie will now inflict Coagulated and Cursed.<q>We've all been waiting for you. And some more.</q>");
 		Game.Upgrades['Legacy'].icon = [7, 3, kaizoCookies.images.custImg];
-		decay.minimumPrestigeAmountToAscend = 400;
+		decay.minimumPrestigeAmountToAscend = 1;
 		decay.eligibleForAscend = function() {
 			if (Game.resets >= 1) { return true; }
 			let chips = Math.pow(Game.cookiesEarned / Game.firstHC, 1 / Game.HCfactor);
@@ -4795,13 +4800,12 @@ Game.registerMod("Kaizo Cookies", {
         =======================================================================================*/
 		Game.updateLog= //declaring a new log text
 		'<div class="selectable">'+
-		'<div class="section">'+loc("Info")+'</div>'+
-		'<div class="subsection">'+
 		'<div class="section">'+loc("Mod Credits")+'</div>'+
 		'<div class="subsection">'+
 		'<div class="title">Programmers</div>'+
 		'<div class="listing">CursedSliver</div>'+'<div style="display:blockvertical-align:middle;position:relative;left:97px;top:-18px;width:48px;height:48px;background:url(\''+kaizoCookies.images.cursed+'\');margin:-16px;transform:scale(0.5);"></div>'+
 		'<div class="listing">Omar uvu</div>'+tinyIcon([8,1,kaizoCookies.images.custImg],"position:relative;left:80px;top:-20px;")+
+		'</div>'+
 
         '<div class="subsection">'+
 		'<div class="title">Playtesters/QA</div>'+
@@ -4813,6 +4817,7 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="listing">Fishman</div>'+
 		'<div class="listing">Johnny Cena</div>'+
 		'<div class="listing">Samyli "rip his hands"</div>'+
+		'</div>'+
 
 
         '<div class="subsection">'+
@@ -4820,6 +4825,7 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="listing">Omar uvu</div>'+
 		'<div class="listing">CursedSliver</div>'+
 		'<div class="listing">Whisp</div>'+
+		'</div>'+
 
 		'<div class="subsection">'+
 		'<div class="title">Special Thanks</div>'+
@@ -4830,7 +4836,8 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="listing">Retropaint</div>'+ //he will never be forgotten
 		'<div class="listing">Rubik</div>'+ 
 		'<div class="listing">Lookas</div>'+ 
-		'<div class="listing">Yeetdragon</div>'+Game.updateLog; 
+		'<div class="listing">Yeetdragon</div>'+
+		'</div></div>'+Game.updateLog.replace(); 
 		
 		/*=====================================================================================
         Minigames 
