@@ -1265,7 +1265,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			wrinkler: {
 				title: 'Wrinklers',
-				desc: 'Wrinklers now spawn passively, approach the big cookie quicker the more decay you have, and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging them into it, temporarily stopping decay.',
+				desc: 'Wrinklers now spawn passively, approach the big cookie quicker the more decay you have, and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging or flinging them into it, temporarily stopping decay.',
 				icon: [19, 8]
 			},
 			wrath: {
@@ -2416,8 +2416,9 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		decay.setWrinklerResistance = function() {
 			//the amount of health decrease per click
-			var base = 0.6;
-			var fingerMult = 1;
+			let base = 0.6;
+			if (Game.Has('Legacy')) { base += 0.15; }
+			let fingerMult = 1;
 			for (let i in decay.multiFingers) {
 				if (decay.multiFingers[i].bought) { fingerMult += 0.15; }
 			}
