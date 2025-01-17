@@ -423,7 +423,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.momentumFactor = 2; //the more this is, the less powerful momentum is (very strongly affects momentum)
 		decay.momentumIncFactor = 1.5; //the larger, the less momentum increases (straight mult)
 		decay.momentumLogInc = 2.5; //directly affects momentum increase (instead of momentum interpretation)
-		decay.clickHaltBaseTime = 0.5; //amount of halting applied with no bonuses per click
+		decay.clickHaltBaseTime = 0.6; //amount of halting applied with no bonuses per click
 		decay.purityToDecayPow = 1.5; //purity multiplies decay rate to this power
 		decay.purityToMomentumPow = 2; //purity multiplies decay momentum to this power
 		decay.unshackledPurityMult = 0.75; //unshackled purity upgrade
