@@ -2383,9 +2383,9 @@ Game.registerMod("Kaizo Cookies", {
 			3: 0.01,
 			5: 0.02,
 			7: 0.04,
-			9: 0.05,
+			12: 0.05,
 			12: 0.04,
-			21: 0.02,
+			21: 0.025,
 			27: 0.01,
 			48: 0.0075,
 			309: 0.005
@@ -2730,6 +2730,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.onWrinklerClick = function() {
 			if (decay.powerClicksOn() && decay.spendPowerClick()) {
 				decay.performPowerWrinklerClick.call(this);
+				return; 
 			}
 			decay.damageWrinkler.call(this, decay.wrinklerResistance * decay.getSpecialProtectMult.call(this));
 		}
@@ -3874,13 +3875,10 @@ Game.registerMod("Kaizo Cookies", {
 		
 		//ways to purify/refresh/stop decay
 		eval('Game.shimmer.prototype.pop='+Game.shimmer.prototype.pop.toString().replace('Game.Click=0;', 'Game.Click=0; decay.purifyFromShimmer(this);'));
-		new decay.haltChannel('reindeerHalt', {
-			
-		});
 		decay.purifyFromShimmer = function(obj) {
 			if (obj.type == 'reindeer') {
 				if (decay.isConditional('reindeer')) { decay.amplifyAll(5, 20); } else if (obj.noPurity) { decay.amplifyAll(10, 0); Game.Notify('LOL', '', [12, 8]); }// else { decay.purifyAll(1.3 * (1 + Game.Has('Weighted sleighs') * 0.25), 0.2, 5); decay.triggerNotif('reindeer'); }
-				if (Game.Has('Weighted sleighs')) { decay.stop(3, 'reindeerHalt') }
+				if (Game.Has('Weighted sleighs')) { decay.stop(5); }
 				return;
 			} 
 			if (obj.type == 'a mistake') {
