@@ -1534,7 +1534,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.writeInfoSnippetButton = function(prefName, button) {
 			if (!decay.prefs.preventNotifs[decay.notifs[prefName].pref]) { return ''; }
-			return '<a class="smallFancyButton" style="margins: 5px; " id="'+button+'"'+Game.clickStr+'="decay.triggerNotif(\''+prefName+'\', true);">'+decay.notifs[prefName].title+'</a>';
+			return '<a class="smallFancyButton" style="margin: 5px; " id="'+button+'"'+Game.clickStr+'="decay.triggerNotif(\''+prefName+'\', true);">'+decay.notifs[prefName].title+'</a>';
 		}
 		addLoc('Ascend on infinite decay');
 		addLoc('Wipe save on infinite decay');
@@ -4877,42 +4877,72 @@ Game.registerMod("Kaizo Cookies", {
 		/*=====================================================================================
         Credits
         =======================================================================================*/
+		addLoc('Kaizo cookies');
+		addLoc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game more active. The mod is currently not complete, with content ending at the decillions range.');
+		addLoc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:');
+		addLoc('join our <a href="%1" target="_blank" class="highlightHover smallWhiteButton">Discord server</a>! Any feedback is welcome!');
+		addLoc('like, favorite, and (if you want) give an award to our steam workshop entry!');
+		addLoc('share our mod with anyone who you think will like it!');
+		injectCSS(`.subsection.kaizoCreditsBox { text-align: center; display: flex; flex-wrap: wrap; width: 90%; margin: 12px auto; border-radius: 5px; border:1px solid rgba(255,255,255,0.1); background: rgba(40, 40, 40, 0.05); box-shadow:0px 0px 3px rgb(75, 75, 75),0px 0px 1px #000 inset; }`);
+		injectCSS(`.kaizoCreditsTitle { font-size:22px; width: 100%; flex: 1; display: block; text-align: center; margin-bottom:4px; margin-top: 0px; background:linear-gradient(to right,rgba(0,0,0,0),rgba(0,0,0,0),rgba(0,0,0,0.5),rgba(0,0,0,0),rgba(0,0,0,0)); padding:0px 16px; font-family: 'Merriweather', Georgia,serif; text-shadow:0px 1px 4px #000; color: #fff; }`);
+		//injectCSS(`.kaizoCreditsTitle:after { content: "" !important, display: block; height: 1px; margin: 6px 0px; background:linear-gradient(to right,rgba(255,255,255,0),rgba(255,255,255,0),rgba(255,255,255,0.25),rgba(255,255,255,0),rgba(255,255,255,0)); }`);
+		injectCSS(`.titleLine { height: 1px; width: 100%; margin: 6px 0px; background:linear-gradient(to right,rgba(255,255,255,0),rgba(255,255,255,0),rgba(255,255,255,0.25),rgba(255,255,255,0),rgba(255,255,255,0)); }`);
+		injectCSS(`.KCPersonBox { padding: 8px; font-variant: small-caps; font-family: 'Merriweather', Georgia,serif;display: flex; border-radius: 3px; align-items: center; background: rgba(40, 40, 40, 0.05); border:1px solid rgba(255,255,255,0.1); box-shadow:0px 0px 2px rgb(30, 30, 30),0px 0px 1px #000 inset; font-size: 15px; margin: auto; text-shadow:0px -2px 6px rgba(255,255,200,0.6),0px 1px 0px rgba(100,100,100,1),0px 2px 4px rgba(0,0,0,1); }`);
+		injectCSS(`.noteSpan { font-size: 9px; transform: translateY(3px); margin-left: 4px; }`);
 		Game.updateLog= //declaring a new log text
+		'<div class="section">'+loc("Kaizo cookies")+'</div>'+
+
 		'<div class="selectable">'+
-		'<div class="section">'+loc("Mod Credits")+'</div>'+
-		'<div class="subsection">'+
-		'<div class="title">Programmers</div>'+
-		'<div class="listing">CursedSliver</div>'+'<div style="display:blockvertical-align:middle;position:relative;left:97px;top:-18px;width:48px;height:48px;background:url(\''+kaizoCookies.images.cursed+'\');margin:-16px;transform:scale(0.5);"></div>'+
-		'<div class="listing">Omar uvu</div>'+tinyIcon([8,1,kaizoCookies.images.custImg],"position:relative;left:80px;top:-20px;")+
+			'<div class="listing">'+loc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game more active. The mod is currently not complete, with content ending at the decillions range.')+'</div>'+
+			'<div class="listing block" style="margin:8px 32px;font-size:11px;line-height:110%;color:rgb(255, 200, 200);background:rgba(255, 179, 128, 0.15);">'+
+				loc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:')+
+				'<br><br>&bull; '+loc('join our <a href="%1" target="_blank" class="highlightHover smallWhiteButton">Discord server</a>! Any feedback is welcome!', 'https://discord.gg/pwhMxt5Ygw')+
+				'<br><br>&bull; '+loc('like, favorite, and (if you want) give an award to our steam workshop entry')+' (mod for steam currently not released)'+ //insert link to entry here
+				'<br><br>&bull; '+loc('share our mod with anyone who you think will like it!')+ //other monetization methods here; replace this bullet point
+			'</div>'+
 		'</div>'+
 
-        '<div class="subsection">'+
-		'<div class="title">Playtesters/QA</div>'+
-		'<div class="listing">hz</div>'+
-		'<div class="listing">Charlie</div>'+
-		'<div class="listing">Samyli "rip his hands"</div>'+
+		'<div class="subsection kaizoCreditsBox">'+
+			'<div class="kaizoCreditsTitle">Programmers</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox" style="font-size: 20px; padding-left: 32px;">'+'<div style="display:inline-block;width:48px;height:48px;background:url(\''+kaizoCookies.images.cursed+'\');margin:-16px;transform:scale(0.6) translateX(-24px);"></div>'+'CursedSliver</div>'+
+			'<div class="KCPersonBox" style="padding-left: 24px;">'+tinyIcon([8,1,kaizoCookies.images.custImg],"display: inline-block; transform: translateX(-12px) scale(0.6);")+'Omar uvu</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox">Helloperson <span class="noteSpan">(buffTimerFix dev)</span></div>'+
+			'<div class="KCPersonBox">xxfillex <span class="noteSpan">(P for Pause dev)</span></div>'+
 		'</div>'+
 
-
-        '<div class="subsection">'+
-		'<div class="title">Artwork</div>'+
-		'<div class="listing">Omar uvu</div>'+
-		'<div class="listing">CursedSliver</div>'+
-		'<div class="listing">Whisp</div>'+
+		'<div class="subsection kaizoCreditsBox">'+
+			'<div class="kaizoCreditsTitle">Artists</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox" style="font-size: 20px; padding-left: 32px;">'+tinyIcon([8,1,kaizoCookies.images.custImg],"display: inline-block; transform: translateX(-12px) scale(0.6);")+'Omar uvu</div>'+
+			'<div class="KCPersonBox" style="padding-left: 24px;">'+'<div style="display:inline-block;width:48px;height:48px;background:url(\''+kaizoCookies.images.cursed+'\');margin:-16px;transform:scale(0.6) translateX(-24px);"></div>'+'CursedSliver</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox">Whisp <span class="noteSpan">(helper)</span></div>'+
+			'<div class="KCPersonBox">Samyli <span class="noteSpan">(helper)</span></div>'+
 		'</div>'+
 
-		'<div class="subsection">'+
-		'<div class="title">Special Thanks</div>'+
-		'<div class="listing">Fififoop</div>'+
-		'<div class="listing">xxfillex (P for Pause)</div>'+
-		'<div class="listing">Helloperson (buffTimer)</div>'+
-		'<div class="listing">hz</div>'+
-		'<div class="listing">leoguy</div>'+
-		'<div class="listing">Retropaint</div>'+ //he will never be forgotten
-		'<div class="listing">Rubik</div>'+ 
-		'<div class="listing">Lookas</div>'+ 
-		'<div class="listing">Yeetdragon</div>'+
-		'</div></div>'+Game.updateLog.replace(); 
+        '<div class="subsection kaizoCreditsBox">'+
+			'<div class="kaizoCreditsTitle">Playtesters/QA</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox">Hellranger</div>'+
+			'<div class="KCPersonBox">Charlie</div>'+
+		'</div>'+
+
+		'<div class="subsection kaizoCreditsBox">'+
+			'<div class="kaizoCreditsTitle">Special Thanks</div>'+
+			'<div class="titleLine"></div>'+
+			'<div class="KCPersonBox">Fififoop</div>'+
+			'<div class="KCPersonBox">hz</div>'+
+			'<div class="KCPersonBox">Lookas</div>'+
+			'<div class="KCPersonBox">Dragoon</div>'+
+			'<div class="titleLine"></div>'+
+			'<div style="margin: 2px auto; font-variant: small-caps; font-family: \'Merriweather\', Georgia,serif; font-size: 13px; text-shadow:0px -2px 6px rgba(255,255,200,0.6),0px 1px 0px rgba(100,100,100,1),0px 2px 4px rgba(0,0,0,1); ">And of course, to everyone who gave us valuable advice and improvements!</div>'+
+		'</div>'+
+
+		'<div style="width: 100%; text-align: center; color: rgba(255, 255, 255, 0.01)">if only, if only... :heart:</div>'+ //fifi
+		
+		Game.updateLog; 
 		
 		/*=====================================================================================
         Minigames 
@@ -7605,7 +7635,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		Game.registerHook('reset', function() { decay.killAllPowerOrbs(); decay.resetPower(); });
 		decay.spawnPowerOrbs = function() {
-			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power <= decay.powerClickReqs[0] || !decay.powerUnlocked()) { return; }
+			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power < decay.powerClickReqs[0] || !decay.powerUnlocked()) { return; }
 
 			var inverseChance = 0.996;
 			if (Game.Has('Virtues')) { inverseChance = Math.pow(inverseChance, 2); }
@@ -7860,7 +7890,7 @@ Game.registerMod("Kaizo Cookies", {
 				str += '<div class="challengeNotice">Because a conditional challenge is currently ongoing, you cannot complete any other challenges.</div>';
 				str += '<div class="line"></div>';
 			}
-			str += '<div style="display: flex; margins: auto; justify-content: center; align-items: center;'+((Game.ascensionMode==42069?' margin-top: 8px;':''))+'">'
+			str += '<div style="display: flex; justify-content: center; align-items: center;'+((Game.ascensionMode==42069?' margin-top: 8px;':''))+'">'
 			str += '<div class="smallFancyButton framed challengeUtilityButton" '+Game.clickStr+'="decay.showCompletedChallenges=!decay.showCompletedChallenges;Game.UpdateMenu();">'+(decay.showCompletedChallenges?loc('Hide completed challenges'):loc('Show completed challenges'))+'</div>';
 			str += '<div class="smallFancyButton framed challengeUtilityButton" '+Game.clickStr+'="decay.showIncompleteChallenges=!decay.showIncompleteChallenges;Game.UpdateMenu();">'+(decay.showIncompleteChallenges?loc('Hide unfinished challenges'):loc('Show unfinished challenges'))+'</div>';
 			str += '</div><div class="line"></div>';
