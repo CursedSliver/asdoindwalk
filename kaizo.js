@@ -6852,8 +6852,8 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in allWrinklers) {
 				if (allWrinklers[i] == this) { continue; }
 				const specialMult = decay.getSpecialProtectMult.call(allWrinklers[i]);
-				for (let i = 0; i < 2 + Game.Has('Belphegor') + Game.Has('Beelzebub'); i++) {
-					if (!allWrinklers[i]?.dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
+				for (let ii = 0; ii < 2 + Game.Has('Belphegor') + Game.Has('Beelzebub'); ii++) {
+					if (allWrinklers[i] && !allWrinklers[i].dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.08; }
 				}
 				allWrinklers[i].hurt += 100;
