@@ -970,7 +970,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.timesExhausted = 0;
 		decay.timesExhaustedLocal = 0;
 		decay.exhaust = function() {
-			decay.exhaustion = decay.exhaustionBegin * decay.exhaustionBeginMult * (decay.timesExhaustedLocal < 1?0.5:1);
+			decay.exhaustion = decay.exhaustionBegin * decay.exhaustionBeginMult * (decay.timesExhaustedLocal < 1?0.5:1) * (Game.resets < 1?0.6:1);
 			decay.fatigue = 0;
 			Game.Notify(loc('Exhausted! (%1s)', Beautify(decay.exhaustion / Game.fps)), '', 0);
 			decay.timesExhausted++;
@@ -2719,7 +2719,8 @@ Game.registerMod("Kaizo Cookies", {
                 this.hurt += decay.wrinklerResistance * 45;
                 this.hpMax = decay.wrinklerHPFromSize(this.size);
                 this.hp = this.hpMax;
-                decay.spawnWrinklerbits(this, 3 + Math.floor(Math.random() * 3), 1);
+                if (!fromPC) { decay.spawnWrinklerbits(this, 3 + Math.floor(Math.random() * 3), 1); }
+				else { decay.spawnWrinklerbits(this, 5, 2.5, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc); }
             }
 		}
 		decay.getSpecialProtectMult = function() {
@@ -3812,6 +3813,8 @@ Game.registerMod("Kaizo Cookies", {
 				decay.utenglobeStorage[i].amount = 0;
 				decay.utenglobeStorage[i].setCap();
 			}
+			decay.shinyCondenserUnlocked = false;
+			decay.shinyCondenserUpgrades = 0;
 			if (decay.challengeStatus('powerClickWrinklers')) { decay.utenglobeStorage.soul.deposit(10000); }
 		}
 		decay.wipeUtenglobe = function() {
@@ -4887,11 +4890,6 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="title">Playtesters/QA</div>'+
 		'<div class="listing">hz</div>'+
 		'<div class="listing">Charlie</div>'+
-		'<div class="listing">Cookiemains</div>'+
-		'<div class="listing">Fififoop</div>'+
-		'<div class="listing">Trufflz</div>'+
-		'<div class="listing">Fishman</div>'+
-		'<div class="listing">Johnny Cena</div>'+
 		'<div class="listing">Samyli "rip his hands"</div>'+
 		'</div>'+
 
@@ -4905,6 +4903,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		'<div class="subsection">'+
 		'<div class="title">Special Thanks</div>'+
+		'<div class="listing">Fififoop</div>'+
 		'<div class="listing">xxfillex (P for Pause)</div>'+
 		'<div class="listing">Helloperson (buffTimer)</div>'+
 		'<div class="listing">hz</div>'+
@@ -6728,13 +6727,13 @@ Game.registerMod("Kaizo Cookies", {
 			keep: 100,
 			overtimeLimit: 1000,
 			overtimeEfficiency: 1,
-			power: 0.5,
+			power: 0.3,
 			decMult: 0.2
 		});
 		decay.powerClickHaltParameters = {
 			autoExpire: true,
 			halt: 1,
-			power: 0.5,
+			power: 0.7,
 			decMult: 0.2
 		}
 		decay.performPowerClick = function() {
@@ -6827,7 +6826,7 @@ Game.registerMod("Kaizo Cookies", {
 					if (!allWrinklers[i]?.dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.08; }
 				}
-				allWrinklers[i].hurt = Math.max(allWrinklers[i].hurt, 100);
+				allWrinklers[i].hurt += 100;
 			}
 
 			decay.spawnWrinklerbits(this, 16, 4, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
@@ -9789,7 +9788,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		strIn = str[24];
 		decay.setupCovenant();
-		if (isv(strIn) && strIn != 'NA') {
+		if (isv(strIn) && strIn != 'NA' && decay.covenantModes[strIn]) {
 			decay.covenantModes[strIn].upgrade.unlocked = 1;
 			decay.covenantModes[strIn].upgrade.bought = 0;
 			//console.log(strIn);
