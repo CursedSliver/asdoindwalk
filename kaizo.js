@@ -2363,7 +2363,7 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		Game.rebuildWrinklers(2);
 		decay.setWrinklerApproach = function() {
-			var base = 35 / Math.pow(Game.eff('wrinklerApproach'), 1.5); //the bigger the number here, the slower it approaches
+			var base = 45 / Math.pow(Game.eff('wrinklerApproach'), 1.5); //the bigger the number here, the slower it approaches
 			var mult = 1 + Game.auraMult("Dragon Guts");
 			if (Game.Has('Wrinklerspawn')) { mult *= 1.05; }
 			if (Game.hasGod) {
@@ -2373,7 +2373,7 @@ Game.registerMod("Kaizo Cookies", {
 				else if (godLvl == 3) { mult *= 1/0.9; }
 			}
 			if (decay.challengeStatus('buildingsAlternate')) { mult *= 1/0.9; }
-			return Math.min(Math.sqrt(Game.log10Cookies + 20), (Game.Has('Legacy')?10:3)) * 0.00125 * (1 / mult) + 1 / Math.max(5, base * mult / (Math.log(1 / Math.min(1, Math.pow(Math.max(decay.gen, decay.breakingPoint), decay.wrinklerApproachPow))) / Math.log(decay.wrinklerApproachFactor)));
+			return Math.min(Math.sqrt(Game.log10Cookies + 20), (Game.Has('Legacy')?10:3)) * 0.001 * (1 / mult) + 1 / Math.max(5, base * mult / (Math.log(1 / Math.min(1, Math.pow(Math.max(decay.gen, decay.breakingPoint), decay.wrinklerApproachPow))) / Math.log(decay.wrinklerApproachFactor)));
 		};
 		decay.wrinklerSpawnRateMap = { 
 			//all values below are log10 of cookie count
