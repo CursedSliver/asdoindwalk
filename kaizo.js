@@ -314,8 +314,8 @@ Game.registerMod("Kaizo Cookies", {
 			AddEvent(window,'keydown',function(e){
 				if (!PauseGame) { return; }
 				let hasTriggered = false;
-    			if (e.key.toLowerCase()=='c' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
-				if (e.key.toLowerCase()=='p' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
+    			if (e.key?.toLowerCase()=='c' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
+				if (e.key?.toLowerCase()=='p' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
 				
 				if (!hasTriggered) { return; }
 				kaizoCookies.togglePause();
@@ -388,7 +388,7 @@ Game.registerMod("Kaizo Cookies", {
 		});
 
 		//overriding notification so some really important notifs can last for any amount of time even with quick notes on
-		eval('Game.Notify='+Game.Notify.toString().replace('quick,noLog', 'quick,noLog,forceStay').replace('if (Game.prefs.notifs)', 'if (Game.prefs.notifs && (!forceStay))').replace('if (Game.popups) new Game.Note(title,desc,pic,quick);', 'if (Game.popups) var note = new Game.Note(title,desc,pic,quick);').replace('if (!noLog)', 'if (forceStay && quick > 1e6) { note.rainbow = true; Game.UpdateNotes(); } if (!noLog)'));
+		eval('Game.Notify='+Game.Notify.toString().replace('quick,noLog', 'quick,noLog,forceStay').replace('if (Game.prefs.notifs)', 'if (Game.prefs.notifs && (!forceStay))').replace('if (Game.popups) new Game.Note(title,desc,pic,quick);', 'if (Game.popups) var note = new Game.Note(title,desc,pic,quick);').replace('if (!noLog)', 'if (forceStay && quick > 1e6 && note) { note.rainbow = true; Game.UpdateNotes(); } if (!noLog)'));
 		injectCSS('.noteRainbow { border: 3px ridge white; animation: rainbowCycleBorder 8s infinite ease-in-out; }');
 		eval('Game.UpdateNotes='+Game.UpdateNotes.toString().replace(`me.desc!=''?'hasdesc':'nodesc')+'`, `me.desc!=''?'hasdesc':'nodesc')+(me.rainbow?' noteRainbow':'')+'`));
 
@@ -1421,13 +1421,14 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			accExtras: {
 				title: 'Acceleration on halting',
-				desc: 'To put simply, acceleration past x2 also increases decay gain like purity does, to reduced effects; you will need to combine more methods of decay-halting methods to properly halt decay past this point.',
+				desc: 'To put simply, acceleration past x1.5 also increases decay gain like purity does, to reduced effects; you will need to combine more methods of decay-halting methods to properly halt decay past this point.',
 				icon: [7, 0, kaizoCookies.images.custImg]
 			},
 			challenges: {
 				title: 'Decay challenges',
 				desc: 'The challenges in this mod doesn\'t just serve as changes in gameplay, they also sometimes teach you certain vital game mechanics! Because of this, some of the challenges can be a little puzzly; if you find yourself not knowing what to do, you can check the rewards of the challenges; the rewards will usually have something to do with the solution to the challenge.',
-				icon: [10, 12, kaizoCookies.images.custImg]
+				icon: [10, 12, kaizoCookies.images.custImg],
+				noPause: true
 			},
 			combos: {
 				title: 'Combos',
@@ -1437,12 +1438,12 @@ Game.registerMod("Kaizo Cookies", {
 			bombers: {
 				title: 'Bombers',
 				desc: 'What you just popped was a bomber wrinkler. Bombers move much faster with less health, and explodes very quickly upon reaching the big cookie, inflicting coagulated and cursed with reduced duration, and distorted for 30 seconds which continuously spawns <b>low-health</b> bombers. To progress further, you need to exploit this somehow...<br>(a tip: let them reach the cookie and explode once in a while)<br>(if you are not up for the puzzle or can\'t figure it out, go to the options menu and invoke the "Bomber hint" notification!)',
-				icon: 0
+				icon: [13, 1, kaizoCookies.images.custImg]
 			},
 			bomberHint: {
 				title: 'Bomber hint',
 				desc: 'Remember: bombers have <b>much less</b> health than normal but still drops wrinkler souls as normal. This fact, in combination of the Distorted effect they inflict upon exploding, makes them a very potent soul farming tool.',
-				icon: 0	
+				icon: [14, 1, kaizoCookies.images.custImg]
 			},
 			options: {
 				title: 'Options',
@@ -5907,8 +5908,8 @@ Game.registerMod("Kaizo Cookies", {
 		);
 		addLoc('%1 soul', ['%1 soul', '%1 souls']);
 		addLoc('%1 shiny soul', ['%1 shiny soul', '%1 shiny souls']);
-		Game.santaSoulReqs = [1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 7, 9, 12, 22]; //14 levels
-		Game.santaShinySoulReqs = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 4];
+		Game.santaSoulReqs = [1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 7, 9, 12, 20]; //14 levels
+		Game.santaShinySoulReqs = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 3];
 		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString()
 			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
 			.replace(`'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+loc("sacrifice %1",'<div'+(Game.cookies>moni?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(Math.pow(Game.santaLevel+1,Game.santaLevel+1)))+'</div>')+'</div>'+`, `'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+'<div'+((Game.cookies>moni&&decay.utenglobeStorage.soul.amount>=(Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls"))&&decay.utenglobeStorage.shinySoul.amount>=Game.santaShinySoulReqs[Game.santaLevel])?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(moni))+'<br>'+((Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls") > 0)?loc('%1 soul',LBeautify((Game.santaSoulReqs[Game.santaLevel] - Game.Has("Wrinkly balls")))):'')+(Game.santaShinySoulReqs[Game.santaLevel]>0?('<br>'+loc('%1 shiny soul',LBeautify(Game.santaShinySoulReqs[Game.santaLevel]))):'')+'</div></div>'+`)
@@ -7662,8 +7663,8 @@ Game.registerMod("Kaizo Cookies", {
         Challenge mode
         =======================================================================================*/
 
-		addLoc('Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that grows slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode.');
-		Game.ascensionModes[42069] = {name:'Unshackled decay',dname:loc("Unshackled decay"),desc:loc("Decay gains \"Acceleration\", which is an ever-increasing boost to decay propagation that grows slower with existing purity. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode."),icon:[23,14,kaizoCookies.images.custImg]};
+		addLoc('Decay gains \"Acceleration\", an ever-increasing boost to decay propagation. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode.');
+		Game.ascensionModes[42069] = {name:'Unshackled decay',dname:loc("Unshackled decay"),desc:loc("Decay gains \"Acceleration\", an ever-increasing boost to decay propagation. Past x1.5 acceleration, acceleration also starts boosting the amount of halting methods required to halt by the same amount / 1.5.<div class=\"line\"></div>Perform tasks in order to complete challenges and get rewards. You can find the list of challenges in the Stats menu during the challenge mode."),icon:[23,14,kaizoCookies.images.custImg]};
 
 		eval('Game.PickAscensionMode='+Game.PickAscensionMode.toString().replace(`background-position:'+(-icon[0]*48)+'px '+(-icon[1]*48)+'px;`, `'+writeIcon(icon)+'`));
 
@@ -7797,7 +7798,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (this.repeatable) { this.complete++; } else { this.complete = 1; }
 			decay.getCompletionCount();
 			if (!silent) { 
-				Game.Notify(loc('Challenge complete!'), loc('You completed challenge <b>%1</b>!', this.name), this.icon??([12, 6]), 20, false, true);
+				Game.Notify(loc('Challenge complete!'), loc('You completed challenge <b>%1</b>!', this.name), this.icon??([12, 6]), 1e10, false, true);
 			}
 			if (this.onCompletion) { this.onCompletion(); }
 			kaizoCookies.checkChallengeAchievs();
@@ -9063,12 +9064,12 @@ Game.registerMod("Kaizo Cookies", {
 				decay.offBrandFingers[i].order = 110 + 0.0001 * decay.offBrandFingers[i].id;
 			}
 
-			this.achievements.push(new Game.Upgrade('Vial of challenges', 'Unlocks <b>new challenges</b> for the <b>Unshackled decay</b> challenge mode.<br>This upgrade was unlocked after obtaining at least <b>'+Beautify(10000)+'</b> total prestige levels.<q>Quite concentrated, in fact.</q>', 1, [9, 0, kaizoCookies.images.custImg])); 
+			this.achievements.push(new Game.Upgrade('Vial of challenges', 'Unlocks <b>new challenges</b> for the <b>Unshackled decay</b> challenge mode.<br>This upgrade was unlocked after obtaining at least <b>'+Beautify(20000)+'</b> total prestige levels.<q>Quite concentrated, in fact.</q>', 1, [9, 0, kaizoCookies.images.custImg])); 
 			Game.last.pool = 'prestige';
 			Game.last.showIf = function() {
-				return Game.prestige > 10000;
+				return Game.prestige > 20000;
 			}
-			Game.last.parents = [Game.Upgrades['Persistent memory']];
+			Game.last.parents = [Game.Upgrades['Persistent memory']]
 			Game.PrestigeUpgrades.push(Game.last);
 			Game.last.posX = 218; Game.last.posY = -115;
 
