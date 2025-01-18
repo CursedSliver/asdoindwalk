@@ -493,7 +493,8 @@ Game.registerMod("Kaizo Cookies", {
 			typingDisplay: 1,
 			scrollWrinklers: 1,
 			touchpad: 0,
-			comp: 0
+			comp: 0,
+			powerClickShiftReverse: 0
 		}
 		Game.TCount = 0;
 
@@ -1559,6 +1560,8 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('<b>none.</b><br><small>(You can see and replay information snippets you\'ve collected throughout the game here. The first one occurs at 5,555 cookies baked this ascension.)</small>');
 		addLoc('Typing display');
 		addLoc('Shows your keyboard inputs in real time.');
+		addLoc('Shift to Power click');
+		addLoc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift');
 		addLoc('Competition mode');
 		addLoc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.');
 		injectCSS(`.block.infoSnippetBox { margin-top: 5px; text-align: center; }`);
@@ -1573,6 +1576,7 @@ Game.registerMod("Kaizo Cookies", {
 			str += decay.writePrefButton('RunTimer','RunTimerButton',loc("Show run timer")+' ON',loc("Show run timer")+' OFF', 'if (decay.prefs.RunTimer) { l(\'Timer\').style.display = \'\'; } else { l(\'Timer\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the run started stat.')+')</label><br>';
 			str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 			str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time.')+')</label><br>';
+			str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
 			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.')+')</label><br>';
 			str += '<div class="line"></div><b>Replay information snippets:</b><br><div class="block infoSnippetBox">';
 			var str2 = '';
@@ -6909,7 +6913,7 @@ Game.registerMod("Kaizo Cookies", {
 			return (decay.power >= decay.powerClickReqs[0]);
 		}
 		decay.powerClicksOn = function() {
-			return Game.hasBuff('Power surge') && !Game.keys[16];
+			return Game.hasBuff('Power surge') && ((!decay.prefs.powerClickShiftReverse && !Game.keys[16]) || (decay.prefs.powerClickShiftReverse && Game.keys[16]));
 		}
 		//no decay.powerClick here for simplicity
 		decay.tryUpdateTable = true;
