@@ -5065,12 +5065,12 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('Better luck next time...');
 			addLoc('Bending Power orbs to your will.');
 			addLoc('Those Power orbs are quite a headache...');
-			gp.spells['haggler\'s charm'].desc = loc('Summons a power orb if there aren\'t any currently present, and continuously attracts every present power orb to your mouse for the next %1 seconds.', 10);
-			gp.spells['haggler\'s charm'].failDesc = loc('Continuously heals and speeds up every present power orb for the next %1 seconds.', 20);
+			gp.spells['haggler\'s charm'].desc = loc('Summons a power orb if there aren\'t any currently present, and continuously attracts every present power orb to your mouse for the next %1 seconds.', 20);
+			gp.spells['haggler\'s charm'].failDesc = loc('Continuously heals and speeds up every present power orb for the next %1 seconds.', 30);
 			gp.spells['haggler\'s charm'].costMin = 15;
 			gp.spells['haggler\'s charm'].costPercent = 0.15;
-			eval(`gp.spells["haggler's charm"].win=`+gp.spells['haggler\'s charm'].win.toString().replace('loc("Upgrades are cheaper!")', 'loc("Come, power orbs! Come!")').replace("('haggler luck',60,2);", '("haggler luck",10,2); if (decay.powerOrbsN <= 0 && Game.Has("Twin Gates of Transcendence")) { new decay.powerOrb(); }'));
-			eval(`gp.spells["haggler's charm"].fail=`+gp.spells['haggler\'s charm'].fail.toString().replace('loc("Upgrades are pricier!")', 'loc("Better luck next time...")').replace('60*60,2);', '20,2);'));
+			eval(`gp.spells["haggler's charm"].win=`+gp.spells['haggler\'s charm'].win.toString().replace('loc("Upgrades are cheaper!")', 'loc("Come, power orbs! Come!")').replace("('haggler luck',60,2);", '("haggler luck",20,2); if (decay.powerOrbsN <= 0 && Game.Has("Twin Gates of Transcendence")) { new decay.powerOrb(); }'));
+			eval(`gp.spells["haggler's charm"].fail=`+gp.spells['haggler\'s charm'].fail.toString().replace('loc("Upgrades are pricier!")', 'loc("Better luck next time...")').replace('60*60,2);', '30,2);'));
 			eval(`Game.buffTypesByName['haggler luck'].func=`+Game.buffTypesByName['haggler luck'].func.toString().replace(`loc("All upgrades are %1% cheaper for %2!",[pow,Game.sayTime(time*Game.fps,-1)])`, `loc("Bending Power orbs to your will.")`));
 			eval(`Game.buffTypesByName['haggler misery'].func=`+Game.buffTypesByName['haggler misery'].func.toString().replace('loc("All upgrades are %1% pricier for %2!",[pow,Game.sayTime(time*Game.fps,-1)])', 'loc("Those Power orbs are quite a headache...")'));
 			//CBG win effect
@@ -6899,8 +6899,8 @@ Game.registerMod("Kaizo Cookies", {
 				AddEvent(bigCookie,'click',Game.ClickCookie);
 				AddEvent(bigCookie,'mousedown',function(event){if (decay.gameCan.click) { Game.BigCookieState=1; }if (Game.prefs.cookiesound) {Game.playCookieClickSound();}if (event) event.preventDefault();});
 				AddEvent(bigCookie,'mouseup',function(event){if (decay.gameCan.click) { Game.BigCookieState=2; }if (event) event.preventDefault();});
-				AddEvent(bigCookie,'mouseout',function(event){if (decay.gameCan.click) { Game.BigCookieState=0; Game.bigCookieHovered = false; }});
-				AddEvent(bigCookie,'mouseover',function(event){if (decay.gameCan.click) { Game.BigCookieState=2; Game.bigCookieHovered = true; }});
+				AddEvent(bigCookie,'mouseout',function(event){ Game.BigCookieState=0; Game.bigCookieHovered = false; });
+				AddEvent(bigCookie,'mouseover',function(event){ Game.BigCookieState=2; Game.bigCookieHovered = true; });
 			}
 		}
 		Game.bigCookieHovered = false;
@@ -6909,7 +6909,7 @@ Game.registerMod("Kaizo Cookies", {
 			return (decay.power >= decay.powerClickReqs[0]);
 		}
 		decay.powerClicksOn = function() {
-			return Game.hasBuff('Power surge');
+			return Game.hasBuff('Power surge') && !Game.keys[16];
 		}
 		//no decay.powerClick here for simplicity
 		decay.tryUpdateTable = true;
@@ -6968,7 +6968,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("else mult*=Game.eff('wrathCookieGain');","else mult*=Game.eff('wrathCookieGain'); if (powerClick) { effectDurMod*=decay.PCOnGCDuration; mult*=decay.PCOnGCDuration*50; } "));		
 	
-		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>40%</b> more power. You start with a maximum storage capacity of <b>1</b> power click.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds; you can damage them by tapping the spacebar while hovering over them. <br>&bull; Power orbs fall when you click the big cookie with at least 1 power click worth of power stored. <br>&bull; Power clicks can be used on wrinklers to <b>instantly obliterate</b> the wrinkler clicked, and releases <b>two</b> consecutive shockwaves that each deal <b>massive damage</b> to <b>all wrinklers</b>, each shockwave destroying up to one layer.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
+		replaceDesc('Twin Gates of Transcendence', 'Unlocks <b>power clicks</b>. You now <b>build up power</b> by claiming wrinkler souls, which condense into power clicks. Each stored power click makes the next one take <b>40%</b> more power. You start with a maximum storage capacity of <b>1</b> power click.<line></line><br>&bull; to use power clicks, break open power orbs that occasionally fall from the sky to enable power clicks for 5 seconds; you can damage them by tapping the spacebar while hovering over them. <br>&bull; Power orbs fall when you click the big cookie with at least 1 power click worth of power stored. <br>&bull; Power clicks can be used on wrinklers to <b>instantly obliterate</b> the wrinkler clicked, and releases <b>two</b> consecutive shockwaves that each deal <b>massive damage</b> to <b>all wrinklers</b>, each shockwave destroying up to one layer.<br>&bull; you can do normal clicks while power clicks are enabled by holding down shift.<q>There\'s plenty of knowledgeable people up here, and you\'ve been given some excellent pointers.</q>');
 		//Game.Upgrades['Twin Gates of Transcendence'].dname="Power clicks"; moved to after upgrade localization
 		addLoc('Power clicks');
 		addLoc('This is your power gauge, representing the amount of power clicks you have as well as the amount of power you will need to get to your next power click. <br>For more information, refer to the Power clicks heavenly upgrade.');
