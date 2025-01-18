@@ -256,7 +256,7 @@ Game.registerMod("Kaizo Cookies", {
 		l('support').style.display = 'none';
 
 		this.images = {
-			custImg: kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':"https://raw.githack.com/CursedSliver/asdoindwalk/main/modicons.png"),
+			custImg: window.kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':"https://raw.githack.com/CursedSliver/asdoindwalk/main/modicons.png"),
 			bigGolden: App?this.dir+'/bigGoldenCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/bigGoldenCookie.png',
 			bigWrath: App?this.dir+'/bigWrathCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/bigWrathCookie.png',
 			classic: App?this.dir+'/classicCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/classicCookie.png',
@@ -388,7 +388,9 @@ Game.registerMod("Kaizo Cookies", {
 		});
 
 		//overriding notification so some really important notifs can last for any amount of time even with quick notes on
-		eval('Game.Notify='+Game.Notify.toString().replace('quick,noLog', 'quick,noLog,forceStay').replace('if (Game.prefs.notifs)', 'if (Game.prefs.notifs && (!forceStay))'));
+		eval('Game.Notify='+Game.Notify.toString().replace('quick,noLog', 'quick,noLog,forceStay').replace('if (Game.prefs.notifs)', 'if (Game.prefs.notifs && (!forceStay))').replace('if (Game.popups) new Game.Note(title,desc,pic,quick);', 'if (Game.popups) var note = new Game.Note(title,desc,pic,quick);').replace('if (!noLog)', 'if (forceStay && quick > 1e6) { note.rainbow = true; Game.UpdateNotes(); } if (!noLog)'));
+		injectCSS('.noteRainbow { border: 3px ridge white; animation: rainbowCycleBorder 8s infinite ease-in-out; }');
+		eval('Game.UpdateNotes='+Game.UpdateNotes.toString().replace(`me.desc!=''?'hasdesc':'nodesc')+'`, `me.desc!=''?'hasdesc':'nodesc')+(me.rainbow?' noteRainbow':'')+'`));
 
 		/*=====================================================================================
         Decay
@@ -634,7 +636,7 @@ Game.registerMod("Kaizo Cookies", {
 				else if (godLvl == 2) { tickSpeed *= 0.8; }
 				else if (godLvl == 3) { tickSpeed *= 0.9; }
 			}
-			if (decay.covenantStatus('wrathBan')) { tickSpeed *= 0.8; }
+			if (decay.covenantStatus('wrathBan') && decay.gen <= 1) { tickSpeed *= 0.8; }
 			if (Game.hasBuff('Storm of creation').arg1) { tickSpeed *= 1 - Game.hasBuff('Storm of creation').arg1; }
 			if (Game.hasBuff('Unending flow').arg1) { tickSpeed *= 1 - Game.hasBuff('Unending flow').arg1; }
 			if (Game.hasBuff('Stagnant body').arg1) { tickSpeed *= 1 + Game.hasBuff('Stagnant body').arg1; }
@@ -670,7 +672,6 @@ Game.registerMod("Kaizo Cookies", {
 				else if (godLvl == 3) { tickSpeed *= 0.9; }
 			}
 			if (Game.hasBuff('Devastation').arg2 && !decay.isConditional('godz')) { tickSpeed *= Game.hasBuff('Devastation').arg2; }
-			if (decay.covenantStatus('wrathBan')) { tickSpeed *= 0.8; }
 			//tickSpeed *= Math.pow(2, Math.max(0, Game.gcBuffCount() - 1));
 			if (Game.hasBuff('Storm of creation').arg1) { tickSpeed *= 1 - Game.hasBuff('Storm of creation').arg1; }
 			if (Game.hasBuff('Unending flow').arg1) { tickSpeed *= 1 - Game.hasBuff('Unending flow').arg1; }
@@ -3085,7 +3086,8 @@ Game.registerMod("Kaizo Cookies", {
 			if (me.shiny) { stopMult *= 3; }
 			if (decay.exhaustion && Game.Has('Elder spice')) { stopMult *= 1.15; }
 			if (Game.Has('Santaic zoom')) { stopMult *= 1 + Math.max(Game.santaLevel - 7, 0) * 0.03; }
-			decay.stop(3 * stopMult, (me.shiny?'wSoulShiny':'wSoul')); 
+			decay.stop(3 * stopMult, 'wSoul'); 
+			if (me.shiny) { decay.stop(3 * stopMult, 'wSoulShiny'); }
 			decay.gainPower(10 * ((me.shiny)?3:1) * (decay.isConditional('powerClickWrinklers')?4.5:1));
 			decay.createSoulClaimAura(me);
 			decay.times.sinceSoulClaim = 0;
@@ -3326,7 +3328,7 @@ Game.registerMod("Kaizo Cookies", {
 			let soulAmount = 1;
 			if (Game.Has('Sacrilegious corruption')) { soulAmount *= 1.1; }
 			if (decay.isConditional('powerClickWrinklers')) { soulAmount *= 0.5; }
-			if (decay.covenantStatus('wrathTrap')) { soulAmount *= 0.8; }
+			if (decay.covenantStatus('wrathTrap')) { soulAmount *= 0.75; }
 			for (let i = 0; i < randomFloor(soulAmount); i++) {
 				decay.spawnWrinklerSoul(this.x, this.y, this.shiny, ((5 + i) * (this.shiny?0.5:1)) / Game.fps, (Math.random() - 0.5) * (6 + i * 3));
 			}
@@ -3510,12 +3512,12 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Click to release one, or shift-click to release all at once.');
 		addLoc('Fuse: %1'); addLoc('(click to discharge!)'); addLoc('Decay is shattered!'); addLoc('(recovery: %1%)'); 
 		addLoc('Toggle this on to have released souls autonomously fly into the big cookie. (green = on)');
-		addLoc('Click this to trade <b>10</b> normal wrinkler souls in your storage for <b>1</b> shiny wrinkler soul.');
+		addLoc('Click this to trade <b>%1</b> normal wrinkler souls in your storage for <b>%2</b> shiny wrinkler soul.');
 		addLoc('<b>Cannot use</b> (not enough normal souls!)');
 		decay.utenglobeAutoClaim = true;
 		decay.utenglobeAutoClaimTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+loc('Toggle this on to have released souls autonomously fly into the big cookie. (green = on)')+'</div>'; }
 		decay.shinyCondenserUnlocked = false;
-		decay.utenglobeShinyCondenserTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+(decay.utenglobeStorage.soul.amount<10?loc('<b>Cannot use</b> (not enough normal souls!)')+'<div class="line"></div>':'')+loc('Click this to trade <b>10</b> normal wrinkler souls in your storage for <b>1</b> shiny wrinkler soul.')+'</div>'; }
+		decay.utenglobeShinyCondenserTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+(decay.utenglobeStorage.soul.amount<8?loc('<b>Cannot use</b> (not enough normal souls!)')+'<div class="line"></div>':'')+loc('Click this to trade <b>%1</b> normal wrinkler souls in your storage for <b>%2</b> shiny wrinkler soul.', [8, 1])+'</div>'; }
 		decay.utenglobeTab = 0;
 		decay.allUtenglobeTabs = [
 			{ 
@@ -3529,7 +3531,7 @@ Game.registerMod("Kaizo Cookies", {
 					str += '<svg version="1.1" viewBox="0.0 0.0 480.0 480.0" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><clipPath id="p.0"><path d="m0 0l480.0 0l0 480.0l-480.0 0l0 -480.0z" clip-rule="nonzero"/></clipPath><g clip-path="url(#p.0)"><path fill="#000000" fill-opacity="0.0" d="m0 0l480.0 0l0 480.0l-480.0 0z" fill-rule="evenodd"/><path fill="#ffffff" d="m74.247475 43.05654l111.02363 111.02363l40.65628 -40.65629l0 113.00788l-113.00788 0l40.656273 -40.65628l-111.02362 -111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m74.247475 43.05654l111.02363 111.02363l40.65628 -40.65629l0 113.00788l-113.00788 0l40.656273 -40.65628l-111.02362 -111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m405.75238 43.05654l-111.02362 111.02363l-40.656265 -40.65629l0 113.00788l113.00789 0l-40.65628 -40.65628l111.02362 -111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m405.75238 43.05654l-111.02362 111.02363l-40.656265 -40.65629l0 113.00788l113.00789 0l-40.65628 -40.65628l111.02362 -111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m74.247475 436.94345l111.02363 -111.02362l40.65628 40.65628l0 -113.00787l-113.00788 0l40.656273 40.65628l-111.02362 111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m74.247475 436.94345l111.02363 -111.02362l40.65628 40.65628l0 -113.00787l-113.00788 0l40.656273 40.65628l-111.02362 111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m405.75238 436.94345l-111.02362 -111.02362l-40.656265 40.65628l0 -113.00787l113.00789 0l-40.65628 40.65628l111.02362 111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m405.75238 436.94345l-111.02362 -111.02362l-40.656265 40.65628l0 -113.00787l113.00789 0l-40.65628 40.65628l111.02362 111.02362z" fill-rule="evenodd"/></g></svg>';
 					str += '</div>';
 					if (decay.shinyCondenserUnlocked) {
-						str += '<div id="utenglobeShinyCondenserElement" class="option framed utenglobeShinyCondenser" '+Game.getDynamicTooltip('decay.utenglobeShinyCondenserTooltip', 'top', true)+Game.clickStr+'="decay.shinyConvert(10, 1);">';
+						str += '<div id="utenglobeShinyCondenserElement" class="option framed utenglobeShinyCondenser" '+Game.getDynamicTooltip('decay.utenglobeShinyCondenserTooltip', 'top', true)+Game.clickStr+'="decay.shinyConvert(8, 1);">';
 						str += '<svg version="1.1" viewBox="0.0 0.0 480.0 480.0" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><clipPath id="p.0"><path d="m0 0l480.0 0l0 480.0l-480.0 0l0 -480.0z" clip-rule="nonzero"/></clipPath><g clip-path="url(#p.0)"><path fill="#000000" fill-opacity="0.0" d="m0 0l480.0 0l0 480.0l-480.0 0z" fill-rule="evenodd"/><path fill="#000000" fill-opacity="0.0" d="m48.0 72.03208l211.32288 0l0 138.28006l98.47537 0l0 -54.295822l74.20175 83.98425l-74.20175 83.98425l0 -54.295807l-98.47537 0l0 138.28006l-211.32288 0z" fill-rule="evenodd"/><path stroke="#ffffff" stroke-width="24.0" stroke-linejoin="round" stroke-linecap="butt" d="m48.0 72.03208l211.32288 0l0 138.28006l98.47537 0l0 -54.295822l74.20175 83.98425l-74.20175 83.98425l0 -54.295807l-98.47537 0l0 138.28006l-211.32288 0z" fill-rule="evenodd"/><path fill="#ffffff" d="m82.62992 240.0l0 0c0 -70.8577 12.091835 -128.29921 27.007874 -128.29921l0 0c7.1629333 0 14.032494 13.517197 19.09745 37.577972c5.0649567 24.06076 7.910431 56.694168 7.910431 90.72124l0 0c0 70.8577 -12.091843 128.29922 -27.007881 128.29922l0 0c-7.1629333 0 -14.032494 -13.517212 -19.09745 -37.577972c-5.0649567 -24.060791 -7.9104233 -56.694183 -7.9104233 -90.72125z" fill-rule="evenodd"/><path stroke="#ffffff" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m82.62992 240.0l0 0c0 -70.8577 12.091835 -128.29921 27.007874 -128.29921l0 0c7.1629333 0 14.032494 13.517197 19.09745 37.577972c5.0649567 24.06076 7.910431 56.694168 7.910431 90.72124l0 0c0 70.8577 -12.091843 128.29922 -27.007881 128.29922l0 0c-7.1629333 0 -14.032494 -13.517212 -19.09745 -37.577972c-5.0649567 -24.060791 -7.9104233 -56.694183 -7.9104233 -90.72125z" fill-rule="evenodd"/><path fill="#ffffff" d="m162.77953 240.0l0 0c0 -60.716537 12.091843 -109.93701 27.007874 -109.93701l0 0c7.1629333 0 14.032501 11.582626 19.097458 32.199814c5.0649567 20.617188 7.9104156 48.580093 7.9104156 77.7372l0 0c0 60.716522 -12.091827 109.93701 -27.007874 109.93701l0 0c-7.1629333 0 -14.032486 -11.582611 -19.097443 -32.1998c-5.064972 -20.617188 -7.910431 -48.58011 -7.910431 -77.73721z" fill-rule="evenodd"/><path stroke="#ffffff" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m162.77953 240.0l0 0c0 -60.716537 12.091843 -109.93701 27.007874 -109.93701l0 0c7.1629333 0 14.032501 11.582626 19.097458 32.199814c5.0649567 20.617188 7.9104156 48.580093 7.9104156 77.7372l0 0c0 60.716522 -12.091827 109.93701 -27.007874 109.93701l0 0c-7.1629333 0 -14.032486 -11.582611 -19.097443 -32.1998c-5.064972 -20.617188 -7.910431 -48.58011 -7.910431 -77.73721z" fill-rule="evenodd"/></g></svg>';
 						str += '</div>';
 					}
@@ -4146,7 +4148,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (decay.nextModeIn <= 0) { Game.Lock('Elder Covenant [switching]'); Game.Lock(decay.covenantModes[decay.nextMode].upgrade.name); Game.Unlock(decay.covenantModes[decay.nextMode].upgrade.name); Game.Notify(loc('Covenant mode switched!'), loc('Your covenant mode is now: ')+'<b>'+loc(decay.covenantModes[decay.nextMode].upgrade.dname)+'</b>', [8, 9]); decay.nextMode = null; } 
 			}
 		}
-		decay.modeSwitchTime = 2 * Game.fps;
+		decay.modeSwitchTime = 1.5 * Game.fps;
 		decay.nextModeIn = 0;
 		let switchingCovenant = new Game.Upgrade('Elder Covenant [switching]', 'The Elder Covenant is preparing to switch modes...', 0, [8, 9]);
 		switchingCovenant.order = 15001;
@@ -4174,8 +4176,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.createCovenantModes = function() {
 			new decay.covenantMode('off', 'off', 'Switches between different modes, each one giving an unique bonus with an unique drawback.', decay.trueFunc);
 			//key is not updated for safety sake
-			new decay.covenantMode('wrathBan', 'holy', 'Decay rates <b>-20%</b>, but CpS <b>-25%</b>.<q>Blocks an outlet for decay using a portion of your production.</q>', decay.trueFunc);
-			new decay.covenantMode('wrathTrap', 'energized', 'Fatigue buildup <b>-25%</b>, but wrinklers have a <b>20%</b> chance to not drop any souls.<q>Motivates you to be faster, stronger, and better; but all this strength comes at the cost of dexterity, making you not always able to successfully extract the soul out of a wrinkler.</q>', decay.trueFunc);
+			new decay.covenantMode('wrathBan', 'holy', 'Decay rates <b>-20%</b> while having no purity, but CpS <b>-25%</b>.<q>Blocks an outlet for decay using a portion of your production.</q>', decay.trueFunc);
+			new decay.covenantMode('wrathTrap', 'energized', 'Fatigue buildup <b>-25%</b>, but wrinklers have a <b>25%</b> chance to not drop any souls.<q>Motivates you to be faster, stronger, and better; but all this strength comes at the cost of dexterity, making you not always able to successfully extract the soul out of a wrinkler.</q>', decay.trueFunc);
 			eval('Game.shimmerTypes.golden.missFunc='+Game.shimmerTypes.golden.missFunc.toString().replace('Game.missedGoldenClicks++;', `{ Game.missedGoldenClicks++; } if (me.wrathTrapBoosted && me.wrath && me.force == "") { Game.gainBuff("smited", 44, 0.2); Game.Popup('<div style="font-size:80%;">'+loc('Wrath cookie disappeared, cookie smited!')+'</div>', me.x, me.y); }`));
 			addLoc('Cookie production -%1 for %2!');
 			addLoc('Wrath cookie disappeared, cookie smited!');
@@ -5223,7 +5225,9 @@ Game.registerMod("Kaizo Cookies", {
 				costPercent: 0.25,
 				id: 10,
 				win: function() {
-					decay.halts['manifestSpring'].addChannel(new decay.haltChannel(decay.manifestSpringHaltParameters));
+					let h = new decay.haltChannel(decay.manifestSpringHaltParameters);
+					if (decay.halts['manifestSpring'].length) { h.halt += decay.halts['manifestSpring'].channels[decay.halts['manifestSpring'].length - 1].halt; }
+					decay.halts['manifestSpring'].addChannel(h);
 					Game.Popup('<div style="font-size:80%;">'+loc("The water shall flow!")+'</div>',Game.mouseX,Game.mouseY);
 				},
 				fail: function() {
@@ -9561,6 +9565,7 @@ Game.registerMod("Kaizo Cookies", {
 		if (Game.cookiesEarned + Game.cookiesReset < 1000) { kaizoWarning = false; }
 		allValues('init completion');
 
+		setTimeout(function() { if (!kaizoCookies.hasLoaded) { l('logButton').classList.add('hasUpdate'); } }, 500);
 		if (this.toLoad) { this.toLoad = false; this.applyLoad(this.loadStr); this.loadStr = ''; }
 	},
 	save: function(){
