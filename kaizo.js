@@ -2,7 +2,7 @@ var decay = {};
 var kaizoCookiesVer = 'v1.0';
 var kaizoCookies = null;
 
-var kaizoWarning = true;
+var kaizoWarning = false; //true;
 
 //integration
 if (typeof Cookieclysm === 'undefined') { window.Cookieclysm = null; }
@@ -220,11 +220,56 @@ Game.registerMod("Kaizo Cookies", {
 		if (typeof CrumbsEngineLoaded === 'undefined' || !CrumbsEngineLoaded) { 
 			Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://raw.githack.com/CursedSliver/Crumbs-engine/main/Crumbs.js'); 
 		}
-		const checkPrerequisites = function() {
-			if (typeof CrumbsEngineLoaded !== 'undefined' && CrumbsEngineLoaded) { kaizoCookies.header(); clearInterval(interval); }
+
+		//the cccem solution, fixes import corruption on mod load
+		if (!(typeof Game.Objects.Temple.minigame === "undefined")){Game.Objects.Temple.minigame.slot=[Game.Objects.Temple.minigame.slot[0],Game.Objects.Temple.minigame.slot[1],Game.Objects.Temple.minigame.slot[2]]};
+		this.loadWrapper = function() {
+			const checkPrerequisites = function() {
+				if (typeof CrumbsEngineLoaded !== 'undefined' && CrumbsEngineLoaded) { kaizoCookies.header(); clearInterval(interval); }
+			}
+			const interval = setInterval(checkPrerequisites, 10);
 		}
-		const interval = setInterval(checkPrerequisites, 10);
+		this.saveFile = localStorage.getItem('kaizoCookiesSave');
+		let offendingMods = [];
+		for (let i in Game.mods) {
+			if (!this.exemptMods.includes(Game.mods[i].id)) { offendingMods.push(Game.mods[i].name); }
+		}
+		if (offendingMods.length) {
+			this.modWarn(offendingMods);
+		} else { 
+			this.callHeader();
+		}
 	},
+	callHeader: function() {
+		if (this.saveFile) {
+			Game.LoadSave(this.saveFile);
+			Game.SaveTo = 'kaizoCookiesSave';
+			this.loadWrapper();
+		} else {
+			Game.Prompt(`<id kaizoFirstLoadConfirmPrompt><noClose><h3>Before you start...</h3><div class="block">
+				Kaizo Cookies uses a different save slot than vanilla cookie clicker for your convenience. This means that:
+				<div class="line"></div>
+				Once you confirm this prompt, you will be placed into a <b>fresh save</b>, but your original save remains <b>untouched</b> and can be accessed at any time by simply <b>unloading</b> the mod.
+				<br><br>You can unload the mod by ${App?'removing the mod from your modlist and restarting the game':'simply reloading, and removing it from your mod list if you are using a mod manager'}
+				<br><br>Your Kaizo cookies save will <b>reappear</b> if the mod is loaded again on the same website, and this prompt will not appear again. Changing (or even wiping) the original save or the Kaizo cookies save have no effect on the other. 
+				<br><br>Because this is a content mod, you will <b>start again from scratch</b>, and your original progress <b>will not</b> carry into your new save. 
+				<br><br>While you may export and import your main save into the new save, doing so is <b>highly discouraged</b>, is <b>cheating</b>, and will likely <b>heavily break the game</b>.
+				<div class="line"></div>
+				Once you've read and understood the above, click <b>Let\'s go!</b> to start playing. Enjoy! 
+			</div>`, [['Let\'s go!', 'Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.ClosePrompt(); Game.HardReset(2);'], ['Nevermind', 'Game.ClosePrompt();']], 0, 'widePrompt');
+		}
+	},
+	modWarn: function(modList) {
+		Game.Prompt(`<id kaizoModConflictPrompt><noClose><h3>Hold it!</h3><div class="block">
+			Mod loading has been stopped due to the presence of other mods, which may have <b>unintended consequences</b> when combined with Kaizo cookies, potentially leading to <b>save corruption</b> and a myriad of other issues. 
+			<br><br>We recommend that you <b>unload</b> all unnecessary mods before loading Kaizo cookies${App?', which includes all mods that aren\'t a prerequisite as listed on the Steam workshop page':''}. You can unload mods by ${App?'removing the mod from your modlist and restarting the game':'simply reloading, and removing it from your mod list if you are using a mod manager'}.
+			<br><br>Close the game ASAP and remove other mods before loading Kaizo cookies again. However, if you really insist, you may continue loading Kaizo cookies anyways with the "I know what I'm doing!" button below, but we will not be responsible for any issues that arised from such mod conflicts.
+			<br><br>If you are a mod creator, you can have your mod be approved if it works well with Kaizo cookies, making having your mod loaded no longer trigger this prompt.
+			</div><div class="block">
+			<b>Potentially offending mods:</b> ${modList.join(', ')}
+		</div>`, [['Ok', 'Game.ClosePrompt();'], ['I know what I\'m doing!', 'Game.ClosePrompt(); kaizoCookies.callHeader();']], 0, 'widePrompt');
+	},
+	exemptMods: ['Kaizo Cookies', 'Crumbs engine', 'buffTimerFix', 'P for Pause'],
 	header: function() {
 		if (kaizoCookies.warn) { console.log('header reactivation attempted!'); return; }
 		preLoads();
@@ -245,11 +290,8 @@ Game.registerMod("Kaizo Cookies", {
 
 		eval('Game.Logic='+Game.Logic.toString().replace('Game.prefs.autosave)', 'Game.prefs.autosave && !kaizoWarning)').replace('Game.CanClick=1;', 'Game.CanClick=1; if (kaizoWarning && Game.T%15==0) { kaizoCookies.warn(); }'));
 		this.warn = function() {
-			Game.Notify('WARNING', 'We\'ve detected that you are loading this mod on a progressed save, which can lead to unknown issues and corrupted saves. Please IMMEDIATELY quit and <b>load this mod on a NEW SAVE</b>!', [1, 7], 1e21, 0, true);
+			//Game.Notify('WARNING', 'We\'ve detected that you are loading this mod on a progressed save, which can lead to unknown issues and corrupted saves. Please IMMEDIATELY quit and <b>load this mod on a NEW SAVE</b>!', [1, 7], 1e21, 0, true);
 		}
-
-		//the cccem solution, fixes import corruption on mod load
-		if (!(typeof Game.Objects.Temple.minigame === "undefined")){Game.Objects.Temple.minigame.slot=[Game.Objects.Temple.minigame.slot[0],Game.Objects.Temple.minigame.slot[1],Game.Objects.Temple.minigame.slot[2]]};
 
 		//no more ads (requested by fifi)
 		l('smallSupport').style.display = 'none';
@@ -739,11 +781,11 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.hasGod) {
 				var godLvl = Game.hasGod('creation');
 				if (godLvl == 1) {
-					Game.gainBuff('creation storm', 4, 0.48);
+					Game.gainBuff('creation storm', 9, 0.48);
 				} else if (godLvl == 2) {
-					Game.gainBuff('creation storm', 16, 0.24);
+					Game.gainBuff('creation storm', 27, 0.24);
 				} else if (godLvl == 3) {
-					Game.gainBuff('creation storm', 64, 0.12);
+					Game.gainBuff('creation storm', 81, 0.12);
 				}
 			}
 
@@ -3441,7 +3483,9 @@ Game.registerMod("Kaizo Cookies", {
 			`background:url('+pic+')`
 		).replace(`pic='santa.png?v='`, `pic=Game.resPath+'img/santa.png?v='`).replace(`pic='dragon.png?v='`, `pic=Game.resPath+'img/dragon.png?v='`)
 		.replace(`Game.ToggleSpecialMenu(0);">x</div>';`, `Game.ToggleSpecialMenu(0);">x</div>'; if (Game.specialTab == 'utenglobe') { str += decay.utenglobeOpen(); }`)
-		.replace(`l('specialPopup').className='framed prompt onScreen';`, `l('specialPopup').className='framed prompt onScreen'; if (l('fuseAmount')) { decay.fuseAmountEle = l('fuseAmount'); }`));
+		.replace(`l('specialPopup').className='framed prompt onScreen';`, `l('specialPopup').className='framed prompt onScreen'; if (l('fuseAmount')) { decay.fuseAmountEle = l('fuseAmount'); }`)
+		.replace(`if (on`, `if (on && !(!decay.gameCan.interactUtenglobe && Game.specialTab == 'utenglobe')`)
+		.replace(`if (Game.specialTab!=''`, `if (Game.specialTab!='' && !(!decay.gameCan.interactUtenglobe && Game.specialTab == 'utenglobe')`));
 		decay.getUtenglobeFrame = function() { return 0; }
 		decay.fuse = 0; //goes from 0 to 100, canonically a material
 		decay.fuseDischargePoint = 60;
@@ -3520,7 +3564,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.utenglobeAutoClaim = true;
 		decay.utenglobeAutoClaimTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+loc('Toggle this on to have released souls autonomously fly into the big cookie. (green = on)')+'</div>'; }
 		decay.shinyCondenserUnlocked = false;
-		decay.utenglobeShinyCondenserTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+(decay.utenglobeStorage.soul.amount<8?loc('<b>Cannot use</b> (not enough normal souls!)')+'<div class="line"></div>':'')+loc('Click this to trade <b>%1</b> normal wrinkler souls in your storage for <b>%2</b> shiny wrinkler soul.', [5, 1])+'</div>'; }
+		decay.utenglobeShinyCondenserTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+(decay.utenglobeStorage.soul.amount<5?loc('<b>Cannot use</b> (not enough normal souls!)')+'<div class="line"></div>':'')+loc('Click this to trade <b>%1</b> normal wrinkler souls in your storage for <b>%2</b> shiny wrinkler soul.', [5, 1])+'</div>'; }
 		decay.utenglobeTab = 0;
 		decay.allUtenglobeTabs = [
 			{ 
@@ -3530,7 +3574,7 @@ Game.registerMod("Kaizo Cookies", {
 					for (let i in decay.utenglobeStorage) {
 						str += decay.utenglobeStorage[i].getButton();
 					}
-					str += '<div id="utenglobeAutoClaimElement" class="option framed utenglobeAutoClaimToggle" '+Game.getDynamicTooltip('decay.utenglobeAutoClaimTooltip', 'top', true)+Game.clickStr+'="decay.utenglobeAutoClaim=!decay.utenglobeAutoClaim; l(\'utenglobeAutoClaimElement\').style.background=(decay.utenglobeAutoClaim?\'#1e3\':\'#000\')" style="background: '+(decay.utenglobeAutoClaim?'#1e3':'#000')+'">';
+					str += '<div id="utenglobeAutoClaimElement" class="option framed utenglobeAutoClaimToggle" '+Game.getDynamicTooltip('decay.utenglobeAutoClaimTooltip', 'top', true)+Game.clickStr+'="if (decay.gameCan.toggleAutoClaim) { decay.utenglobeAutoClaim=!decay.utenglobeAutoClaim; l(\'utenglobeAutoClaimElement\').style.background=(decay.utenglobeAutoClaim?\'#1e3\':\'#000\'); }" style="background: '+(decay.utenglobeAutoClaim?'#1e3':'#000')+'">';
 					str += '<svg version="1.1" viewBox="0.0 0.0 480.0 480.0" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><clipPath id="p.0"><path d="m0 0l480.0 0l0 480.0l-480.0 0l0 -480.0z" clip-rule="nonzero"/></clipPath><g clip-path="url(#p.0)"><path fill="#000000" fill-opacity="0.0" d="m0 0l480.0 0l0 480.0l-480.0 0z" fill-rule="evenodd"/><path fill="#ffffff" d="m74.247475 43.05654l111.02363 111.02363l40.65628 -40.65629l0 113.00788l-113.00788 0l40.656273 -40.65628l-111.02362 -111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m74.247475 43.05654l111.02363 111.02363l40.65628 -40.65629l0 113.00788l-113.00788 0l40.656273 -40.65628l-111.02362 -111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m405.75238 43.05654l-111.02362 111.02363l-40.656265 -40.65629l0 113.00788l113.00789 0l-40.65628 -40.65628l111.02362 -111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m405.75238 43.05654l-111.02362 111.02363l-40.656265 -40.65629l0 113.00788l113.00789 0l-40.65628 -40.65628l111.02362 -111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m74.247475 436.94345l111.02363 -111.02362l40.65628 40.65628l0 -113.00787l-113.00788 0l40.656273 40.65628l-111.02362 111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m74.247475 436.94345l111.02363 -111.02362l40.65628 40.65628l0 -113.00787l-113.00788 0l40.656273 40.65628l-111.02362 111.02362z" fill-rule="evenodd"/><path fill="#ffffff" d="m405.75238 436.94345l-111.02362 -111.02362l-40.656265 40.65628l0 -113.00787l113.00789 0l-40.65628 40.65628l111.02362 111.02362z" fill-rule="evenodd"/><path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m405.75238 436.94345l-111.02362 -111.02362l-40.656265 40.65628l0 -113.00787l113.00789 0l-40.65628 40.65628l111.02362 111.02362z" fill-rule="evenodd"/></g></svg>';
 					str += '</div>';
 					if (decay.shinyCondenserUnlocked) {
@@ -3627,7 +3671,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.updateUtenglobe = function() {
 			if (Game.specialTab != 'utenglobe') { return; } else { Game.ToggleSpecialMenu(1); }
 		}
- 		decay.utenglobeStorageItem = function(key, name, cap, icon, withdrawFunc, desc, capFunc, upgradeButtons) {
+ 		decay.utenglobeStorageItem = function(key, name, cap, icon, withdrawFunc, desc, capFunc, upgradeButtons, gameCanKey) {
 			this.key = key;
 			this.name = name;
 			this.cap = cap;
@@ -3637,6 +3681,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.desc = desc;
 			this.capFunc = capFunc;
 			this.upgradeButtons = upgradeButtons;
+			this.gameCanKey = gameCanKey;
 		}
 		addLoc('You can deposit this material by dragging an instance into the milk, and take out stored material by clicking on the button.');
 		decay.utenglobeStorageItem.prototype.getButton = function() {
@@ -3644,7 +3689,7 @@ Game.registerMod("Kaizo Cookies", {
 			return '<div class="materialContainer" '+Game.getTooltip('<div style="min-width:300px;text-align:center;font-size:11px;padding-top:4px;padding-bottom:4px;"><h3><b>' + this.name + '</b></h3><div class="line"></div>' + loc('You can deposit this material by dragging an instance into the milk, and take out stored material by clicking on the button.') + '<br><small>' + loc(this.desc) + '</small></div>', 'top', true)+'><div class="option framed large materialButton" '+Game.clickStr+'="decay.utenglobeStorage[\''+this.key+'\'].withdraw(Game.keys[16]);Game.ToggleSpecialMenu(1);"><div class="materialIcon" style="'+writeIcon(this.icon)+'"></div></div><div class="materialCountText">'+Beautify(this.amount)+' / '+Beautify(this.cap)+'</div></div>';
 		}
 		decay.utenglobeStorageItem.prototype.withdraw = function(all) {
-			if (kaizoCookies.paused) { return; }
+			if (!decay.gameCan[this.gameCanKey]) { return; }
 			if (all) {
 				for (let i = 0; i < this.amount; i++) {
 					this.withdrawFunc();
@@ -3695,14 +3740,14 @@ Game.registerMod("Kaizo Cookies", {
 		decay.utenglobeSoulCookieUpgradeCount = 0;
 		decay.ugSoulCookieUpgradeCostMap = [1e9, 1e10, 1e11, 1e12, 1e14, 1e17, 1e21, 1e26, 1e32, 1e39, 1e47, 1e56];
 		decay.tryBuyUtenglobeCookieUpgrade = function() {
-			if (decay.utenglobeSoulCookieUpgradeCount >= decay.ugSoulCookieUpgradeCostMap.length || Game.cookies < decay.ugSoulCookieUpgradeCostMap[decay.utenglobeSoulCookieUpgradeCount]) { return; }
+			if (decay.utenglobeSoulCookieUpgradeCount >= decay.ugSoulCookieUpgradeCostMap.length || Game.cookies < decay.ugSoulCookieUpgradeCostMap[decay.utenglobeSoulCookieUpgradeCount] || !decay.gameCan.upgradeUtenglobe) { return; }
 			Game.Spend(decay.ugSoulCookieUpgradeCostMap[decay.utenglobeSoulCookieUpgradeCount]);
 			decay.utenglobeSoulCookieUpgradeCount++;
 			decay.updateUtenglobe();
 		}
 		decay.shinyCondenserUpgrades = 0;
 		decay.shinyConvert = function(fromSoulAmount, toShinyAmount) {
-			if (decay.utenglobeStorage.soul.amount < fromSoulAmount) { return; }
+			if (decay.utenglobeStorage.soul.amount < fromSoulAmount || !decay.gameCan.condenseSouls) { return; }
 			decay.utenglobeStorage.soul.lose(fromSoulAmount);
 			for (let i = 0; i < toShinyAmount; i++) {
 				if (decay.utenglobeStorage.shinySoul.amount >= decay.utenglobeStorage.shinySoul.cap) {
@@ -3726,7 +3771,7 @@ Game.registerMod("Kaizo Cookies", {
 				const secondButtonCapped = '<div class="block capped">' + loc('Unlock achievements to raise maximum storage (Maxed out: <b>+%1</b>)', Beautify(10)) + '</div>';
 
 				return (decay.utenglobeSoulCookieUpgradeCount<12?firstButton:firstButtonCapped) + (Game.AchievementsOwned<590?secondButton:secondButtonCapped);
-			}),
+			}, 'releaseSouls'),
 			shinySoul: new decay.utenglobeStorageItem('shinySoul', 'Shiny wrinkler soul', 4, [10, 3, kaizoCookies.images.custImg], function() { 
 				const h = decay.spawnWrinklerSoul(Crumbs.getCanvasByScope('left').canvas.parentNode.offsetWidth / 2, Crumbs.getCanvasByScope('left').canvas.parentNode.offsetHeight * 0.9, 1, (0.15 + Math.random() * 0.05) * (decay.utenglobeAutoClaim?2:1), (Math.random() * 5 - 2.5) * (decay.utenglobeAutoClaim?2:1)); 
 				h.cookieAttract = decay.utenglobeAutoClaim;
@@ -3734,12 +3779,12 @@ Game.registerMod("Kaizo Cookies", {
 				return 4 + Math.min(Math.floor(Math.log2(decay.challengesCompleted + 1)), 4);
 			}, function() {
 				//implement upgrade later
-				const button = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e10) { Game.Spend(2e10); decay.shinyCondenserUnlocked = true; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul', Beautify(2e10)) + '</div>');
+				const button = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e10 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e10); decay.shinyCondenserUnlocked = true; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul', Beautify(2e10)) + '</div>');
 				const buttonCapped = '<div class="block capped">' + loc('Shiny condenser acquired') + '</div>';
 				const prompt = '<div class="block incomplete shinyColor">' + loc('Complete <b>%1</b> more unshackled decay challenges to raise maximum storage by <b>%2</b> (Currently: <b>+%3</b>)', [Beautify(Math.pow(2, Math.floor(Math.log2(decay.challengesCompleted + 1)) + 1) - 1 - decay.challengesCompleted), 1, Math.floor(Math.log2(decay.challengesCompleted + 1))]) + '</div>';
 				const promptCapped = '<div class="block capped">' + loc('Complete unshackled decay challenges to raise maximum storage (Maxed out: <b>+%1</b>)', Beautify(4)) + '</div>';
 				return (decay.shinyCondenserUnlocked?buttonCapped:button) + (decay.challengesCompleted<31?prompt:promptCapped);
-			})
+			}, 'releaseShinySouls')
 		}
 
 		decay.greatSouls = [];
@@ -3911,7 +3956,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (decay.offBrandFingers[i].bought) { offbrandAdd += 0.15; }
 			}
 			base *= offbrandAdd;
-			base *= Math.pow(1 / Game.log10Cookies, 0.2);
+			base *= 1 / (1 + Game.log10Cookies / 20);
 			if (Game.Has('Touch of nature') && Math.random()<0.01) { decay.purifyAll(1.05, 0, 100); }
 			//base *= 1 + Math.max(12 - Game.log10Cookies, 0) / 12;
 			if (decay.exhaustion > 0) { base *= 1 - Math.min(decay.times.sinceLastExhaustion / (Game.fps * 5), 1); }
@@ -4888,7 +4933,7 @@ Game.registerMod("Kaizo Cookies", {
         Credits
         =======================================================================================*/
 		addLoc('Kaizo cookies');
-		addLoc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game more active. The mod is currently not complete, with content ending at the decillions range.');
+		addLoc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the decillions range.');
 		addLoc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:');
 		addLoc('You can find a non-comprehensive changelog of the mod <a href="%1" target="_blank" class="highlightHover">here</a>, but we recommend against spoiling yourself with that information.');
 		addLoc('join our <a href="%1" target="_blank" class="highlightHover smallWhiteButton">Discord server</a>! Any feedback is welcome!');
@@ -4904,7 +4949,7 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="section">'+loc("Kaizo cookies")+'</div>'+
 
 		'<div class="selectable">'+
-			'<div class="listing">'+loc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game more active. The mod is currently not complete, with content ending at the decillions range.')+'</div>'+
+			'<div class="listing">'+loc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the decillions range.')+'</div>'+
 			'<div class="listing">'+loc('You can find a non-comprehensive changelog of the mod <a href="%1" target="_blank" class="highlightHover">here</a>, but we recommend against spoiling yourself with that information.', 'https://docs.google.com/document/d/1uicVSbhYwOjKJSPHEt7dpqKpriPGsWJeyZl1BVeltXA/edit?usp=sharing')+'</div>'+
 			'<div class="listing block" style="margin:8px 32px;font-size:11px;line-height:110%;color:rgb(255, 200, 200);background:rgba(255, 179, 128, 0.15);">'+
 				loc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:')+
@@ -4982,7 +5027,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.getCFChance = function() { 
 			if (Game.resets < 1) { return 0.25 * Math.pow(0.6, Game.gcBuffCount()); }
 			let chance = 0.75;
-			if (decay.challengeStatus('combo1')) { chance += (Game.hasAchiev('A wizard is you')?0.3:0.15); }
+			if (decay.challengeStatus('combo1')) { chance += (Game.HasAchiev('A wizard is you')?0.3:0.15); }
 			if (decay.challengeStatus('combo4')) { chance += 0.1; }
 			chance += decay.challengeStatus('allBuffStackR') * 0.02;
 			if (decay.isConditional('dualcast')) { chance += 2; }
@@ -5633,6 +5678,12 @@ Game.registerMod("Kaizo Cookies", {
 			temp.gods['ages'].desc2=loc("Effect cycles over %1 hours.",24);
 			temp.gods['ages'].desc3=loc("Effect cycles over %1 hours.",48);
 
+			addLoc('While this spirit is slotted, you cannot switch seasons.');
+			temp.gods['seasons'].desc1 = '<span class="green">'+loc("Large boost.")+'</span>';
+			temp.gods['seasons'].desc2 = '<span class="green">'+loc("Medium boost.")+'</span>';
+			temp.gods['seasons'].desc3 = '<span class="green">'+loc("Small boost.")+'</span>';
+			temp.gods['seasons'].descAfter = '<span class="red">'+loc("While this spirit is slotted, you cannot switch seasons.")+'</span>';
+
 			temp.gods['industry'].desc1='<span class="green">'+loc("Buildings produce %1% more.",20)+'</span> <span class="red">'+loc("Golden and wrath cookies appear %1% less.",6)+'</span>';
 			temp.gods['industry'].desc2='<span class="green">'+loc("Buildings produce %1% more.",14)+'</span> <span class="red">'+loc("Golden and wrath cookies appear %1% less.",4)+'</span>';
 			temp.gods['industry'].desc3='<span class="green">'+loc("Buildings produce %1% more.",8)+'</span> <span class="red">'+loc("Golden and wrath cookies appear %1% less.",2)+'</span>';
@@ -5648,9 +5699,9 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('-%1% decay for %2 seconds.');
 			addLoc('Purifying decay grants a buff that weakens decay propagation.');
 			temp.gods['creation'].descBefore='<span class="green">'+loc('Purifying decay grants a buff that weakens decay propagation.')+'</span>';
-			temp.gods['creation'].desc1='<span class="green">'+loc('-%1% decay for %2 seconds.', [48, 4])+'</span>';
-			temp.gods['creation'].desc2='<span class="green">'+loc('-%1% decay for %2 seconds.', [24, 16])+'</span>';
-			temp.gods['creation'].desc3='<span class="green">'+loc('-%1% decay for %2 seconds.', [12, 64])+'</span>';
+			temp.gods['creation'].desc1='<span class="green">'+loc('-%1% decay for %2 seconds.', [48, 9])+'</span>';
+			temp.gods['creation'].desc2='<span class="green">'+loc('-%1% decay for %2 seconds.', [24, 27])+'</span>';
+			temp.gods['creation'].desc3='<span class="green">'+loc('-%1% decay for %2 seconds.', [12, 81])+'</span>';
 
 			addLoc('Decay propagation rate -%1%.');
 			temp.gods['asceticism'].desc1='<span class="green">'+loc("+%1% base CpS.",15)+' '+loc('Decay propagation rate -%1%.', 30)+'</span>';
@@ -5907,6 +5958,18 @@ Game.registerMod("Kaizo Cookies", {
 			Game.AchievementsOwned = counter;
 			return counter;
 		}
+
+		let seasonSwitcherPriceFunc = function(){
+			if (Game.hasGod && Game.hasGod('seasons')) {
+				return 1e300; //Want to put Infinity here but afraid itll break the game somewhere
+			}
+			return Game.seasonTriggerBasePrice+Game.unbuffedCps*60*(Math.pow(1.5,Game.seasonUses) - 1);
+		}
+		Game.Upgrades['Festive biscuit'].priceFunc = seasonSwitcherPriceFunc;
+		Game.Upgrades['Ghostly biscuit'].priceFunc = seasonSwitcherPriceFunc;
+		Game.Upgrades['Lovesick biscuit'].priceFunc = seasonSwitcherPriceFunc;
+		Game.Upgrades['Fool\'s biscuit'].priceFunc = seasonSwitcherPriceFunc;
+		Game.Upgrades['Bunny biscuit'].priceFunc = seasonSwitcherPriceFunc;
 
 		//santa changes
 		eval('Game.UpgradeSanta='+Game.UpgradeSanta.toString()
@@ -6891,7 +6954,7 @@ Game.registerMod("Kaizo Cookies", {
 			.replace('else if (Game.BigCookieState==2) Game.BigCookieSizeT=1.05;', 'else if (Game.BigCookieState==2) Game.BigCookieSizeT=Math.pow(1.05, 1 + Math.pow(Math.max(1 - decay.times.sincePowerClick / Game.fps, 0), 0.33) * (decay.powerPokedStack?(6 + decay.powerPokedStack):0));')
 		);
 		decay.PCOnBigCookie = function() {
-			if (Game.hasBuff('Power surge') && Game.Has('Mammon') && decay.spendPowerClick()) { decay.performPowerClick(); return 10; }
+			if (decay.powerClicksOn() && Game.Has('Mammon') && decay.spendPowerClick()) { decay.performPowerClick(); return 10; }
 			return 1;
 		}
 		eval('Game.ClickCookie='+Game.ClickCookie.toString().replace(`var amount=amount?amount:Game.computedMouseCps;`, `var amount=amount?amount:Game.computedMouseCps; amount *= decay.PCOnBigCookie();`).replace(`(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50))`, `(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50) || !decay.gameCan.click)`));
@@ -8220,7 +8283,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.');
 		addLoc('<b>Halved</b> flavored cookie cost');
 		new decay.challenge('hc', loc('Bake <b>%1</b> with <b>no</b> normal upgrades <b>bought</b>.', loc('%1 cookie', Beautify(1e12))), function() { return Game.cookiesEarned >= 1e12; }, loc('<b>Halved</b> flavored cookie cost')+'<br>'+loc('Hardcore'), decay.challengeUnlockModules.vial, { prereq: 'combo1', onCompletion: function() { Game.Win('Hardcore'); } });
-		eval('Game.Upgrade.prototype.buy='+Game.Upgrade.prototype.buy.toString().replace('Game.Spend(price);', 'Game.Spend(price); decay.challenges.hc.makeCannotComplete();'))
+		eval('Game.Upgrade.prototype.buy='+Game.Upgrade.prototype.buy.toString().replace('Game.Spend(price);', 'Game.Spend(price); if (this.pool != "toggle") { decay.challenges.hc.makeCannotComplete(); }'))
 		
 		addLoc('Activate the Elder Pledge in the first <b>%1</b> of the run.');
 		addLoc('The Memory capsule upgrade becomes <b>free</b>');
@@ -8332,7 +8395,13 @@ Game.registerMod("Kaizo Cookies", {
 			buyBrokers: true, //doesnt work but its a pain to implement so whatever
 			takeLoans: true, //good
 			changeTickspeed: true, //good
-			refillMinigames: true //good
+			refillMinigames: true, //good
+			interactUtenglobe: true, //good
+			upgradeUtenglobe: true, //good
+			releaseSouls: true, //good
+			releaseShinySouls: true, //good
+			condenseSouls: true, //good
+			toggleAutoClaim: true
 		}
 		decay.copyGameCan = function() { 
 			for (let i in decay.gameCan) {
@@ -9669,7 +9738,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		Game.RebuildUpgrades();
 
-		if (Game.cookiesEarned + Game.cookiesReset < 1000) { kaizoWarning = false; }
+		//if (Game.cookiesEarned + Game.cookiesReset < 1000) { kaizoWarning = false; }
 		allValues('init completion');
 
 		setTimeout(function() { if (!kaizoCookies.hasLoaded) { l('logButton').classList.add('hasUpdate'); } }, 500);
