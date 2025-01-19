@@ -252,6 +252,7 @@ Game.registerMod("Kaizo Cookies", {
 				Once you confirm this prompt, you will be placed into a <b>fresh save</b>, but your original save remains <b>untouched</b> and can be accessed at any time by simply <b>unloading</b> the mod.
 				<br><br>You can unload the mod by ${App?'removing the mod from your modlist and restarting the game':'simply reloading, and removing it from your mod list if you are using a mod manager'}
 				<br><br>Your Kaizo cookies save will <b>reappear</b> if the mod is loaded again on the same website, and this prompt will not appear again. Changing (or even wiping) the original save or the Kaizo cookies save have no effect on the other. 
+				${App?'':'<br><br>If you wish to play on your Kaizo save while simultaneously having your main save open, you can open two tabs of your game, then loading the mod on one; or alternatively, you can use a different site to host your Kaizo cookies save, such as <a href="https://cookieclicker.eu/cookieclicker/" target="_blank" class="highlightHover">cookieclicker.eu</a> or <a href="https://cdn.dashnet.org/cookieclicker/" target="_blank" class="highlightHover">cdn.dashnet.org</a>.'}
 				<br><br>Because this is a content mod, you will <b>start again from scratch</b>, and your original progress <b>will not</b> carry into your new save. 
 				<br><br>While you may export and import your main save into the new save, doing so is <b>highly discouraged</b>, is <b>cheating</b>, and will likely <b>heavily break the game</b>.
 				<div class="line"></div>
@@ -9745,6 +9746,7 @@ Game.registerMod("Kaizo Cookies", {
 		if (this.toLoad) { this.toLoad = false; this.applyLoad(this.loadStr); this.loadStr = ''; }
 	},
 	save: function(){
+		if (Game.SaveTo != 'kaizoCookiesSave') { return 'DOINIT'; }
         let str = kaizoCookiesVer + '/';
         for(let i of kaizoCookies.achievements) {
           str+=i.unlocked; //using comma works like that in python but not js
@@ -9816,8 +9818,8 @@ Game.registerMod("Kaizo Cookies", {
 		this.loadStr = str;
 		this.toLoad = true;
 		kaizoWarning = false;
-		if (this.hasLoaded) { this.applyLoad(str); return; }
-		this.hasLoaded = true;
+		if (this.hasLoaded && str != 'DOINIT') { this.applyLoad(str); return; }
+		if (str != 'DOINIT') { this.hasLoaded = true; }
 	},
 	achievsToBackupSave: [],
 	saveBackupStats: function() {
