@@ -257,7 +257,7 @@ Game.registerMod("Kaizo Cookies", {
 				<br><br>While you may export and import your main save into the new save, doing so is <b>highly discouraged</b>, is <b>cheating</b>, and will likely <b>heavily break the game</b>.
 				<div class="line"></div>
 				Once you've read and understood the above, click <b>Let\'s go!</b> to start playing. Enjoy! 
-			</div>`, [['Let\'s go!', 'Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.ClosePrompt(); Game.HardReset(2);'], ['Nevermind', 'Game.ClosePrompt();']], 0, 'widePrompt');
+			</div>`, [['Let\'s go!', 'Game.HardReset(2); Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.ClosePrompt();'], ['Nevermind', 'Game.ClosePrompt();']], 0, 'widePrompt');
 		}
 	},
 	modWarn: function(modList) {
@@ -3939,6 +3939,9 @@ Game.registerMod("Kaizo Cookies", {
 				decay.purifyAll(2, 0.5, 3.5);
 				return;
 			}
+
+			if (obj.spawnLead && Game.ascensionMode == 42069 && !decay.challengeStatus("comboDragonCursor") && Game.clickMult > 1282 && Game.buffCount() <= 1 && !Game.Has("Santa\'s helpers") && Game.auraMult("Reaper of Fields") >= 0.5) { decay.challenges.comboDragonCursor.finish(); }
+
 			var strength = 5;
 			if (decay.challengeStatus('noGC1')) { strength *= 1.15; }
 			if (obj.wrath && obj.wrathTrapBoosted) { strength *= 1.5; }
@@ -7177,7 +7180,8 @@ Game.registerMod("Kaizo Cookies", {
 			100% { background: radial-gradient(circle, #ff1d87, #a071ff, #40b9ff, #15ff57, #ffed29, #ff5f2e); }
 		}`); doesnt work lmao s k u l l*/
 		decay.getPowerOrbHP = function() {
-			var base = 110;
+			var base = 45;
+			base *= 1 + Game.log10Cookies * 0.05;
 			if (decay.isConditional('power')) { base *= 1.5; }
 			return base;
 		}
@@ -7542,7 +7546,7 @@ Game.registerMod("Kaizo Cookies", {
 					vel.setPolar([Math.cos(this.t / 7) * 4 + 5, Math.sin(this.t / 11) * Math.PI]);
 					break;
 				case 'fleeing':
-					vel.add(new decay.vector(0, -this.times.sinceLastModeChange / 60));
+					vel.add(new decay.vector(0, Math.max(-this.times.sinceLastModeChange / Game.fps / 2, -2)));
 					if (this.y < 0 - 2 * aY) {
 						this.expire();
 					}
@@ -7684,7 +7688,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
-			me.hp -= 5 * (1 + Math.sqrt(Game.log10Cookies) / 5) * (Game.Has('Dominions')?1.5:1);
+			me.hp -= 8 * (Game.Has('Dominions')?1.5:1);
 			me.hp *= 0.9;
 			decay.stop(1.5, 'click');
 		}
@@ -8693,7 +8697,6 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('All dragon auras cost <b>50 less</b> buildings to unlock');
 		addLoc('Your dragon starts out hatched with the first aura unlocked');
 		new decay.challenge('comboDragonCursor', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)', [Beautify(1282)]), function(c) { if (Game.Has('Santa\'s helpers')) { c.makeCannotComplete(); } return false; }, loc('All dragon auras cost <b>50 less</b> buildings to unlock') + '<br>' + loc('Your dragon starts out hatched with the first aura unlocked'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
-		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace('Game.goldenClicks++;', 'Game.goldenClicks++; if (Game.ascensionMode == 42069 && !decay.challengeStatus("comboDragonCursor") && Game.clickMult > 1282 && Game.buffCount() <= 1 && !Game.Has("Santa\'s helpers") && Game.auraMult("Reaper of Fields") >= 0.5) { decay.challenges.comboDragonCursor.finish(); }'));
 		
 		addLoc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.');
 		addLoc('The Golden switch is <b>%1%</b> cheaper.');
