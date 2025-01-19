@@ -2997,7 +2997,7 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		decay.wSoulMovement = new Crumbs.behavior(function(p) {
 			if (Game.keys[65] && decay.prefs.touchpad && this.getComponent('pointerInteractive').hovered) { this.grabbed = true; }
-			if (!this.grabbed) { this.y -= p.dy * (1 / (1 + Math.min(this.inMilk / 50, 2))); }
+			if (!this.grabbed) { this.y -= p.dy * (this.inMilk?0.5:1); }
 			if (this.grabbed) {
 				if (!this.getComponent('pointerInteractive').click) { this.grabbed = false; }
 				p.dx += (Math.min(Game.mouseX, this.leftSection.offsetWidth) - this.x) * 0.2;
@@ -3009,12 +3009,13 @@ Game.registerMod("Kaizo Cookies", {
 				this.lastGrab = Crumbs.t;
 				this.recentlyWithdrawn = false;
 			} else {
-				p.dy += p.ddy;
+				p.dy += p.ddy * (this.inMilk?0.1:1);
 				p.dx += (this.cookieAttract?-7.5:1) * ((this.x < Game.cookieOriginX)?-1:1) * 10 / Math.sqrt((this.x - Game.cookieOriginX)**2 + (this.y - Game.cookieOriginY)**2 + 1) * (this.shiny?3:1);
-				this.x += p.dx * (1 / (1 + Math.min(this.inMilk / 50, 2)));
+				this.x += p.dx * (this.inMilk?0.5:1);
 				if (this.inMilk) { 
-					const divisor = (1 + Math.min(this.inMilk / 30, 1)); p.dx /= (1 + Math.min(this.inMilk / 30, 1));
-					p.dy /= divisor; p.dx /= divisor; 
+					const divisor = 1.15;
+					p.dy /= divisor; p.dx /= divisor;
+					p.dy -= 0.5 / Game.fps; p.dx -= 0.5 / Game.fps; 
 				}
 				p.dx *= 1 - (0.01);
 				p.dy *= 1 - (0.01);
