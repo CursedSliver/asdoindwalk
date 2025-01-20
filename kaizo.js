@@ -212,6 +212,7 @@ var pantheonUpdated = false;
 var stockUpdated = false;
 
 Game.registerMod("Kaizo Cookies", { 
+	name: 'Kaizo cookies',
 	init: function() {
 		if (kaizoCookies) { return; }
 		if (l('promptContentChangeLanguage')) { for (let i = 0; i < 30; i++) { Game.Notify('Please select a language before you load the mod!', '', 0); } }
@@ -289,7 +290,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.HowManyCookiesReset='+Game.HowManyCookiesReset.toString().replace('1000000000000', 'Game.firstHC'));
 		Game.HCfactor = 4;
 
-		eval('Game.Logic='+Game.Logic.toString().replace('Game.prefs.autosave)', 'Game.prefs.autosave && !kaizoWarning)').replace('Game.CanClick=1;', 'Game.CanClick=1; if (kaizoWarning && Game.T%15==0) { kaizoCookies.warn(); }'));
+		eval('Game.Logic='+Game.Logic.toString().replace('Game.CanClick=1;', 'Game.CanClick=1; if (kaizoWarning && Game.T%15==0) { kaizoCookies.warn(); }'));
 		this.warn = function() {
 			//Game.Notify('WARNING', 'We\'ve detected that you are loading this mod on a progressed save, which can lead to unknown issues and corrupted saves. Please IMMEDIATELY quit and <b>load this mod on a NEW SAVE</b>!', [1, 7], 1e21, 0, true);
 		}
@@ -297,6 +298,15 @@ Game.registerMod("Kaizo Cookies", {
 		//no more ads (requested by fifi)
 		l('smallSupport').style.display = 'none';
 		l('support').style.display = 'none';
+
+		eval('Game.bakeryNameRefresh='+Game.bakeryNameRefresh.toString().replaceAll('saysopensesame', 'saysclosesesame'));
+		if (!(Game.bakeryName.indexOf('saysclosesesame') > 0)) { 
+			//disable sesame to discourage cheating
+			//this is to incentivize new players to actually play the game instead of scanning the game for content and then losing enjoyment because theyve already seen it all
+			Game.sesame = 0;
+			if (l('debug')) { l('debug').style.display = 'none'; }
+			//maybe later have a warning pop up when importing a save without kaizo mod data
+		}
 
 		this.images = {
 			custImg: window.kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':"https://raw.githack.com/CursedSliver/asdoindwalk/main/modicons.png"),
@@ -2778,6 +2788,7 @@ Game.registerMod("Kaizo Cookies", {
 			return (this.shiny?0.5:1) * (this.bomber?2:1);
 		}
 		decay.onWrinklerClick = function() {
+			Game.playWrinklerSquishSound();
 			if (decay.powerClicksOn() && decay.spendPowerClick()) {
 				decay.performPowerWrinklerClick.call(this);
 				return; 
@@ -2789,6 +2800,7 @@ Game.registerMod("Kaizo Cookies", {
             this.die();
 			this.dead = true;
 			decay.wrinklersN--;
+			PlaySound('snd/pop'+Math.floor(Math.random()*3+1)+'.mp3',0.75);
 			if (this.bomber) { 
 				decay.bombersPopped++; 
 				decay.bombersPoppedLocal++;
@@ -3028,11 +3040,11 @@ Game.registerMod("Kaizo Cookies", {
 			if (Crumbs.t - this.t > 20 * Game.fps) { decay.triggerNotif('soulExpiry'); this.die(); }
 		}, { dy: 0, dx: 0, ddy: 10 / Game.fps });
 		decay.wSoulClaim = new Crumbs.behavior(function() {
-			if ((this.x - Game.cookieOriginX)**2 + (this.y - Game.cookieOriginY)**2 < 4096) { this.inAura += 1 + (this.dxExport*this.dxExport + this.dyExport*this.dyExport)*0.1; } 
+			if ((this.x - Game.cookieOriginX)**2 + (this.y - Game.cookieOriginY)**2 < 6400) { this.inAura += 1 + (this.dxExport*this.dxExport + this.dyExport*this.dyExport)*0.1; } 
 			else if (this.inAura == 0 || this.dxExport + this.dyExport < 20) { this.inAura = 0; }
 			else { this.inAura = 1000; }
 			this.alpha = 1 - this.inAura / (2 * Game.fps)
-			if (this.inAura > 2 * Game.fps) { decay.onWSoulClaim(this); this.die(); }
+			if (this.inAura > 2 * Game.fps) { decay.onWSoulClaim(this); if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } this.die(); }
 			this.alpha *= 1 - Math.max((Crumbs.t - this.t) / (20 * Game.fps) * 5 - 4, 0);
 		});
 		decay.wSoulDeposit = new Crumbs.behavior(function(p) {
@@ -3068,6 +3080,7 @@ Game.registerMod("Kaizo Cookies", {
 				function() { this.alpha = this.parent.alpha * 0.25; }
 			]
 		};
+		decay.grabbedObj = [];
 		decay.wrinklerSoulTemplate = {
 			id: 's',
 			scope: 'left',
@@ -3075,7 +3088,7 @@ Game.registerMod("Kaizo Cookies", {
 			height: 32,
 			leftSection: Crumbs.getCanvasByScope('left').canvas.parentNode,
 			order: 10,
-			components: [new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { this.grabbed = true; }, onRelease: function() { this.grabbed = false; } })],
+			components: [new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } })],
 			grabbed: false,
 			recentlyWithdrawn: true,
 			cookieAttract: false,
@@ -3179,6 +3192,34 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		addLoc('Reflective blessing!');
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*15`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, mult * Game.cookiesPs * 300 * (Game.resets>0?0.5:1)) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
+		Crumbs.spawn({
+			id: 'soulClaimIndicator',
+			width: 2 * 80,
+			height: 2 * 80,
+			behaviors: [Crumbs.objectBehaviors.centerOnBigCookie, new Crumbs.behaviorInstance(function(p) {
+				p.lastActive++;
+				p.lastClaiming++;
+				this.alpha = Math.max(1 - p.lastActive / (2 * Game.fps), 0);
+				//if (decay.grabbedObj.length) { this.noDraw = false; } else { this.noDraw = true; }
+				if (decay.grabbedObj.length) { p.lastActive = 0; }
+				this.rotation += Math.PI / 10 / Game.fps * Math.max(2.5 - 1.5 * p.lastClaiming / (3 * Game.fps), 1);
+				for (let i in decay.grabbedObj) {
+					if (decay.grabbedObj[i] && Crumbs.h.inOval(decay.grabbedObj[i].x - this.x, decay.grabbedObj[i].y - this.y, this.width / 2, this.height / 2, 0, 0, this.rotation)) { p.lastClaiming = 0; break; } 
+				}
+			}, { lastActive: 1000, lastClaiming: 10000 })],
+			components: new Crumbs.component.canvasManipulator({
+				function: function (m, ctx) {
+					//ctx.globalAlpha = m.alpha;
+					ctx.beginPath();
+					ctx.setLineDash([8, 5]); 
+					ctx.arc(0, 0, m.width / 2, 0, 2 * Math.PI);
+					ctx.strokeStyle = 'white';
+					ctx.lineWidth = 2; 
+					ctx.stroke();
+				}
+			}),
+			scope: 'left'
+		})
 		decay.soulClaimCount = 0;
 		decay.soulClaimCountLocal = 0;
 		decay.shinySoulClaimCount = 0;
@@ -3886,12 +3927,8 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		
 		decay.getBuffLoss = function() {
-			if (Game.auraMult('Epoch Manipulator')) {
-				if (decay.gen > 1) {
-					return 1 - Game.auraMult('Epoch Manipulator') * 0.5 * (2 - 1 / decay.gen);
-				} else {
-					return 1 / Math.pow(decay.gen, decay.buffDurPow);
-				}
+			if (Game.auraMult('Epoch Manipulator') && decay.gen > 1) {
+				return 1 - Game.auraMult('Epoch Manipulator') * 0.5 * (2 - 1 / decay.gen);
 			} 
 			return 1;
 		}
@@ -3942,7 +3979,7 @@ Game.registerMod("Kaizo Cookies", {
 				return;
 			}
 
-			if (obj.spawnLead && Game.ascensionMode == 42069 && !decay.challengeStatus("comboDragonCursor") && Game.clickMult > 1282 && Game.buffCount() <= 1 && !Game.Has("Santa\'s helpers") && Game.auraMult("Reaper of Fields") >= 0.5) { decay.challenges.comboDragonCursor.finish(); }
+			if (obj.spawnLead && Game.ascensionMode == 42069 && !decay.challengeStatus("comboDragonCursor") && Game.clickMult > 1282 && Game.buffCount() <= 1 && !Game.Has("Santa\'s helpers") && Game.eff('click') < 1.1 && Game.auraMult("Reaper of Fields") >= 0.5) { decay.challenges.comboDragonCursor.finish(); }
 
 			var strength = 5;
 			if (decay.challengeStatus('noGC1')) { strength *= 1.15; }
@@ -5849,6 +5886,7 @@ Game.registerMod("Kaizo Cookies", {
 			let list = [];
 			if (decay.challengeStatus('combo2')) { list.push('Lucky day'); }
 			if (decay.challengeStatus('comboDragonCursor')) { list.push('A crumbly egg'); }
+			if (decay.challengeStatus('sb4')) { list.push('Trigger fingers'); list.push('Non-euclidean baking trays') }
 
 			let newList = [];
 			for (let i in list) {
@@ -6171,10 +6209,8 @@ Game.registerMod("Kaizo Cookies", {
         =======================================================================================*/
 		Game.getAuraUnlockCost = function(building) {
 			let amount = 100 + building.id * 10;
-			if (Game.ascensionMode == 42069 && decay.challengeStatus('easterTutorial')) { amount -= 20; }
 			if (decay.challengeStatus('comboDragonCursor')) { amount -= 50; }
 			if (decay.isConditional('comboOrbs')) { return 2; }
-			if (decay.isConditional('easterTutorial')) { return 5; }
 
 			return Math.floor(amount);
 		}
@@ -7030,7 +7066,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.powerClicksOn() && Game.Has('Mammon') && decay.spendPowerClick()) { decay.performPowerClick(); return 10; }
 			return 1;
 		}
-		eval('Game.ClickCookie='+Game.ClickCookie.toString().replace(`var amount=amount?amount:Game.computedMouseCps;`, `var amount=amount?amount:Game.computedMouseCps; amount *= decay.PCOnBigCookie();`).replace(`(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50))`, `(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50) || !decay.gameCan.click)`));
+		eval('Game.ClickCookie='+Game.ClickCookie.toString().replace(`var amount=amount?amount:Game.computedMouseCps;`, `var amount=amount?amount:Game.computedMouseCps; amount *= decay.PCOnBigCookie();`).replace(`(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50))`, `(Game.OnAscend || Game.AscendTimer>0 || Game.T<3 || now-Game.lastClick<1000/((e?e.detail:1)===0?3:50) || !decay.gameCan.click || decay.grabbedObj.length)`));
 		Game.rebuildBigCookieButton = function() {
 			l('bigCookie').remove();
 			var bigCookie = document.createElement('button');
@@ -8760,10 +8796,10 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)');
 		addLoc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.');
 		new decay.challenge('combo4', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.', [Beautify(50000), Game.sayTime(10 * 60 * Game.fps)]) + '<br>' + loc('(note: there is no way to stack Click frenzy and Dragonflight in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return (Game.clickMult >= 50000); }, loc('Sacrificing the garden leaves the %1 seed in addition to Baker\'s Wheat.', 'Thumbcorn') + '<br>' + loc('Click frenzy from Force the Hand of Fate Grimoire spell base chance <b>%1</b> --> <b>%2</b>', ['90%', '100%']), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
-		addLoc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)');
+		addLoc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active, without Santa\'s helpers, and without help from the Garden. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)');
 		addLoc('All dragon auras cost <b>50 less</b> buildings to unlock');
 		addLoc('Your dragon starts out hatched with the first aura unlocked');
-		new decay.challenge('comboDragonCursor', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active and without Santa\'s helpers. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)', [Beautify(1282)]), function(c) { if (Game.Has('Santa\'s helpers')) { c.makeCannotComplete(); } return false; }, loc('All dragon auras cost <b>50 less</b> buildings to unlock') + '<br>' + loc('Your dragon starts out hatched with the first aura unlocked'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
+		new decay.challenge('comboDragonCursor', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active, without Santa\'s helpers, and without help from the Garden. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)', [Beautify(1282)]), function(c) { if (Game.Has('Santa\'s helpers')) { c.makeCannotComplete(); } return false; }, loc('All dragon auras cost <b>50 less</b> buildings to unlock') + '<br>' + loc('Your dragon starts out hatched with the first aura unlocked'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
 		
 		addLoc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.');
 		addLoc('The Golden switch is <b>%1%</b> cheaper.');
@@ -8777,14 +8813,9 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('three');
 		new decay.challenge('comboOrbs', loc('Each dragon aura only takes <b>%1</b> buildings each to unlock.', 2) + '<br>' + loc('Get at least <b>%1</b> Golden cookie effects active at the same time in the first <b>%2</b> of the run.', [loc('three'), Game.sayTime(10 * 60 * Game.fps)]), function() { if (Game.TCount >= 10 * 60 * Game.fps) { decay.forceAscend(); } return (Game.gcBuffCount() >= 3)}, loc('Chance to spawn a Golden cookie when selling with Dragon Orbs <b>%1%</b> --> <b>%2%</b>', [10, 25]), decay.challengeUnlockModules.box, { conditional: true, prereq: ['powerClickWrinklers'] });
 		
-		addLoc('Keepsake is disabled, and Easter eggs drop as if you always have the Hide & seek champion achievement.');
-		addLoc('Get at least <b>%1</b> Easter eggs in the first <b>%2</b> of the run.');
-		addLoc('While in Unshackled decay, all dragon auras require <b>half</b> as much buildings to unlock');
-		addLoc('While in Unshackled decay, all dragon auras require <b>%1</b> less buildings to unlock');
-		addLoc('Script writer code to bolster the chance of Cookie storms and Cookie chains from Golden cookies to be the same as Wrath cookies');
-		new decay.challenge('easterTutorial', loc('Keepsake is disabled, and Easter eggs drop as if you always have the Hide & seek champion achievement.') + ' ' + loc('Each dragon aura only takes <b>%1</b> buildings each to unlock.', 5) + '<br>' + loc('Get at least <b>%1</b> Easter eggs in the first <b>%2</b> of the run.', [19, Game.sayTime(10 * 60 * Game.fps)]), function() { if (Game.TCount >= 600 * Game.fps) { decay.forceAscend(); } let has = 0; for (let i of Game.easterEggs) { if (Game.Has(i)) { has++; } } return (has >= 19); }, loc('While in Unshackled decay, all dragon auras require <b>%1</b> less buildings to unlock', 20) + '<br>' + loc('Script writer code to bolster the chance of Cookie storms and Cookie chains from Golden cookies to be the same as Wrath cookies'), decay.challengeUnlockModules.box, { conditional: true, prereq: 'comboOrbs' });
-		eval('Game.DropEgg='+Game.DropEgg.toString().replace(`Game.HasAchiev('Hide & seek champion')`, `Game.HasAchiev('Hide & seek champion') || decay.isConditional('easterTutorial')`));
-		eval('Game.Reset='+Game.Reset.toString().replace(`Game.Has('Keepsakes')`, `Game.Has('Keepsakes') && !decay.isConditional('easterTutorial')`));
+		addLoc('You keep the Trigger fingers and Non-euclidean baking trays across ascensions.');
+		addLoc('Speed baking IV');
+		new decay.challenge('sb4', loc("Get to <b>%1</b> baked in <b>%2</b>.", [loc("%1 cookie", LBeautify(1e8)), Game.sayTime(2 * Game.fps)]), function(c) { if (Game.TCount >= 2 * Game.fps) { c.makeCannotComplete(); } return ( Game.cookiesEarned > 1e8); }, loc('You keep the Trigger fingers and Non-euclidean baking trays across ascensions.') + '<br>' + loc('Speed baking IV'), decay.challengeUnlockModules.box, { prereq: 'comboOrbs', onCompletion: function() { Game.Win('Speed baking IV'); } });
 
 		addLoc('Get a CpS multiplier from buffs of at least <b>x%1</b> and a direct click power multiplier of at least <b>x%2</b> simultaneously, in the first <b>%3</b> of the run');
 		new decay.challenge('godzSwap', loc('Get a CpS multiplier from buffs of at least <b>x%1</b> and a direct click power multiplier of at least <b>x%2</b> simultaneously, in the first <b>%3</b> of the run', [100, 5000, Game.sayTime(6 * 60 * Game.fps)]), function() { if (Game.TCount >= 360 * Game.fps) { decay.forceAscend(); } return (Game.buffCpsMult >= 100 && Game.clickMult >= 5000); }, loc('Script writer code to ascend and keep the current Pantheon setup'), decay.challengeUnlockModules.box, { order: 15.5, prereq: 'godz' });
@@ -9561,6 +9592,8 @@ Game.registerMod("Kaizo Cookies", {
 			this.upgrades.push(new Game.Achievement('Mass x velocity', 'Unlock <b>decay momentum</b>.'+willPurifyDecayStr, [2, 1, kaizoCookies.images.custImg])); Game.Achievements['Mass x velocity'].order = 7509;
 			this.upgrades.push(new Game.Achievement('Unnatural resistance', 'Unlock <b>decay</b>.', [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Unnatural resistance'].order = 7499;
 
+			this.upgrades.push(new Game.Achievement('Speed baking IV', loc("Get to <b>%1</b> baked in <b>%2</b>.",[loc("%1 cookie",LBeautify(1e8)),Game.sayTime(2*Game.fps)]),[12, 0, kaizoCookies.images.custImg])); Game.Achievements['Speed baking IV'].order = 11020;
+
 			this.checkChallengeAchievs = function() {
 				const completions = decay.challengesCompleted;
 				if (completions>=1) { Game.Win('First contact'); }
@@ -10122,6 +10155,10 @@ Game.registerMod("Kaizo Cookies", {
 		decay.assignThreshold();
 		Game.RebuildUpgrades();
 		if (Game.specialTab) { Game.ToggleSpecialMenu(1); }
+
+		if (Game.cookiesEarned > 5.555e33) { 
+			Game.Notify('Warning: content', 'This is a warning about the content desert that comes ahead. This mod currently only has content implemented up to decillions, so you will not encounter much new stuff beyond this point and progression will only become harder and harder.', [3, 2, kaizoCookies.images.custImg]);
+		}
 		allValues('load completion');
     }
 });
