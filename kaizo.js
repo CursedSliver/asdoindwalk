@@ -361,7 +361,8 @@ Game.registerMod("Kaizo Cookies", {
 				Game.LoadMod('./buffTimer.js');
 				//Game.LoadMod('./dethrottler.js');
 			} else {
-				Game.LoadMod(`https://glander.club/asjs/qdNgUW9y`); 
+				Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/PForPause.js');
+				//Game.LoadMod(`https://glander.club/asjs/qdNgUW9y`); 
 				Game.LoadMod('https://hellopir2.github.io/cc-mods/buffTimer.js');
 			}
 			Game.registerHook('logic', function() {
@@ -1251,6 +1252,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			decay.soulClaimCount = 0;
 			decay.shinySoulClaimCount = 0;
+			decay.bombersPopped = 0;
 			decay.wipeUtenglobe();
 
 			for (let i in decay.seFrees) { decay.seFrees[i] = 0; }
@@ -3158,6 +3160,7 @@ Game.registerMod("Kaizo Cookies", {
 			decay.times.sinceSoulClaim = 0;
 			Game.BigCookieState = 2;
 			decay.bounceBackIn = Math.floor(0.15 * (me.shiny?1.5:1) * Game.fps);
+			if (decay.indicator.behaviors && decay.indicator.behaviors[1]) { decay.indicator.behaviors[1].lastClaiming = 0; if (Math.random() < 0.2) { decay.indicator.behaviors[1].direction *= -1; } }
 			if (me.shiny) { 
 				decay.shinySoulClaimCount++;
 				decay.shinySoulClaimCountLocal++;
@@ -3195,21 +3198,21 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		addLoc('Reflective blessing!');
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*15`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, mult * Game.cookiesPs * 300 * (Game.resets>0?0.5:1)) + 13; Game.Earn(toEarn); Game.Popup(loc('Reflective blessing!')+'<br><div style="font-size: 80%;">' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div>', me.x, me.y); } else if (choice=='cookie storm drop')`));
-		Crumbs.spawn({
+		decay.indicator = Crumbs.spawn({
 			id: 'soulClaimIndicator',
-			width: 2 * 80,
-			height: 2 * 80,
+			width: 2 * 72,
+			height: 2 * 72, //intentionally slightly smaller than the actual claim range
 			behaviors: [Crumbs.objectBehaviors.centerOnBigCookie, new Crumbs.behaviorInstance(function(p) {
 				p.lastActive++;
 				p.lastClaiming++;
-				this.alpha = Math.max(1 - p.lastActive / (2 * Game.fps), 0);
+				this.alpha = Math.max(1 - p.lastActive / (1.5 * Game.fps), 0);
 				//if (decay.grabbedObj.length) { this.noDraw = false; } else { this.noDraw = true; }
 				if (decay.grabbedObj.length) { p.lastActive = 0; }
-				this.rotation += Math.PI / 10 / Game.fps * Math.max(2.5 - 1.5 * p.lastClaiming / (3 * Game.fps), 1);
+				this.rotation += p.direction * Math.PI / 10 / Game.fps * Math.max(4 - 3 * p.lastClaiming / (1 * Game.fps), 1);
 				for (let i in decay.grabbedObj) {
 					if (decay.grabbedObj[i] && Crumbs.h.inOval(decay.grabbedObj[i].x - this.x, decay.grabbedObj[i].y - this.y, this.width / 2, this.height / 2, 0, 0, this.rotation)) { p.lastClaiming = 0; break; } 
 				}
-			}, { lastActive: 1000, lastClaiming: 10000 })],
+			}, { lastActive: 1000, lastClaiming: 10000, direction: 1 })],
 			components: new Crumbs.component.canvasManipulator({
 				function: function (m, ctx) {
 					//ctx.globalAlpha = m.alpha;
@@ -5014,6 +5017,7 @@ Game.registerMod("Kaizo Cookies", {
 			'<div class="titleLine"></div>'+
 			'<div class="KCPersonBox">Helloperson <span class="noteSpan">(buffTimerFix dev)</span></div>'+
 			'<div class="KCPersonBox">xxfillex <span class="noteSpan">(P for Pause dev)</span></div>'+
+			'<div class="KCPersonBox">yeetdragon <span class="noteSpan">(Crumbs engine helper)</span></div>'+
 		'</div>'+
 
 		'<div class="subsection kaizoCreditsBox">'+
@@ -8976,7 +8980,7 @@ Game.registerMod("Kaizo Cookies", {
 			Game.PrestigeUpgrades.push(Game.Upgrades['Sparkling wonder']);
 			Game.last.posY=662; Game.last.posX=-622;
 			
-			this.achievements.push(new Game.Upgrade('Withering prices', 'Your upgrades are <b>0.1%</b> cheaper for every <b>x0.5</b> CpS multiplier from your decay.', 666, [3, 3, kaizoCookies.images.custImg])); Game.last.pool = 'prestige';
+			this.achievements.push(new Game.Upgrade('Withering prices', 'Your upgrades are <b>0.1%</b> cheaper for every <b>x0.5</b> CpS multiplier from your decay.<q>Oh my, oh my!</q>', 666, [3, 3, kaizoCookies.images.custImg])); Game.last.pool = 'prestige';
    			Game.Upgrades['Withering prices'].parents = [Game.Upgrades['Starter kit']];
 	  		Game.PrestigeUpgrades.push(Game.Upgrades['Withering prices']);
 	 		Game.last.posY = -300; Game.last.posX = -390;
