@@ -309,7 +309,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		this.images = {
-			custImg: window.kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':"https://raw.githack.com/CursedSliver/asdoindwalk/main/modicons.png"),
+			custImg: window.kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':'https://cursedsliver.github.io/asdoindwalk/modicons.png'),
 			bigGolden: App?this.dir+'/bigGoldenCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/bigGoldenCookie.png',
 			bigWrath: App?this.dir+'/bigWrathCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/bigWrathCookie.png',
 			classic: App?this.dir+'/classicCookie.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6ed030c47616e40f7af133b0fb97817cc29c34ad/classicCookie.png',
@@ -328,9 +328,12 @@ Game.registerMod("Kaizo Cookies", {
 			utenglobe: App?this.dir+'/utenglobe.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/327bd3214c776ebd316e19e1688864d554249fea/utenglobe.png',
 			glow: App?this.dir+'/glow.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/620c80bdd0f9c4251d0b26437cf04cbef6954bc9/glow.png',
 			bomberParticle: App?this.dir+'/randomParticle.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/17842198c79d3e563c290d1273cc75f74674caaf/randomParticle.png',
-			winterShinyWrinkler: App?this.dir+'/winterShinyWrinkler.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6469c8ad932601bf0962b778f7f4821dbd0aac28/winterShinyWrinkler.png',
-			winterShinyWinkler: App?this.dir+'/winterShinyWrinkler.png':'https://rawcdn.githack.com/CursedSliver/asdoindwalk/6469c8ad932601bf0962b778f7f4821dbd0aac28/winterShinyWinkler.png'
+			winterShinyWrinkler: App?this.dir+'/winterShinyWrinkler.png':'https://cursedsliver.github.io/asdoindwalk/winterShinyWrinkler.png',
+			winterShinyWinkler: App?this.dir+'/winterShinyWrinkler.png':'https://cursedsliver.github.io/asdoindwalk/winterShinyWinkler.png',
+			heavenRing1Png: App?this.dir+'/heavenRing1Modified.png':'https://cursedsliver.github.io/asdoindwalk/heavenRing1Modified.png',
+			heavenRing2Png: App?this.dir+'/heavenRing2Modified.png':'https://cursedsliver.github.io/asdoindwalk/heavenRing2Modified.png',
 		};
+		Crumbs.preload([this.images.powerGradientBlue, this.images.powerGradientRed, this.images.heavenRing1Png, this.images.heavenRing2Png]);
 		decay.timePlayed = 0; //amount of time (not frames uses deltatime) while game active
 		Game.registerHook('logic', function() { if (Game.deltaTime < 1000) { decay.timePlayed += Game.deltaTime; } });
 
@@ -1928,8 +1931,8 @@ Game.registerMod("Kaizo Cookies", {
 					this.scaleX = 0.2;
 					this.scaleY = 0.2;
 				} else {
-					this.scaleX = 0.05;
-					this.scaleY = 0.05;
+					this.scaleX = 0;
+					this.scaleY = 0;
 				}
 			}
 		});
@@ -1970,7 +1973,7 @@ Game.registerMod("Kaizo Cookies", {
 			dh *= Math.max(1 / d, decay.haltDecMin);
 			decay.decHalt = dh;
 
-			decay.workProgressMult = 1;
+			decay.workProgressMult = Math.pow(d, 2);
 			/*
 			decay.workProgressMult *= 1 + Math.pow(Game.log10Cookies, 0.25) / 6;
 			decay.workProgressMult *= 1 + Math.pow(Math.max(Game.log10Cookies - 18, 1), 0.5) / 12;
@@ -2693,7 +2696,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i = 0; i < amount; i++) { 
 				let w = Crumbs.wrinklerBit(decay.wrinklerBitSelection[(seed + i * 3)%8] + Crumbs.objects.left.length); //is this necessary?
 				if (obj.shiny) { w.imgs = 'shinyWrinklerBits.png'; }
-				w.behaviors = [new Crumbs.behaviorInstance(Crumbs.objectBehaviors.cookieFall, {yd: ydFunc?ydFunc():(Math.random()*-2-2)}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.horizontal, {speed: xdFunc?xdFunc():(Math.random()*4-2)}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.expireAfter, {t: speed * Game.fps}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.fadeout, {speed: 1 / (speed * Game.fps)})];
+				w.behaviors = [new Crumbs.behaviorInstance(Crumbs.objectBehaviors.cookieFall, {yd: ydFunc?ydFunc(speed):(Math.random()*-2-2)}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.horizontal, {speed: xdFunc?xdFunc(speed):(Math.random()*4-2)}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.expireAfter, {t: speed * Game.fps}), new Crumbs.behaviorInstance(Crumbs.objectBehaviors.fadeout, {speed: 1 / (speed * Game.fps)})];
 				w.x = obj.x;
 				w.y = obj.y;
 				w.rotation = obj.rotation;
@@ -2781,7 +2784,7 @@ Game.registerMod("Kaizo Cookies", {
                 this.hpMax = decay.wrinklerHPFromSize(this.size);
                 this.hp = this.hpMax;
                 if (!fromPC) { decay.spawnWrinklerbits(this, 3 + Math.floor(Math.random() * 3), 1); }
-				else { decay.spawnWrinklerbits(this, 5, 2.5, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc); }
+				else { decay.spawnWrinklerbits(this, 5, fromPC, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc); }
             }
 		}
 		decay.getSpecialProtectMult = function() {
@@ -2851,8 +2854,8 @@ Game.registerMod("Kaizo Cookies", {
                 aura: 2
             }
         });
-        decay.wrinklerExplosionBitsFunc = function() {
-            return (Math.round(Math.random()) * 2 - 1) * (Math.random() * 5 + 4);
+        decay.wrinklerExplosionBitsFunc = function(speed) {
+            return (Math.round(Math.random()) * 2 - 1) * (Math.random() * 2 + 1) * speed;
         }
         decay.wrinklerExplosion = function() { 
             this.sucked += Game.cookies * (this.bomber?0.05:0.25);
@@ -2869,7 +2872,7 @@ Game.registerMod("Kaizo Cookies", {
 				Game.Win('Way to soulflow');
 			}
 
-            decay.spawnWrinklerbits(this, 16, 4, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
+            decay.spawnWrinklerbits(this, 16, 3, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
 
 			this.getComponent('pointerInteractive').enabled = false;
 
@@ -3088,7 +3091,7 @@ Game.registerMod("Kaizo Cookies", {
 			height: 32,
 			leftSection: Crumbs.getCanvasByScope('left').canvas.parentNode,
 			order: 10,
-			components: [new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } })],
+			components: [new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length < 1) { this.grabbed = true; decay.grabbedObj.push(this); } }, onRelease: function() { this.grabbed = false; decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } })],
 			grabbed: false,
 			recentlyWithdrawn: true,
 			cookieAttract: false,
@@ -7043,13 +7046,14 @@ Game.registerMod("Kaizo Cookies", {
 				if (allWrinklers[i] == this) { continue; }
 				const specialMult = decay.getSpecialProtectMult.call(allWrinklers[i]);
 				for (let ii = 0; ii < 2 + Game.Has('Belphegor') + Game.Has('Beelzebub'); ii++) {
-					if (allWrinklers[i] && !allWrinklers[i].dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, true); }
+					if (allWrinklers[i] && !allWrinklers[i].dead) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, 2); }
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.08; }
 				}
 				allWrinklers[i].hurt += 100;
 			}
 
-			decay.spawnWrinklerbits(this, 16, 4, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
+			decay.spawnWrinklerbits(this, 8, 1.5, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
+			decay.spawnWrinklerbits(this, 8, 3, decay.wrinklerExplosionBitsFunc, decay.wrinklerExplosionBitsFunc);
 
 			return;
 		}
@@ -9594,6 +9598,13 @@ Game.registerMod("Kaizo Cookies", {
 
 			this.upgrades.push(new Game.Achievement('Speed baking IV', loc("Get to <b>%1</b> baked in <b>%2</b>.",[loc("%1 cookie",LBeautify(1e8)),Game.sayTime(2*Game.fps)]),[12, 0, kaizoCookies.images.custImg])); Game.Achievements['Speed baking IV'].order = 11020;
 
+			this.upgrades.push(new Game.Achievement('Fleshmangler', loc("Burst <b>%1 wrinklers</b>.", Beautify(500)), [19, 8])); Game.Achievements['Fleshmangler'].order = 21000.108;
+			this.upgrades.push(new Game.Achievement('Horrorsubduer', loc("Burst <b>%1 wrinklers</b>.", Beautify(1000)), [19, 8])); Game.Achievements['Horrorsubduer'].order = 21000.109;
+
+			addLoc('Burst <b>%1</b> bomber wrinklers.');
+			this.upgrades.push(new Game.Achievement('The red wire', loc('Burst <b>%1</b> bomber wrinklers.', Beautify(66)), [13, 1, kaizoCookies.images.custImg])); Game.Achievements['The red wire'].order = 21000.2631;
+			this.upgrades.push(new Game.Achievement('Innocence farmer', loc('Burst <b>%1</b> bomber wrinklers.', Beautify(6666)), [13, 1, kaizoCookies.images.custImg])); Game.Achievements['Innocence farmer'].order = 21000.2632;
+
 			this.checkChallengeAchievs = function() {
 				const completions = decay.challengesCompleted;
 				if (completions>=1) { Game.Win('First contact'); }
@@ -9704,6 +9715,12 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.wrinklersN >= 52) { Game.Win('Wrinkler poker'); }
 
 			if (decay.gen >= 13.34 && Game.cookiesMultByType['kittens'] >= 1.23e+12) { Game.Win('Calcium overflow'); }
+
+			if (Game.wrinklersPopped >= 500) { Game.Win('Fleshmangler'); }
+			if (Game.wrinklersPopped >= 1000) { Game.Win('Horrorsubduer'); }
+
+			if (decay.bombersPopped >= 66) { Game.Win('The red wire'); }
+			if (decay.bombersPopped >= 6666) { Game.Win('Innocence farmer'); }
 		}
 		Game.registerHook('check', this.checkUpgrades);
 
