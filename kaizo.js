@@ -547,7 +547,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (buildId == 20) {
 				return decay.getCpsDiffFromDecay();
 			}
-			var c = decay.mults[buildId];
+			let c = decay.mults[buildId];
 			if (Game.Has('Purification domes')) { tickSpeed *= decay.getBuildingSpecificTickspeed(buildId); }
     		c *= Math.pow(Math.pow(1 - (1 - Math.pow((1 - decay.incMult / Game.fps), Math.max(1 - c, decay.min))), (Math.max(1, Math.pow(c, decay.purityToDecayPow)))), tickSpeed * (1 - Math.min(decay.effectiveHalt / decay.requiredHalt, 1)));
 			return c;
@@ -570,12 +570,12 @@ Game.registerMod("Kaizo Cookies", {
 				decay.updateBreaking();
 				if (Game.Has('Purification domes')) {
 					for (let i in decay.mults) {
-						var c = decay.update(i, t);
+						let c = decay.update(i, t);
 						if (!isFinite(1 / c)) { c = 1 / (Number.MAX_VALUE * 0.9999999999); if (!isNaN(c)) { decay.infReached = true; } }
 						decay.mults[i] = c;
 					}
 				} else { 
-					var c = decay.update(0, t);
+					let c = decay.update(0, t);
 					if (!isFinite(1 / c)) { c = 1 / (Number.MAX_VALUE * 0.9999999999); if (!isNaN(c)) { decay.infReached = true; } }
 					for (let i in decay.mults) {
 						decay.mults[i] = c;
@@ -600,7 +600,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.updateWrinklers();
 			}
 			if (Game.pledgeT > 0) {
-				var strength = Game.getPledgeStrength();
+				let strength = Game.getPledgeStrength();
 				decay.purifyAll(strength[0], strength[1], strength[2], true);
 			}
 			if (Game.pledgeC > 0) {
@@ -662,20 +662,20 @@ Game.registerMod("Kaizo Cookies", {
 			decay.momentumTS = decay.getMomentumMult();
 			m += 0.002 * decay.momentumTS / Math.pow(Math.min(m, 2), 2) / Game.fps;
 
-			//var mult = decay.momentumTS * Math.pow(1 + decay.incMult, 5) * Math.pow(Math.max(decay.gen, 1), decay.purityToMomentumPow) / (16 * Game.fps);
+			//let mult = decay.momentumTS * Math.pow(1 + decay.incMult, 5) * Math.pow(Math.max(decay.gen, 1), decay.purityToMomentumPow) / (16 * Game.fps);
 			//m += ((Math.log((m + decay.momentumLogInc - 1)) / Math.log(decay.momentumLogInc)) * (1 - Math.min(1, decay.effectiveHalt / decay.TSMultFromMomentum)) / decay.momentumIncFactor) * mult; more wanky old nonsense
 			
 			return Math.max(1, m);
 		}
 		decay.getTickspeed = function() {
-			var tickSpeed = 1;
+			let tickSpeed = 1;
 			tickSpeed *= decay.broken;
 			tickSpeed *= Math.pow(decay.shatterManifestation, 2);
 			tickSpeed *= Game.eff('decayRate');
 			if (Game.veilOn()) { tickSpeed *= 1 - Game.getVeilBoost(); }
 			if (Game.Has('Rift to the beyond') && decay.gen <= 1 && !Game.hasBuff('Coagulated')) { tickSpeed *= 0.5; }
 			if (Game.hasGod) {
-				var godLvl = Game.hasGod('asceticism');
+				let godLvl = Game.hasGod('asceticism');
 				if (godLvl == 1) { tickSpeed *= 0.7; }
 				else if (godLvl == 2) { tickSpeed *= 0.8; }
 				else if (godLvl == 3) { tickSpeed *= 0.9; }
@@ -687,7 +687,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Santa\'s bottomless bag')) { tickSpeed *= 0.9; }
 			//if (Game.ascensionMode==42069) { tickSpeed *= 0.5; }
 			if (Game.Has('Lumpy evolution')) {
-				var n = 0;
+				let n = 0;
 				for (let i in Game.Objects) { if (Game.Objects[i].level >= 10) { n++; } }
 				tickSpeed *= (1 - n / 100);
 			}
@@ -703,14 +703,14 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.getMomentumMult = function() {
 			//getTickspeed but for momentum
-			var tickSpeed = Math.max(1 + decay.incMult - 0.12, 1);
+			let tickSpeed = Math.max(1 + decay.incMult - 0.12, 1);
 			tickSpeed *= decay.broken;
 			tickSpeed *= Math.pow(decay.shatterManifestation, 0.5);
 			tickSpeed *= (1 - Math.pow(0.75, Math.log10(Math.max(Game.cookiesEarned - decay.featureUnlockThresholds.momentum, 1))));
 			tickSpeed *= Game.eff('decayMomentum');
 			if (Game.veilOn()) { tickSpeed *= 1 - Game.getVeilBoost(); }
 			if (Game.hasGod) {
-				var godLvl = Game.hasGod('asceticism');
+				let godLvl = Game.hasGod('asceticism');
 				if (godLvl == 1) { tickSpeed *= 0.7; }
 				else if (godLvl == 2) { tickSpeed *= 0.8; }
 				else if (godLvl == 3) { tickSpeed *= 0.9; }
@@ -723,7 +723,7 @@ Game.registerMod("Kaizo Cookies", {
 			//if (Game.ascensionMode==42069) { tickSpeed *= 0.5; }
 			if (decay.ascendIn) { tickspeed *= 2; }
 			if (Game.Has('Lumpy evolution')) {
-				var n = 0;
+				let n = 0;
 				for (let i in Game.Objects) { if (Game.Objects[i].level >= 10) { n++; } }
 				tickSpeed *= (1 - n / 100);
 			}
@@ -734,13 +734,13 @@ Game.registerMod("Kaizo Cookies", {
 			return tickSpeed;
 		}
 		decay.getPurityToDecayPow = function() {
-			var base = 2;
+			let base = 2;
 			//base += 0.25 * Math.max(0, Game.gcBuffCount() - 1);
 			if (Game.Has('Unshackled Purity')) { base *= decay.unshackledPurityMult; }
 			return base;
 		}
 		decay.getBuildingSpecificTickspeed = function(buildId) {
-			var tickSpeed = 1;
+			let tickSpeed = 1;
 			if (Game.ObjectsById[buildId].tieredUpgrades.purity.bought) { tickSpeed *= 1 - decay.purityTierStrengthMap[buildId]; }
 			if (Game.Has('Ultra-concentrated sweetener')) { tickSpeed *= 1 - 0.02 * Math.min(Game.ObjectsById[buildId].level, 20); }
 			
@@ -773,14 +773,14 @@ Game.registerMod("Kaizo Cookies", {
 		decay.purifyAll = function(mult, close, cap, invisPurify) {
 			if (typeof id === 'undefined') { id = ''; }
 			mult *= decay.getPurificationMult();
-			var u = false;
+			let u = false;
 			if (Game.Has('Unshackled Purity')) { u = true; }
 			for (let i in decay.mults) {
 				if (decay.purify(i, mult + decay.bankedPurification, 1 - Math.pow(1 / (1 + decay.bankedPurification), 0.5) * (1 - close), cap * (1 + decay.bankedPurification), u, true)) { decay.triggerNotif('purityCap'); }
 			}
 			decay.bankedPurification *= 0.5;
 			if (Game.hasGod) {
-				var godLvl = Game.hasGod('creation');
+				let godLvl = Game.hasGod('creation');
 				if (godLvl == 1) {
 					Game.gainBuff('creation storm', 9, 0.48);
 				} else if (godLvl == 2) {
@@ -807,7 +807,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Cherubim')) { decay.gainPower(Math.pow(3 * (mult - 1), 3)); }
 		}
 		decay.getPurificationMult = function() {
-			var mult = 1;
+			let mult = 1;
 			if (decay.isConditional('typing') || decay.isConditional('typingR')) { mult *= 3; }
 			return mult;
 		}
@@ -913,7 +913,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		}
 		decay.getHaltMult = function() {
-			var mult = 1;
+			let mult = 1;
 			if (decay.isConditional('typing') || decay.isConditional('typingR')) { mult *= 5; }
 			return mult;
 		}
@@ -1038,12 +1038,12 @@ Game.registerMod("Kaizo Cookies", {
 			return Math.pow(1 - decay.fatigue / decay.fatigueMax, 0.75) * (Math.min(decay.times.sinceExhaustionRecovery, 60) / 60);
 		}
 		Game.buffCount = function() {
-			var count = 0;
+			let count = 0;
 			for (let i in Game.buffs) { if (!decay.exemptBuffs.includes(Game.buffs[i].type.name)) { count++; } }
 			return count;
 		}
 		Game.gcBuffCount = function() {
-			var count = 0;
+			let count = 0;
 			for (let i in Game.buffs) { if (decay.gcBuffs.includes(Game.buffs[i].type.name)) { count++; } }
 			return count;
 		}
@@ -1787,10 +1787,12 @@ Game.registerMod("Kaizo Cookies", {
 			`' <span id="rawCpSHighestD">'+[[REF]]+'</span>)'`,
 			'rawCpSHighestD'
 		);
+		addLoc('direct multiplier: x%1');
+		eval('Game.UpdateMenu='+Game.UpdateMenu.toString().replace(`'</b> '+Beautify(Game.computedMouseCps,1)+'</div>'+`, `'</b> '+Beautify(Game.computedMouseCps,1)+' <small>('+loc('direct multiplier: x%1', Beautify(Game.clickMult, 2))+')</small></div>'+`))
 		new decay.reactiveStat(
 			function() { return Beautify(Game.computedMouseCps,1); },
-			`'</b> '+Beautify(Game.computedMouseCps,1)+'</div>'`,
-			`'</b> <span id="CpCD">'+[[REF]]+'</span></div>'`,
+			`'</b> '+Beautify(Game.computedMouseCps,1)`,
+			`'</b> <span id="CpCD">'+[[REF]]+'</span>'`,
 			'CpCD'
 		);
 		new decay.reactiveStat(
@@ -9391,15 +9393,13 @@ Game.registerMod("Kaizo Cookies", {
 			Game.Upgrades['Bazillion fingers'].basePrice *= 1e9;
 			this.checkRhodorange = function() {
 				for (let i = 0; i < this.rhodorangeUpgrades.length; i++) {
-					if (Game.ObjectsById[i].amount > 0) { Game.Unlock(this.rhodorangeUpgrades[i].name); }
+					if (Game.ObjectsById[i].amount > 0 && Game.cookiesEarned > this.rhodorangeUpgrades[i].basePrice) { Game.Unlock(this.rhodorangeUpgrades[i].name); }
 				}
 			}
 			decay.rhodorangeBoost = function(name) {
 				return Game.Has(Game.Objects[name].rhodorange.name)?Game.Objects[name].rhodorange.boostPower:1;
 			}
 			eval('Game.magicCpS='+Game.magicCpS.toString().replace('return 1;', 'return;').replace('return 1;', 'return decay.rhodorangeBoost(what);'));
-
-			//50%, 100%, 180%, etc. until 10%
 
 			this.upgrades = []; //:ortroll:
 
