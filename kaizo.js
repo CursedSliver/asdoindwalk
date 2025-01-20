@@ -6304,7 +6304,7 @@ Game.registerMod("Kaizo Cookies", {
 		auraDesc(12, "Elder frenzy from Wrath cookies appear <b>4x as often</b>.", 'Aura: 4x Elder frenzy chance from Wrath cookies');
 		auraDesc(13, "Having purity now makes positive buffs run out slower, for up to <b>-50%</b> buff duration decrease rate.", 'Aura: purity decreases buff duration decrease rate');
         auraDesc(15, "All cookie production <b>multiplied by 1.5</b>.", 'Aura: all cookie production multiplied by 1.5');
-		auraDesc(21, "Wrinklers approach the big cookie <b>twice/b> as slow.", 'Aura: wrinklers move slower');
+		auraDesc(21, "Wrinklers approach the big cookie <b>twice</b> as slow.", 'Aura: wrinklers move slower');
 		
 		allValues('auras');
 
@@ -7689,7 +7689,6 @@ Game.registerMod("Kaizo Cookies", {
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
 			me.hp -= 8 * (Game.Has('Dominions')?1.5:1);
-			me.hp *= 0.9;
 			decay.stop(1.5, 'click');
 		}
 		decay.powerOrb.prototype.onBounce = function() {
@@ -8295,9 +8294,9 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('The Memory capsule upgrade becomes <b>free</b>');
 		new decay.challenge('pledge', loc('Activate the Elder Pledge in the first <b>%1</b> of the run.', Game.sayTime(7.35 * 60 * Game.fps, -1)), function(c) { if (Game.TCount >= 13.6 * 60 * Game.fps) { c.makeCannotComplete(); return; } return Game.pledges>=1; }, loc('Research is <b>twice</b> as fast') + '<br>' + loc('The Memory capsule upgrade becomes <b>free</b>'), decay.challengeUnlockModules.vial, { prereq: 'combo2' });
 		
-		addLoc('Reach a CpS multiplier from purity of at least <b>%1</b> with <b>no</b> spells casted.');
+		addLoc('Reach a base CpS multiplier from purity of at least <b>%1</b> with <b>no</b> spells casted.');
 		addLoc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity');
-		new decay.challenge('purity1', loc('Reach a CpS multiplier from purity of at least <b>%1</b> with <b>no</b> spells casted.', '+700%'), function(c) { if (gp && gp.spellsCast > 0) { c.makeCannotComplete(); return; } return decay.gen>=8; }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.1'), decay.challengeUnlockModules.vial, { prereq: 'pledge' });
+		new decay.challenge('purity1', loc('Reach a base CpS multiplier from purity of at least <b>%1</b> with <b>no</b> spells casted.', '+700%'), function(c) { if (gp && gp.spellsCast > 0) { c.makeCannotComplete(); return; } return decay.gen>=8; }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.1'), decay.challengeUnlockModules.vial, { prereq: 'pledge' });
 		
 		addLoc('Have a maximum of <b>1 non-free building</b> for each building type, and bake <b>%1</b> cookies.');
 		new decay.challenge('buildingCount', loc('Have a maximum of <b>1 non-free building</b> for each building type, and bake <b>%1</b> cookies.', Beautify(1e18)), function(c) { return (Game.cookiesEarned >= 1e18); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.1'), decay.challengeUnlockModules.vial, { prereq: 2 });
@@ -9382,7 +9381,7 @@ Game.registerMod("Kaizo Cookies", {
 				10
 			];
 			for (let i in Game.Objects) {
-				this.achievements.push(new Game.Upgrade(nameList2[Game.Objects[i].id], Game.Objects[i].dname+' are <b>'+powerList[Game.Objects[i].id]+'%</b> more efficient.<q>'+flavorTextList2[Game.Objects[i].id]+'</q>', Math.max(Math.max(Game.Objects[i].basePrice * 1.234, 1e3 * Math.pow(6, 1 + Game.Objects[i].id)), (1 / 1e8) * Math.pow(69, 1 + Game.Objects[i].id)), [((Game.Objects[i].id<16?0:-11)+Game.Objects[i].iconColumn), 13, kaizoCookies.images.custImg])); 
+				this.achievements.push(new Game.Upgrade(nameList2[Game.Objects[i].id], cap(Game.Objects[i].plural)+' are <b>'+powerList[Game.Objects[i].id]+'%</b> more efficient.<q>'+flavorTextList2[Game.Objects[i].id]+'</q>', Math.max(Math.max(Game.Objects[i].basePrice * 1.234, 1e3 * Math.pow(6, 1 + Game.Objects[i].id)), (1 / 1e8) * Math.pow(69, 1 + Game.Objects[i].id)), [((Game.Objects[i].id<16?0:-11)+Game.Objects[i].iconColumn), 13, kaizoCookies.images.custImg])); 
 				Game.last.order = 6010 + Game.Objects[i].id * 0.01;
 				Game.last.boostPower = powerList[Game.Objects[i].id] / 100 + 1;
 				Game.MakeTiered(Game.last, 'bloodOrange');
@@ -9750,7 +9749,10 @@ Game.registerMod("Kaizo Cookies", {
 		if (this.toLoad) { this.toLoad = false; this.applyLoad(this.loadStr); this.loadStr = ''; }
 	},
 	save: function(){
-		if (Game.SaveTo != 'kaizoCookiesSave') { return 'DOINIT'; }
+		if (Game.SaveTo != 'kaizoCookiesSave') { 
+			if (Game.modSaveData['Kaizo Cookies']) { return Game.modSaveData['Kaizo Cookies']; }
+			else { return 'DOINIT'; }
+		}
         let str = kaizoCookiesVer + '/';
         for(let i of kaizoCookies.achievements) {
           str+=i.unlocked; //using comma works like that in python but not js
