@@ -389,7 +389,7 @@ Game.registerMod("Kaizo Cookies", {
 				kaizoCookies.unpauseGame(); 
 			} else {
 				if (decay.pausingCooldown && decay.prefs.comp) { Game.Notify(loc('On cooldown (%1s left)', Beautify(decay.pausingCooldown / Game.fps)), '', 0, 1); return; }
-				if (decay.prefs.comp) { decay.pausingCooldown = 120 * Game.fps; }
+				if (decay.prefs.comp) { decay.pausingCooldown = 90 * Game.fps; }
 				kaizoCookies.pauseGame(); 
 			}
 		}
@@ -1295,6 +1295,46 @@ Game.registerMod("Kaizo Cookies", {
 			
 			kaizoCookies.unpauseGame();
 		}
+		decay.onReincarnation = function() {
+			Game.resetTCount();
+
+			decay.unlocked = false;
+			decay.momentumUnlocked = false;
+			decay.bankedAcceleration = 0;
+			decay.acceleration = 1;
+			if (Game.ascensionMode == 42069) {
+				decay.acceleration = decay.startingAcc;
+				if (Game.Has('Vial of challenges')) { decay.triggerNotif('challenges'); }
+			}
+			if (Game.Has('Legacy')) { decay.triggerNotif('breakingPoint'); }
+			decay.assignThreshold();
+			decay.checkChallengeUnlocks();
+			decay.resetAllChallengesInternalStatuses();
+			decay.multList = [];
+			decay.wrinklerSpawnRate = decay.setWrinklerSpawnRate();
+
+			for (let i in decay.seFrees) { decay.seFrees[i] = 0; } 
+
+			if (decay.challengeStatus('comboDragonCursor')) { Game.dragonLevel += 5; }
+
+			decay.fatigue = 0;
+			decay.exhaustion = 0;
+
+			decay.ascendUtenglobe();
+
+			decay.removeAllWrinklerSouls();
+			
+			decay.stop(5);
+			decay.stop(5, 'wSoul');
+			decay.resetAll(1);
+			decay.broken = 1;
+			decay.gen = 1;
+
+			decay.recalcAccStats();
+
+			decay.performConditionalInits();
+		}
+		Game.registerHook('reset', decay.onReincarnation);
 		Game.registerHook('reset', function(hard) { if (kaizoCookies.paused) { kaizoCookies.togglePause(); } if (hard) { decay.wipeSave(); } });
 		eval('Game.HardReset='+Game.HardReset.toString().replace('Game.lumpRefill=0;', 'Game.lumpRefill=0; decay.setRates();'));
 		decay.getCpSBoostFromPrestige = function() {
@@ -1627,7 +1667,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Shift to Power click');
 		addLoc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift');
 		addLoc('Competition mode');
-		addLoc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.');
+		addLoc('Adds limitations to pausing; adds a 1 minute, 30 seconds long cooldown to pausing the game.');
 		injectCSS(`.block.infoSnippetBox { margin-top: 5px; text-align: center; }`);
 		decay.getPrefButtons = function() {
 			var str = '';
@@ -1641,7 +1681,7 @@ Game.registerMod("Kaizo Cookies", {
 			str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 			str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time.')+')</label><br>';
 			str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
-			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds limitations to pausing; adds a 2 minutes long cooldown to pausing the game.')+')</label><br>';
+			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds limitations to pausing; adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
 			str += '<div class="line"></div><b>Replay information snippets:</b><br><div class="block infoSnippetBox">';
 			var str2 = '';
 			for (let i in decay.notifs) {
@@ -4082,45 +4122,6 @@ Game.registerMod("Kaizo Cookies", {
 		Game.registerHook('click', function() {
 			Game.lastClickCount = Math.max(Date.now() - 250, Game.lastClickCount + 100);
 		});
-		decay.onReincarnation = function() {
-			Game.resetTCount();
-
-			decay.unlocked = false;
-			decay.momentumUnlocked = false;
-			decay.bankedAcceleration = 0;
-			decay.acceleration = 1;
-			if (Game.ascensionMode == 42069) {
-				decay.acceleration = decay.startingAcc;
-				if (Game.Has('Vial of challenges')) { decay.triggerNotif('challenges'); }
-			}
-			if (Game.Has('Legacy')) { decay.triggerNotif('breakingPoint'); }
-			decay.assignThreshold();
-			decay.checkChallengeUnlocks();
-			decay.resetAllChallengesInternalStatuses();
-			decay.multList = [];
-			decay.wrinklerSpawnRate = decay.setWrinklerSpawnRate();
-
-			for (let i in decay.seFrees) { decay.seFrees[i] = 0; } 
-
-			if (decay.challengeStatus('comboDragonCursor')) { Game.dragonLevel += 5; }
-
-			decay.fatigue = 0;
-			decay.exhaustion = 0;
-
-			decay.ascendUtenglobe();
-
-			decay.removeAllWrinklerSouls();
-			
-			decay.stop(5);
-			decay.resetAll(1);
-			decay.broken = 1;
-			decay.gen = 1;
-
-			decay.recalcAccStats();
-
-			decay.performConditionalInits();
-		}
-		Game.registerHook('reset', decay.onReincarnation);
 		addLoc('Decay propagation rate -%1% for %2!');
 		new Game.buffType('creation storm', function(time, pow) {
 			return {
@@ -6483,6 +6484,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -6872,6 +6874,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
@@ -8237,7 +8240,7 @@ Game.registerMod("Kaizo Cookies", {
 				counter++;
 			}
 			for (let i in completedList) {
-				str += '<div id="ch'+counter+'" class="singleChallenge canSelect" style="background-color:'+completedList[i].completedColor+';" onclick="if (decay.selectedChallenge==\''+completedList[i].key+'\') { decay.selectedChallenge = null; l(\'ch'+counter+'\').style.backgroundColor=\''+completedList[i].completedColor+'\'; } else { l(\'ch'+counter+'\').style.backgroundColor=\''+selectedBorderColor+'\'; if (decay.selectedChallenge) { l(\'ch\'+decay.findEleidByKey(decay.selectedChallenge)).style.backgroundColor=decay.getChBGWhenSelecting(decay.challenges[decay.selectedChallenge]); } decay.selectedChallenge = \''+completedList[i].key+'\'; }"><div class="taskSection">'+completedList[i].getDesc()+'</div>'+(availableList[i].isPrereq?'<div class="verticalLine"></div>':'')+'<div class="rewardSection">'+completedList[i].getRewards(true)+'</div></div>';
+				str += '<div id="ch'+counter+'" class="singleChallenge canSelect" style="background-color:'+completedList[i].completedColor+';" onclick="if (decay.selectedChallenge==\''+completedList[i].key+'\') { decay.selectedChallenge = null; l(\'ch'+counter+'\').style.backgroundColor=\''+completedList[i].completedColor+'\'; } else { l(\'ch'+counter+'\').style.backgroundColor=\''+selectedBorderColor+'\'; if (decay.selectedChallenge) { l(\'ch\'+decay.findEleidByKey(decay.selectedChallenge)).style.backgroundColor=decay.getChBGWhenSelecting(decay.challenges[decay.selectedChallenge]); } decay.selectedChallenge = \''+completedList[i].key+'\'; }"><div class="taskSection">'+completedList[i].getDesc()+'</div>'+(completedList[i].isPrereq?'<div class="verticalLine"></div>':'')+'<div class="rewardSection">'+completedList[i].getRewards(true)+'</div></div>';
 				completedList[i].eleid = counter;
 				counter++;
 			}
