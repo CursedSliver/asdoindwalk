@@ -2552,6 +2552,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (Game.Has('Unholy bait')) { base *= 1.1; }
 			if (decay.isConditional('powerClickWrinklers')) { base *= 0.5; }
+			if (decay.isConditional('reindeer')) { base *= 1.4; }
 			base *= 1 / (1 + Math.max(Game.log10Cookies - 18, 0) / 30);
 			return base;
 		};
@@ -4106,6 +4107,7 @@ Game.registerMod("Kaizo Cookies", {
 			//base *= 1 + Math.max(12 - Game.log10Cookies, 0) / 12;
 			if (decay.exhaustion > 0) { base *= 1 - Math.min(decay.times.sinceLastExhaustion / (Game.fps * 5), 1); }
 			if (decay.covenantStatus('click')) { base /= 2; }
+			if (decay.isConditional('reindeer')) { base *= 1.5; }
 			decay.stop(base, 'click');
 
 			if (decay.exhaustion > 0) { return; }
@@ -8557,7 +8559,16 @@ Game.registerMod("Kaizo Cookies", {
 		new decay.challenge('reindeer', loc('Reindeers spawn constantly, regardless of season, and massively amplify decay when clicked. Easy clicks and wrinklers are disabled.')+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(5e21)), function() { return Game.cookiesEarned>=5e21; }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.1'), decay.challengeUnlockModules.box, { prereq: 'powerClickWrinklers', conditional: true });
 		eval('Game.shimmerTypes.reindeer.getTimeMod='+Game.shimmerTypes.reindeer.getTimeMod.toString().replace(`if (Game.Has('Reindeer season')) m=0.01;`, `if (Game.Has('Reindeer season')) { m=0.01; } else if (decay.isConditional('reindeer')) { m = 10000000000; }`)); //disables natural spawns
 		eval('Game.shimmerTypes.reindeer.spawnConditions='+Game.shimmerTypes.reindeer.spawnConditions.toString().replace(`if (Game.season=='christmas')`, `if (Game.season=='christmas'||decay.isConditional('reindeer'))`));
-		eval('Game.shimmerTypes.reindeer.initFunc='+Game.shimmerTypes.reindeer.initFunc.toString().replace('var dur=4;', 'var dur=4; if (decay.isConditional("reindeer")) { dur *= Math.random() * 1.5 + 0.4; }').replace(`if (Game.Has('Weighted sleighs')) dur*=2;`, `if (Game.Has('Weighted sleighs') && !decay.isConditional('reindeer')) dur*=2;`).replace('me.sizeMult=1;', 'me.sizeMult=1; if (decay.isConditional("reindeer")) { me.sizeMult *= Math.random() + 0.33; }'));
+		eval('Game.shimmerTypes.reindeer.initFunc='+Game.shimmerTypes.reindeer.initFunc.toString()
+			.replace('var dur=4;', 'var dur=4; if (decay.isConditional("reindeer")) { dur *= Math.random() * 1.5 + 0.4; }')
+			.replace(`if (Game.Has('Weighted sleighs')) dur*=2;`, `if (Game.Has('Weighted sleighs') && !decay.isConditional('reindeer')) dur*=2;`)
+			.replace('me.sizeMult=1;', 'me.sizeMult=1; if (decay.isConditional("reindeer")) { me.sizeMult *= Math.random() + 0.33; }')
+		);
+		eval('Game.shimmerTypes.reindeer.updateFunc='+Game.shimmerTypes.reindeer.updateFunc.toString()
+			.replace('1-me.life/(Game.fps*me.dur)', 'decay.isConditional("reindeer")?(me.life/(Game.fps*me.dur)):(1-me.life/(Game.fps*me.dur))')
+			.replace(`scale('+(me.sizeMult*(1+Math.sin(me.id*0.53)*0.1))+')'`, `scale('+(me.sizeMult*(1+Math.sin(me.id*0.53)*0.1))+')'+(decay.isConditional("reindeer")?'scaleX(-1)':'')`)
+			.replace(`Game.bounds.left`, `Game.bounds.left + (decay.isConditional('reindeer')?256:0)`)
+		);
 		decay.reindeerObj = {
 			timer: 0,
 			update: function() {
@@ -8885,7 +8896,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.');
 		addLoc('Power poked duration <b>+%1%</b>.');
 		addLoc('Power poked strength <b>+%1%</b>.');
-		new decay.challenge('power', loc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.', Beautify(1e16)), function() { return (Game.cookiesEarned >= 1e16) }, loc('Power poked strength <b>+%1%</b>.', '10') + '<br>' + loc('You gain <b>+%1%</b> power.', 50), decay.challengeUnlockModules.box, {conditional: true, prereq: ['comboGSwitch', 'powerClickWrinklers'] });
+		new decay.challenge('power', loc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.', Beautify(1e16)), function() { return (Game.cookiesEarned >= 1e16) }, loc('Power poked strength <b>+%1%</b>.', '10') + '<br>' + loc('You gain <b>+%1%</b> power.', 50), /*decay.challengeUnlockModules.box*/ function() { return false; }, {conditional: true, prereq: ['comboGSwitch', 'powerClickWrinklers'] });
 		
 		addLoc('Bake <b>%1</b>.');
 		new decay.challenge('bakeR', function(c) { return loc('Bake <b>%1</b>.', Beautify(1e12 * Math.pow(100, c)))+(c?'<br>'+loc('Completions: ')+'<b>'+Beautify(c)+'</b>':''); }, function(c) { return (Game.cookiesEarned >= 1e12 * Math.pow(100, c.complete)); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.05'), decay.challengeUnlockModules.truck, { order: 1000, prereq: 5, repeatable: true });
