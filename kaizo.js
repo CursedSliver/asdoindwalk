@@ -369,7 +369,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (typeof changeKeyBind != 'undefined') { changeKeyBind = 1; }
 			});
 			AddEvent(window,'keydown',function(e){
-				if (!PauseGame) { return; }
+				if (!window.PauseGame) { return; }
 				let hasTriggered = false;
     			if (e.key?.toLowerCase()=='c' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
 				if (e.key?.toLowerCase()=='p' && (e.shiftKey || Game.keys[16])) { hasTriggered = true; } 
@@ -1323,6 +1323,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.ascendUtenglobe();
 
 			decay.removeAllWrinklerSouls();
+
+			decay.grabbedObj = [];
 			
 			decay.stop(5);
 			decay.stop(5, 'wSoul');
@@ -4100,7 +4102,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Has('Paint of proof')) { monument += 0.1; }
 			if (Game.Has('Integrated alloys')) { monument += 0.1; }
 			base *= monument;
-			if (Game.Has('Touch of nature') && Math.random()<0.01) { decay.purifyAll(1.05, 0, 100); }
+			if (Game.Has('Touch of nature') && Math.random() < 0.01) { decay.purifyAll(1.05, 0, 100); }
 			//base *= 1 + Math.max(12 - Game.log10Cookies, 0) / 12;
 			if (decay.exhaustion > 0) { base *= 1 - Math.min(decay.times.sinceLastExhaustion / (Game.fps * 5), 1); }
 			if (decay.covenantStatus('click')) { base /= 2; }
