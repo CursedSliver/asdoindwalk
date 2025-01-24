@@ -1162,9 +1162,9 @@ Game.registerMod("Kaizo Cookies", {
 				shiny: 555555555,
 				bomberNat: 5.555e24,
 				momentum: 5.555e33,
-				fuse: 5.555e42,
-				armored: 5.555e45,
-				phantom: 5.555e48,
+				fuse: 5.555e100, //5.555e42,
+				armored: 5.555e100, //5.555e45,
+				phantom: 5.555e100, //5.555e48,
 				leading: 5.555e100,
 			},
 			unshackled: {
@@ -1174,9 +1174,9 @@ Game.registerMod("Kaizo Cookies", {
 				shiny: 55555555,
 				bomberNat: 5.555e24,
 				momentum: 5.555e33,
-				fuse: 5.555e42,
-				armored: 5.555e45,
-				phantom: 5.555e48,
+				fuse: 5.555e100, //5.555e42,
+				armored: 5.555e100, //5.555e45,
+				phantom: 5.555e100, //5.555e48,
 				leading: 5.555e100,
 			}
 		};
@@ -7918,7 +7918,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
-			me.hp -= 8 * (Game.Has('Dominions')?1.5:1);
+			me.hp -= 8 * (Game.Has('Dominions')?1.5:1) * (decay.challengeStatus('godz')?1.4:1);
 			decay.stop(1.8, 'click');
 		}
 		decay.powerOrb.prototype.onBounce = function() {
@@ -8543,12 +8543,13 @@ Game.registerMod("Kaizo Cookies", {
 
 		addLoc('Bake <b>%1</b> without clicking any golden cookies.');
 		addLoc('Golden cookies are <b>%1</b> more effective in purifying decay');
-		new decay.challenge('noGC1', loc('Bake <b>%1</b> without clicking any golden cookies.', Beautify(1e21) + loc(' cookie')), function() { return (Game.cookiesEarned >= 1e21 && !Game.goldenClicksLocal); }, loc('Golden cookies are <b>%1</b> more effective in purifying decay', '15%'), decay.challengeUnlockModules.box, { prereq: ['combo2', 3] });
+		new decay.challenge('noGC1', loc('Bake <b>%1</b> without clicking any golden cookies.', Beautify(2e28) + loc(' cookie')), function(c) { if (Game.goldenClicksLocal) { c.makeCannotComplete(); } return (Game.cookiesEarned >= 2e28); }, loc('Golden cookies are <b>%1</b> more effective in purifying decay', '15%'), decay.challengeUnlockModules.box, { prereq: ['combo2', 3] });
 		
 		addLoc('You gain <b>%1</b> click power but also gains <b>%2</b> required halt for each building you own. You cannot cast any spells and godzamok\'s negative effect is removed.');
 		addLoc('Bake <b>%1</b> cookies.');
 		addLoc('You regenerate worship swaps <b>%1</b> times faster.');
-		new decay.challenge('godz', loc('You gain <b>%1</b> click power but also gains <b>%2</b> required halt for each building you own. You cannot cast any spells and godzamok\'s negative effect is removed.', ['+1%', '+0.1%'])+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(5e25)), function() { return Game.cookiesEarned>=5e25; }, loc('You regenerate worship swaps <b>%1</b> times faster.', 1.25), decay.challengeUnlockModules.box, { prereq: 'earthShatterer', conditional: true, init: function() { decay.gameCan.castSpells = false; }, reset: function() { decay.gameCan.castSpells = true; } });
+		addLoc('You deal <b>%1%</b> more damage to power orbs.');
+		new decay.challenge('godz', loc('You gain <b>%1</b> click power but also gains <b>%2</b> required halt for each building you own. You cannot cast any spells and godzamok\'s negative effect is removed.', ['+1%', '+0.1%'])+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(5e25)), function() { return Game.cookiesEarned>=5e25; }, loc('You deal <b>%1%</b> more damage to power orbs.', 40) + '<br>' + loc('You regenerate worship swaps <b>%1</b> times faster.', 1.25), decay.challengeUnlockModules.box, { prereq: 'earthShatterer', conditional: true, init: function() { decay.gameCan.castSpells = false; }, reset: function() { decay.gameCan.castSpells = true; } });
 		Game.registerHook('cookiesPerClick', function(input) { if (decay.isConditional('godz')) { return input * (1 + Game.BuildingsOwned * 0.01); } return input; });
 		
 		addLoc('You start with the Shimmering veil turned on, but if the Shimmering veil collapses, force ascend. Having purity heals the veil, and the veil gets a significant increase in health to compensate.');
@@ -8896,6 +8897,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.');
 		addLoc('Power poked duration <b>+%1%</b>.');
 		addLoc('Power poked strength <b>+%1%</b>.');
+		addLoc('You gain <b>+%1%</b> power.');
 		new decay.challenge('power', loc('Bake <b>%1</b>, but power passively accumulates with speed scaling with current acceleration. In addition, the duration of Power surge buff decreases with acceleration. Upon reaching maximum power click capacity, force ascend.', Beautify(1e16)), function() { return (Game.cookiesEarned >= 1e16) }, loc('Power poked strength <b>+%1%</b>.', '10') + '<br>' + loc('You gain <b>+%1%</b> power.', 50), /*decay.challengeUnlockModules.box*/ function() { return false; }, {conditional: true, prereq: ['comboGSwitch', 'powerClickWrinklers'] });
 		
 		addLoc('Bake <b>%1</b>.');
