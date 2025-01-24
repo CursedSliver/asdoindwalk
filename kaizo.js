@@ -2248,7 +2248,7 @@ Game.registerMod("Kaizo Cookies", {
 							'<div style="min-width:200px;text-align:center;">Abandon the current run; you will not ascend, you will lose your current progress, but you will keep anything ascending normally keeps.</div>'
 							,'bottom-right')+
 				'>Give up</a>';
-			Game.Prompt(str,[['Ascend','Game.ClosePrompt();if (decay.broken == 1) { Game.Ascend(1); } else { decay.ascendIn = 90 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br','Cancel'],Game.UpdateLegacyPrompt,'legacyPrompt');
+			Game.Prompt(str,[['Ascend','Game.ClosePrompt();if (decay.broken == 1) { Game.Ascend(1); } else { decay.ascendIn = 75 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br','Cancel'],Game.UpdateLegacyPrompt,'legacyPrompt');
 			l('promptOption0').className='option framed large title';
 			l('promptOption0').style='margin:16px;padding:8px 16px;animation:rainbowCycle 5s infinite ease-in-out,pucker 0.2s ease-out;box-shadow:0px 0px 0px 1px #000,0px 0px 1px 2px currentcolor;background:linear-gradient(to bottom,transparent 0%,currentColor 500%);width:auto;text-align:center;';
 			l('promptOption0').style.display='none';
@@ -2256,14 +2256,14 @@ Game.registerMod("Kaizo Cookies", {
 			setTimeout(function() { l('promptOption0').style.display='inline-block'; Game.UpdateLegacyPrompt(); }, 6 / Game.fps * 1000);
 		}
 
-		addLoc('Due to the fact that <b>decay has progressed past its breaking point</b>, it take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.');
+		addLoc('Due to the fact that <b>decay has progressed past its breaking point</b>, it will take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.');
 		Game.UpdateLegacyPrompt=function()
 		{
 			if (!l('legacyPromptData')) return 0;
 			l('legacyPromptData').innerHTML=
 				'<div class="icon" style="pointer-event:none;transform:scale(2);opacity:0.25;position:absolute;right:-8px;bottom:-8px;background-position:'+(-19*48)+'px '+(-7*48)+'px;"></div>'+
                 loc("Do you REALLY want to ascend?<div class=\"line\"></div>You will lose your progress and start over from scratch.<div class=\"line\"></div>All your cookies will be converted into prestige and heavenly chips.")+'<div class="line"></div>'+(Game.canLumps()?loc("You will keep your achievements, building levels and sugar lumps."):loc("You will keep your achievements."))+
-				'<div class="line"></div>'+((decay.broken>1)?('<div class="listing">'+loc('Due to the fact that <b>decay has progressed past its breaking point</b>, it take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.', Game.sayTime(90 * Game.fps))+'</div>'):'');
+				'<div class="line"></div>'+((decay.broken>1)?('<div class="listing">'+loc('Due to the fact that <b>decay has progressed past its breaking point</b>, it will take an additional <b>%1</b> for the ascend animation to start! You can cancel the ascension countdown at any time using the esc key.', Game.sayTime(75 * Game.fps, -1))+'</div>'):'');
 		}
 
 		Game.Ascend = function(bypass) {
@@ -6131,17 +6131,18 @@ Game.registerMod("Kaizo Cookies", {
 			return counter;
 		}
 
-		let seasonSwitcherPriceFunc = function(){
+		decay.seasonSwitcherPriceFunc = function(){
 			if (Game.hasGod && Game.hasGod('seasons')) {
 				return 1e300; //Want to put Infinity here but afraid itll break the game somewhere
 			}
 			return Game.seasonTriggerBasePrice+Game.unbuffedCps*60*(Math.pow(1.5,Game.seasonUses) - 1);
 		}
-		Game.Upgrades['Festive biscuit'].priceFunc = seasonSwitcherPriceFunc;
-		Game.Upgrades['Ghostly biscuit'].priceFunc = seasonSwitcherPriceFunc;
-		Game.Upgrades['Lovesick biscuit'].priceFunc = seasonSwitcherPriceFunc;
-		Game.Upgrades['Fool\'s biscuit'].priceFunc = seasonSwitcherPriceFunc;
-		Game.Upgrades['Bunny biscuit'].priceFunc = seasonSwitcherPriceFunc;
+		Game.computeSeasonPrices = function () {
+			for (var i in Game.seasons) {
+				Game.seasons[i].triggerUpgrade.priceFunc = decay.seasonSwitcherPriceFunc;
+			}
+		}
+		Game.computeSeasonPrices();
 
 		//santa changes
 		eval('Game.UpgradeSanta='+Game.UpgradeSanta.toString()
@@ -6151,7 +6152,7 @@ Game.registerMod("Kaizo Cookies", {
 		);
 		addLoc('%1 soul', ['%1 soul', '%1 souls']);
 		addLoc('%1 shiny soul', ['%1 shiny soul', '%1 shiny souls']);
-		Game.santaSoulReqs = [1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 7, 9, 12, 20]; //14 levels
+		Game.santaSoulReqs = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 7, 12, 20]; //14 levels
 		Game.santaShinySoulReqs = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 3];
 		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString()
 			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
@@ -6496,6 +6497,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -6885,6 +6887,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
@@ -7405,8 +7408,8 @@ Game.registerMod("Kaizo Cookies", {
 			100% { background: radial-gradient(circle, #ff1d87, #a071ff, #40b9ff, #15ff57, #ffed29, #ff5f2e); }
 		}`); doesnt work lmao s k u l l*/
 		decay.getPowerOrbHP = function() {
-			var base = 45;
-			base *= 1 + Game.log10Cookies * 0.05;
+			var base = 40;
+			base *= 1 + Game.log10Cookies * 0.04;
 			if (decay.isConditional('power')) { base *= 1.5; }
 			return base;
 		}
@@ -7914,7 +7917,7 @@ Game.registerMod("Kaizo Cookies", {
 			me.nextModeIn /= 4; me.nextModeIn = Math.floor(me.nextModeIn);
 			
 			me.hp -= 8 * (Game.Has('Dominions')?1.5:1);
-			decay.stop(1.5, 'click');
+			decay.stop(1.8, 'click');
 		}
 		decay.powerOrb.prototype.onBounce = function() {
 			this.times.sinceLastBounce = 0;
@@ -8533,8 +8536,8 @@ Game.registerMod("Kaizo Cookies", {
 
 		addLoc('Bake <b>%1</b> without popping any wrinklers.');
 		addLoc('Your clicks are <b>%1</b> more effective against wrinklers');
-		addLoc('Improves the Molten piercer to destroy wrinkler with one more layer');
-		new decay.challenge('wrinkler1', loc('Bake <b>%1</b> without popping any wrinklers.', Beautify(1e20)), function(c) { if (Game.wrinklersPopped) { c.makeCannotComplete(); } return (Game.cookiesEarned >= 1e20); }, loc('Your clicks are <b>%1</b> more effective against wrinklers', '15%') + '<br>' + loc('Improves the Molten piercer to destroy wrinkler with one more layer'), decay.challengeUnlockModules.vial, { prereq: ['hc', 'combo1'] });
+		addLoc('Improves the Molten piercer to destroy wrinklers with one more layer');
+		new decay.challenge('wrinkler1', loc('Bake <b>%1</b> without popping any wrinklers.', Beautify(1e20)), function(c) { if (Game.wrinklersPopped) { c.makeCannotComplete(); } return (Game.cookiesEarned >= 1e20); }, loc('Your clicks are <b>%1</b> more effective against wrinklers', '15%') + '<br>' + loc('Improves the Molten piercer to destroy wrinklers with one more layer'), decay.challengeUnlockModules.vial, { prereq: ['hc', 'combo1'] });
 
 		addLoc('Bake <b>%1</b> without clicking any golden cookies.');
 		addLoc('Golden cookies are <b>%1</b> more effective in purifying decay');
@@ -8985,7 +8988,7 @@ Game.registerMod("Kaizo Cookies", {
 				mostDecay: 0
 			}
 		}
-		new decay.challenge('research', loc('With less than <b>%1x</b> acceleration, increase decay by <b>%2</b> times over the course of an Elder Pledge purification.', [1.54, Beautify(10000)]), decay.quickCheck(researchCheckObj, researchCheckObj.init), loc('Each research upgrade gives an additional <b>+%1%</b> CpS.', Beautify(2)), decay.challengeUnlockModules.vial, { prereq: ['wrinkler1', 'purity1'] });
+		new decay.challenge('research', loc('With less than <b>%1x</b> acceleration, increase decay by <b>%2</b> times over the course of an Elder Pledge purification.', [1.54, Beautify(10000)]), decay.quickCheck(researchCheckObj, researchCheckObj.init), loc('Each research upgrade gives an additional <b>+%1%</b> CpS.', Beautify(2)), decay.challengeUnlockModules.vial, { prereq: 'wrinkler1' });
 		addLoc('With <b>Challenge %1</b> completed: <b>+%2%</b> CpS');
 		for (let i in Game.UpgradesByPool['tech']) {
 			Game.UpgradesByPool['tech'][i].descFunc = function() {
