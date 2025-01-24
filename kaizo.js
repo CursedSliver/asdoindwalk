@@ -1148,7 +1148,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.forceAscend = function(wipePrestige) {
 			if (wipePrestige) { Game.cookiesEarned = 0; }
-			Game.Ascend(1);
+			if (!Game.OnAscend && !Game.AscendTimer) { Game.Ascend(1); } else { console.trace(); }
 		}
 		decay.autoPauseGame = function() {
 			Game.Notify(loc('Game automatically paused') + '<br><div style="margin-top: 2px;"><small style="font-weight: normal; margin-top: 5px;">' + loc('Go to the options menu or use the hotkey (Shift + P or Shift + C) to toggle pausing.') + '</small></div>', '', 0); kaizoCookies.pauseGame();
@@ -6496,7 +6496,6 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
-		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -6886,7 +6885,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		*/
 
 		/*=====================================================================================
         Power clicks
@@ -7037,7 +7035,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (Math.abs(xd) + Math.abs(yd) < 3) { continue; }
 				Crumbs.spawnFallingCookie(0, 0, yd * (2 + decay.powerPokedStack * 0.4), xd * (1 + decay.powerPokedStack * 0.2), 6, null, true, 1, 2);
 			}
-			
+
 			let o = {
 				x: Crumbs.scopedCanvas.left.l.offsetWidth / 2,
 				y: Crumbs.scopedCanvas.left.l.offsetHeight * 0.4,
