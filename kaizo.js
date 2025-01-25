@@ -2024,7 +2024,7 @@ Game.registerMod("Kaizo Cookies", {
 			dh *= Math.max(1 / d, decay.haltDecMin);
 			decay.decHalt = dh;
 
-			decay.workProgressMult = Math.pow(d, 2);
+			decay.workProgressMult = 1;
 			/*
 			decay.workProgressMult *= 1 + Math.pow(Game.log10Cookies, 0.25) / 6;
 			decay.workProgressMult *= 1 + Math.pow(Math.max(Game.log10Cookies - 18, 1), 0.5) / 12;
@@ -2767,7 +2767,7 @@ Game.registerMod("Kaizo Cookies", {
 				w.scaleX = obj.scaleX;
 				w.scaleY = obj.scaleY;
 				w.order = 9;
-				Crumbs.spawn(w);
+				Crumbs.spawnVisible(w);
 			}
 		};
 		decay.wrinklerSizeHPMap = {
@@ -2852,7 +2852,7 @@ Game.registerMod("Kaizo Cookies", {
             }
 		}
 		decay.getSpecialProtectMult = function() {
-			return (this.shiny?0.5:1) * (this.bomber?2:1);
+			return (this.shiny?0.333:1) * (this.bomber?2:1);
 		}
 		decay.onWrinklerClick = function() {
 			Game.playWrinklerSquishSound();
@@ -3328,7 +3328,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.currentWidth -= this.thinningSpeed;
 			this.thinningSpeed += this.thinningAcceleration;
 			if (this.afterimages && Game.T % this.afterimageInterval == 0 && this.expandSpeed * Game.fps > this.currentWidth) {
-				const h = Crumbs.spawn(decay.soulClaimAuraTemplate, this.afterimages);
+				const h = Crumbs.spawnVisible(decay.soulClaimAuraTemplate, this.afterimages);
 				h.currentWidth = this.currentWidth;
 				h.currentSize = this.currentSize;
 			}
@@ -3365,13 +3365,13 @@ Game.registerMod("Kaizo Cookies", {
 				thinningSpeed: (s?1:12) / Game.fps,
 				thinningAcceleration: (s?1:6) / (1 + (soul.shiny?decay.shinySoulClaimAuraPower:decay.soulClaimAuraPower) / 10) / Game.fps,
 			};
-			Crumbs.spawn(decay.soulClaimAuraTemplate, o);
+			Crumbs.spawnVisible(decay.soulClaimAuraTemplate, o);
 			if (soul.shiny) {
 				o.expandSpeed *= 0.25;
 				o.expandFriction = 0.9;
 				o.currentWidth = 5;
 				o.currentSize = 12;
-				Crumbs.spawn(decay.soulClaimAuraTemplate, o);
+				Crumbs.spawnVisible(decay.soulClaimAuraTemplate, o);
 			}
 			if (soul.shiny) {
 				decay.shinySoulClaimAuraPower += 0.5 * Game.fps;
@@ -3399,7 +3399,7 @@ Game.registerMod("Kaizo Cookies", {
 			ctx.stroke();
 		}
 		decay.createShinySoulConnectLines = function(targetX, targetY) {
-			Crumbs.spawn({
+			Crumbs.spawnVisible({
 				scope: 'foreground',
 				components: new Crumbs.component.canvasManipulator({
 					function: decay.shinySoulConnectLineFunction
