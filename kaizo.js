@@ -2558,7 +2558,7 @@ Game.registerMod("Kaizo Cookies", {
 		};
 		decay.setWrinklerRegen = function() {
 			//per frame
-			var r = 0.02 * (1 / (1 - decay.incMult));
+			var r = 0.01 * (1 / (1 - decay.incMult));
 			return r;
 		};
 		decay.setWrinklerMaxHP = function() {
@@ -2706,6 +2706,15 @@ Game.registerMod("Kaizo Cookies", {
 			if (Math.random()<0.01 && !Game.prefs.notScary) this.hurt=Math.max(this.hurt,Math.random() * 10);
 			this.hurt = Math.max(this.hurt - 60 / Game.fps / (1 + decay.powerPokedStack), 0);
 		});
+		decay.wrinklerGlintTemplate = {
+			imgs: 'glint',
+			anchor: 'top-left',
+			components: new Crumbs.component.settings({globalCompositeOperation: 'lighter'}),
+			order: 5,
+			behaviors: function(p) {
+				if (this.t > 0) { return 't'; }
+			}
+		}
 		decay.wrinklerParticles = new Crumbs.behavior(function() { 
 			if (Game.prefs.particles) {
 				if (this.dist == 0 && Math.random() < 0.015) {
@@ -2713,19 +2722,12 @@ Game.registerMod("Kaizo Cookies", {
 				}
 				if (this.shiny && Math.random()<0.3) {
 					const s = Math.random()*30+5;
-					this.spawnChild({
-						imgs: 'glint',
-						anchor: 'top-left',
+					this.spawnChild(decay.wrinklerGlintTemplate, {
 						alpha: Math.random()*0.65+0.1,
-						components: new Crumbs.component.settings({globalCompositeOperation: 'lighter'}),
 						offsetX: Math.random()*50,
 						offsetY: Math.random()*200,
-						order: 5,
 						scaleX: s / 32, 
 						scaleY: s / 32,
-						behaviors: function(p) {
-							if (this.t > 0) { return 't'; }
-						}
 					}); return;
 				}
 			} 
@@ -6501,6 +6503,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -6890,6 +6893,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
