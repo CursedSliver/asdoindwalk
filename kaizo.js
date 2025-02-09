@@ -334,6 +334,7 @@ Game.registerMod("Kaizo Cookies", {
 			winterShinyWinkler: App?this.dir+'/winterShinyWrinkler.png':'https://cursedsliver.github.io/asdoindwalk/winterShinyWinkler.png',
 			heavenRing1Png: App?this.dir+'/heavenRing1Modified.png':'https://cursedsliver.github.io/asdoindwalk/heavenRing1Modified.png',
 			heavenRing2Png: App?this.dir+'/heavenRing2Modified.png':'https://cursedsliver.github.io/asdoindwalk/heavenRing2Modified.png',
+			buildingIcon: App?this.dir+'/buildersmall.png':'https://cursedsliver.github.io/asdoindwalk/buildersmall.png'
 		};
 		Crumbs.preload([this.images.powerGradientBlue, this.images.powerGradientRed, this.images.heavenRing1Png, this.images.heavenRing2Png]);
 		decay.timePlayed = 0; //amount of time (not frames uses deltatime) while game active
@@ -632,9 +633,6 @@ Game.registerMod("Kaizo Cookies", {
 					Game.Notify('Elder Pledge restored!', '', 0);
 				}
 			}
-			for (let i in decay.times) {
-				decay.times[i]++;
-			}
 			if (decay.times.sinceLastPurify > 30) { decay.bankedPurification += Game.auraMult('Fierce Hoarder') / (4 * Game.fps * Math.pow(1 + decay.bankedPurification, 0.5)); }
 			decay.gen = decay.mults[20];
 			decay.cpsDiff = decay.gen;
@@ -670,6 +668,11 @@ Game.registerMod("Kaizo Cookies", {
             Game.cookiesInTermsOfCps = Game.cookies / Game.cookiesPs;
 		}
 		Game.registerHook('logic', decay.updateAll);
+		Game.registerHook('logic', function() {
+			for (let i in decay.times) {
+				decay.times[i]++;
+			}
+		})
 		decay.draw = function() {
 			decay.setWidget();
 			decay.updateStats();
@@ -824,7 +827,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.bounceBackIn = 0.4 * Game.fps;
 			}	
 
-			if (Game.Has('Cherubim')) { decay.gainPower(Math.pow(3 * (mult - 1), 3)); }
+			if (Game.Has('Cherubim')) { decay.gainPower(2 * Math.pow(Math.max(mult - 1, 0), 2)); }
 		}
 		decay.getPurificationMult = function() {
 			let mult = 1;
@@ -1261,6 +1264,11 @@ Game.registerMod("Kaizo Cookies", {
 			decay.spellsCastTotalNGM = 0;
 			decay.harvestsTotalNGM = 0;
 
+			for (let i in Game.Objects) {
+				Game.Objects[i].everUnlocked = false;
+			}
+			decay.checkBuildingEverUnlocks();
+
 			decay.soulClaimCount = 0;
 			decay.shinySoulClaimCount = 0;
 			decay.bombersPopped = 0;
@@ -1349,6 +1357,11 @@ Game.registerMod("Kaizo Cookies", {
 			decay.boundlessSackOrbCount = 0;
 			if (Game.Has('Virtues')) { Game.Upgrades['Boundless sack'].bought = 1; }
 			Game.Upgrades['Boundless sack'].icon = [34, 12];
+
+			for (let i in Game.Objects) {
+				Game.Objects[i].everUnlocked = false;
+			}
+			decay.checkBuildingEverUnlocks();
 
 			decay.grabbedObj = [];
 			
@@ -2266,8 +2279,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.GiveUpAscend=function(bypass)
 		{
 			if (!bypass) Game.Prompt('<h3>Give up</h3><div class="block">Are you sure? You\'ll have to start this run over and won\'t gain any heavenly chips!</div>',[['Yes','Game.ClosePrompt();Game.GiveUpAscend(1);'],'No']);
-			else
-			{
+			else {
 				if (Game.prefs.popups) Game.Popup('Game reset');
 				else Game.Notify('Gave up','Let\'s try this again!',[0,5],4);
 				Game.Reset();
@@ -4118,6 +4130,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (e.ctrlKey && e.key.toLowerCase() == 'd') { 
 				if (Game.HasUnlocked('Touch of force') && !Game.Has('Touch of force')) { Game.Upgrades['Touch of force'].buy(); }
 				else if (Game.HasUnlocked('Touch of force [ACTIVE]') && !Game.Has('Touch of force [ACTIVE]')) { Game.Upgrades['Touch of force [ACTIVE]'].buy(); }
+				e.preventDefault();
 			}
 		});
 		decay.updateTouchOfForce = function() {
@@ -4555,7 +4568,7 @@ Game.registerMod("Kaizo Cookies", {
 			Game.veilMaxHP = h;
 		}
 		Game.registerHook('reincarnate', function() { if (Game.Has('Shimmering veil')) { Game.veilPreviouslyCollapsed = false; Game.setVeilMaxHP(); Game.veilHP = Game.veilMaxHP; if (decay.isConditional('veil')) { Game.Upgrades['Shimmering veil [on]'].bought = 0; Game.Upgrades['Shimmering veil [off]'].bought = 1; } else { Game.Upgrades['Shimmering veil [on]'].bought = 1; Game.Upgrades['Shimmering veil [off]'].bought = 0; Game.Upgrades['Shimmering veil [off]'].unlock(); } } });
-		replaceDesc('Shimmering veil', 'Unlocks the <b>Shimmering veil</b>, which is a toggleable veil that <b>protects you from exhaustion</b>, preventing fatigue buildup and can temporarily reverse exhaustion. The veil is damaged over time proportional to your current decay rate multiplier.<q>Stars contains purity, whose heat repels and destroys the decay. With this veil brings a galaxy of stars at your disposal; though they are merely an image of the real thing, their shine still significantly halts the ever-growing decay.</q>');
+		replaceDesc('Shimmering veil', 'Unlocks the <b>Shimmering veil</b>, which is a toggleable veil that <b>protects you from exhaustion</b>, preventing fatigue buildup and can temporarily reverse exhaustion. The veil is damaged over time proportional to your current decay rate multiplier.<q>Stars contain purity, whose heat repels and destroys the decay. With this veil brings a galaxy of stars at your disposal; though they are merely an image of the real thing, their shine still significantly halts the ever-growing decay.</q>');
 		Game.getVeilBoost = function() {
 			//this time it is for the fraction of decay that the veil takes on
 			if (Game.Has('Glittering edge')) { return 0.2; }
@@ -6456,6 +6469,44 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.Tiers[i].special) { continue; }
 			Game.Upgrades[Game.Tiers[i].unshackleUpgrade].basePrice = Math.pow(parseFloat(i), 6)*20000000;
 		}
+
+		//building locks
+		injectCSS(`.priceBuildings { font-weight:bold; color:#f66; padding-left:18px; position:relative; }`);
+		injectCSS(`.priceBuildings:before {
+			content:'';
+			display:block;
+			position:absolute;
+			left:0px;
+			top:2px;
+			background:url(${kaizoCookies.images.buildingIcon});
+			width:16px;
+			height:16px;
+		}`);
+		const prevReqs = [
+			0, 5, 10, 15, 20, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 50, 50, 50, 50
+		];
+		decay.checkBuildingEverUnlocks = function() {
+			for (let i in Game.Objects) {
+				if (Game.Objects[i].prevBuilding.amount >= Game.Objects[i].prevReq || Game.Has('Vial of challenges')) {
+					Game.Objects[i].everUnlocked = true;
+				}
+			}
+		}
+		for (let i in Game.Objects) {
+			Game.Objects[i].prevReq = prevReqs[Game.Objects[i].id];
+			Game.Objects[i].prevBuilding = Game.ObjectsById[Math.max(Game.Objects[i].id - 1, 0)];
+			Game.Objects[i].nextBuilding = Game.ObjectsById[Math.min(Game.Objects[i].id + 1, Game.ObjectsById.length - 1)];
+			Game.Objects[i].everUnlocked = false;
+			eval('Game.Objects["'+i+'"].rebuild='+Game.Objects[i].rebuild.toString()
+				.replace(`l('productPrice'+me.id).textContent=Beautify(Math.round(price));`, `l('productPrice'+me.id).textContent=price; l('productPrice'+me.id).classList.remove('price'); l('productPrice'+me.id).classList.remove('priceBuildings'); if (me.everUnlocked) { l('productPrice'+me.id).classList.add('price'); } else { l('productPrice'+me.id).classList.add('priceBuildings'); }`)
+				.replace(`var price=me.bulkPrice;`, `var price=me.everUnlocked?Beautify(Math.round(me.bulkPrice)):(Beautify(me.prevReq) + ' ' + cap(me.prevBuilding.plural));`)
+			);
+			eval('Game.Objects["'+i+'"].refresh='+Game.Objects[i].refresh.toString().replace(`function()`, `function(noPropagate)`).replace(`//if (!this.onMinigame && !this.muted) {}`, `if (!noPropagate) { this.nextBuilding.refresh(true); } //if (!this.onMinigame && !this.muted) {}`));
+			eval('Game.Objects["'+i+'"].buy='+Game.Objects[i].buy.toString().replace(`success=1;`, `decay.checkBuildingEverUnlocks(); success=1;`).replace(`Game.cookies>=price`, `this.everUnlocked && Game.cookies>=price`));
+		}
+		eval('Game.Draw='+Game.Draw.toString().replace(`(Game.buyMode==1 && Game.cookies>=price) || (Game.buyMode==-1 && me.amount>0)`, `(Game.buyMode==1 && Game.cookies>=price && me.everUnlocked) || (Game.buyMode==-1 && me.amount>0)`))
+		Game.Objects.Cursor.everUnlocked = true;
+		decay.checkBuildingEverUnlocks();
 
 		/*=====================================================================================
         Dragon auras
@@ -9641,7 +9692,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.offBrandFingers[i].order = 110 + 0.0001 * decay.offBrandFingers[i].id;
 			}
 
-			this.achievements.push(new Game.Upgrade('Vial of challenges', 'Unlocks <b>new challenges</b> for the <b>Unshackled decay</b> challenge mode.<br>This upgrade was unlocked after obtaining at least <b>'+Beautify(20000)+'</b> total prestige levels.<q>Quite concentrated, in fact.</q>', 1, [9, 0, kaizoCookies.images.custImg])); 
+			this.achievements.push(new Game.Upgrade('Vial of challenges', 'Unlocks <b>new challenges</b> for the <b>Unshackled decay</b> challenge mode.<br>Also <b>disables building requirements</b> for buying new buildings.<br>This upgrade was unlocked after obtaining at least <b>'+Beautify(20000)+'</b> total prestige levels.<q>Quite concentrated, in fact.</q>', 1, [9, 0, kaizoCookies.images.custImg])); 
 			Game.last.pool = 'prestige';
 			Game.last.showIf = function() {
 				return Game.prestige > 20000;
@@ -10748,6 +10799,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		if (isv(str[40])) { decay.loadBoundlessSack(str[40]); }
 		
+		decay.checkBuildingEverUnlocks();
     	Game.storeToRefresh=1;
 
 		decay.setRates();
