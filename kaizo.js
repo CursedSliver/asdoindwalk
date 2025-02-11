@@ -7482,7 +7482,7 @@ Game.registerMod("Kaizo Cookies", {
 			enabled: false,
 			behaviors: function() {
 				if (this.grabbed) { this.x = this.scope.mouseX; this.y = this.scope.mouseY; }
-				if (Game.T < 2) { return; }
+				if (Game.T < Game.fps) { return; }
 				this.x = Math.min(Math.max(this.x, 0), this.scope.l.offsetWidth);
 				this.y = Math.min(Math.max(this.y, 0), this.scope.l.offsetHeight);
 			},
