@@ -447,6 +447,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			for (let i in Game.Objects) { Game.Objects[i].refresh(); }
 		});
+		eval('Game.ImportSaveCode='+Game.ImportSaveCode.toString().replace('var out=false;', 'var out=false; kaizoCookies.unpauseGame();'));
 
 		//overriding notification so some really important notifs can last for any amount of time even with quick notes on
 		eval('Game.Notify='+Game.Notify.toString().replace('quick,noLog', 'quick,noLog,forceStay').replace('if (Game.prefs.notifs)', 'if (Game.prefs.notifs && (!forceStay))').replace('if (Game.popups) new Game.Note(title,desc,pic,quick);', 'if (Game.popups) var note = new Game.Note(title,desc,pic,quick);').replace('if (!noLog)', 'if (forceStay && quick > 1e6 && note) { note.rainbow = true; Game.UpdateNotes(); } if (!noLog)'));
@@ -2532,7 +2533,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.rebuildWrinklers(2);
 		decay.setWrinklerApproach = function() {
 			var base = 45 / Math.pow(Game.eff('wrinklerApproach'), 1.5); //the bigger the number here, the slower it approaches
-			var mult = 1 + Game.auraMult("Dragon Guts");
+			var mult = 1;
 			if (Game.Has('Wrinklerspawn')) { mult *= 1.05; }
 			if (Game.hasGod) {
 				const godLvl = Game.hasGod('scorn');
@@ -2775,16 +2776,6 @@ Game.registerMod("Kaizo Cookies", {
 				if (this.dist == 0 && Math.random() < 0.015) {
 					Crumbs.spawnFallingCookie(this.x, this.y, Math.random()*-2-2, Math.random()*4-2, 1, 'wrinklerPassive', false, Math.random()*0.5+0.5, 4, true);
 				}
-				if (this.shiny && Math.random()<0.3) {
-					const s = Math.random()*30+5;
-					this.spawnChild(decay.wrinklerGlintTemplate, {
-						alpha: Math.random()*0.65+0.1,
-						offsetX: Math.random()*50,
-						offsetY: Math.random()*200,
-						scaleX: s / 32, 
-						scaleY: s / 32,
-					}); return;
-				}
 			} 
 			if (this.bomber && Game.T % 7 == 0) {
 				const m = Crumbs.spawnParticle(decay.bomberParticle, this.x, this.y, Math.random(), 1, 'left'); 
@@ -2998,8 +2989,8 @@ Game.registerMod("Kaizo Cookies", {
 			//else { Game.Popup('<div style="font-size:80%;">' + loc('Decay amplified!') + '</div>', Game.mouseX, Game.mouseY); decay.amplifyAll(1.5, 0.15); decay.triggerNotif('wrinklerAmplify'); }
             Game.cookies = Math.max(0, Game.cookies - this.sucked);
             if (!this.bomber) { Game.gainBuff('clot', 66 * (Game.resets==0?0.1:1), 0.5); }
-            Game.gainBuff('coagulated', (this.bomber?10:16) * (Game.resets==0?0.2:1));
-            Game.gainBuff('cursed', (this.bomber?4:6) * (Game.resets==0?0.2:1));
+            Game.gainBuff('coagulated', (this.bomber?10:20) * (Game.resets==0?0.2:1));
+            Game.gainBuff('cursed', (this.bomber?5:10) * (Game.resets==0?0.2:1));
             if (this.bomber) { 
 				Game.gainBuff('distorted', 30); 
 				Game.Win('Way to soulflow');
@@ -3034,8 +3025,10 @@ Game.registerMod("Kaizo Cookies", {
 			if (!m.parent.shiny || Math.random() >= 0.3 || !Game.prefs.particles) { return; }
 			ctx.globalAlpha = Math.random() * 0.65 + 0.1;
 			var s = Math.random() * 30 + 5;
+			const prev = ctx.globalCompositeOperation;
 			ctx.globalCompositeOperation = 'lighter';
 			ctx.drawImage(Pic('glint.png'), (-s / 2 + Math.random() * 50 - 25) * m.parent.scaleX, (-s / 2 + Math.random() * 200) * m.parent.scaleY, s, s);
+			ctx.globalCompositeOperation = prev;
 		}
 		decay.wrinklerShadowObj = {
 			anchor: 'top',
@@ -3531,8 +3524,8 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.season == 'halloween') { Game.dropHalloweenCookie(this); }
         	Game.cookies = Math.max(0, Game.cookies - this.sucked);
 			if (Game.Has('Legacy')) {
-            	Game.gainBuff('coagulated', 2 + Game.log10Cookies * 0.12);
-            	Game.gainBuff('cursed', 1.5);
+            	Game.gainBuff('coagulated', 4 + Game.log10Cookies * 0.2);
+            	Game.gainBuff('cursed', 2.5);
 			}
 			decay.unlockWrinklerambergris(this);
 		}
@@ -4620,7 +4613,6 @@ Game.registerMod("Kaizo Cookies", {
 			Game.veilPreviouslyCollapsed = false;
 			Game.UpdateMenu();
 			decay.times.sinceVeilTurnOn = 0;
-			decay.triggerNotif('veil');
 		}
 		Game.Upgrades['Shimmering veil [on]'].buyFunction = function() {
 			if (decay.times.sinceGameLoad < 1) { return; }
@@ -4661,7 +4653,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		eval('Game.Logic='+Game.Logic.toString().replace(`if (Game.Has('Shimmering veil') && !Game.Has('Shimmering veil [off]') && !Game.Has('Shimmering veil [on]'))`, `if (Game.Has('Shimmering veil') && !Game.veilOn() && !Game.veilOff() && !Game.veilBroken())`));
 		eval('Game.DrawBackground='+Game.DrawBackground.toString().replace(`if (Game.Has('Shimmering veil [off]'))`, `if (Game.veilOn())`));
-		decay.veilDecBase = 10;
+		decay.veilDecBase = 20;
 		Game.updateVeil = function() {
 			if (!Game.Has('Shimmering veil') || decay.times.sinceGameLoad < 5) { return false; }
 			
@@ -4742,7 +4734,7 @@ Game.registerMod("Kaizo Cookies", {
 			return Math.round(9 * (set + 1));
 		}
 		Game.veilParticleSpawnBound = function(set) {
-			return 155 - 30 * (1 - Math.pow(Game.veilHP / Game.veilMaxHP, 0.75));
+			return 155;
 		}
 		eval('Crumbs.objectBehaviors.veilMain.f='+Crumbs.objectBehaviors.veilMain.f.toString().replace('this.scaleY = scale;', 'this.scaleY = scale; this.alpha = Game.veilOpacity();'));
 		Crumbs.findObject('bigCookie').findChild('veilMain').behaviors = [new Crumbs.behaviorInstance(Crumbs.objectBehaviors.veilMain)];
@@ -4750,6 +4742,8 @@ Game.registerMod("Kaizo Cookies", {
 			if (!Game.prefs.particles || !Game.Has('Shimmering veil [off]')) { return; }
 			for (let set = 0; set < 4; set++) {
 				if (!Game.prefs.fancy && set != 2) { continue; } 
+				let rotationAmount = ((Game.T * (1 + set * 0.6)) % (20 * Game.fps)) / (20 * Game.fps) * Math.PI * 2;
+				ctx.rotate(rotationAmount);
 				for (let i = 0; i < Game.veilParticleQuantity(set); i++) {
 					var t = Game.T+i*Math.round((90 / Game.veilParticleQuantity(set)));
 					var r = (t%30)/30;
@@ -4759,6 +4753,7 @@ Game.registerMod("Kaizo Cookies", {
 					var yy = Math.cos(a)*(Game.veilParticleSpawnBound(set) - Game.veilParticleSpeed(set) * Math.sin(r));
 					ctx.drawImage(Pic('glint.png'),xx-size/2,yy-size/2,size,size);
 				}
+				ctx.rotate(-rotationAmount);
 			}
 		}
 		Crumbs.findObject('bigCookie').findChild('veilGlintGenerator').getComponent('canvasManipulator').function = Crumbs.veilGlintGenerator;
@@ -6506,7 +6501,7 @@ Game.registerMod("Kaizo Cookies", {
 			Game.Objects[i].everUnlocked = false;
 			eval('Game.Objects["'+i+'"].rebuild='+Game.Objects[i].rebuild.toString()
 				.replace(`l('productPrice'+me.id).textContent=Beautify(Math.round(price));`, `l('productPrice'+me.id).textContent=price; l('productPrice'+me.id).classList.remove('price'); l('productPrice'+me.id).classList.remove('priceBuildings'); if (me.everUnlocked) { l('productPrice'+me.id).classList.add('price'); } else { l('productPrice'+me.id).classList.add('priceBuildings'); }`)
-				.replace(`var price=me.bulkPrice;`, `var price=me.everUnlocked?Beautify(Math.round(me.bulkPrice)):(Beautify(me.prevReq) + ' ' + cap(me.prevBuilding.plural));`)
+				.replace(`var price=me.bulkPrice;`, `var price=me.everUnlocked?Beautify(Math.round(me.bulkPrice)):(Beautify(me.prevReq) + ' ' + (me.prevBuilding.locked?'???':cap(me.prevBuilding.plural)));`)
 			);
 			eval('Game.Objects["'+i+'"].refresh='+Game.Objects[i].refresh.toString().replace(`function()`, `function(noPropagate)`).replace(`//if (!this.onMinigame && !this.muted) {}`, `if (!noPropagate) { this.nextBuilding.refresh(true); } //if (!this.onMinigame && !this.muted) {}`));
 			eval('Game.Objects["'+i+'"].buy='+Game.Objects[i].buy.toString().replace(`success=1;`, `decay.checkBuildingEverUnlocks(); success=1;`).replace(`Game.cookies>=price`, `this.everUnlocked && Game.cookies>=price`));
@@ -6722,7 +6717,15 @@ Game.registerMod("Kaizo Cookies", {
 		auraDesc(12, "Elder frenzy from Wrath cookies appear <b>4x as often</b>.", 'Aura: 4x Elder frenzy chance from Wrath cookies');
 		auraDesc(13, "Having purity now makes positive buffs run out slower, for up to <b>-50%</b> buff duration decrease rate.", 'Aura: purity decreases buff duration decrease rate');
         auraDesc(15, "All cookie production <b>multiplied by 1.5</b>.", 'Aura: all cookie production multiplied by 1.5');
-		auraDesc(21, "Wrinklers approach the big cookie <b>twice</b> as slow.", 'Aura: wrinklers move slower');
+		auraDesc(21, "Clicking on the big cookie knock back <b>all</b> wrinklers slightly", 'Aura: global wrinkler knockback on click');
+
+		Game.registerHook('click', function() {
+			if (!Game.auraMult('Dragon Guts')) { return; }
+			let allWrinklers = Crumbs.getObjects('w', 'left');
+			for (let i in allWrinklers) {
+				allWrinklers[i].dist += 0.01 * Game.auraMult('Dragon Guts');
+			}
+		});
 		
 		allValues('auras');
 
@@ -7211,10 +7214,10 @@ Game.registerMod("Kaizo Cookies", {
 			//decreases power as if a power click is used
 			decay.tryUpdateTable = true;
 			if (decay.power < decay.powerClickReqs[0]) { return false; }
-			if (decay.power < decay.powerClickReqs[1]) { decay.power = 0; return true; }
+			if (decay.power < decay.powerClickReqs[1]) { decay.power = (decay.power - decay.powerClickReqs[0]) / (decay.powerClickReqs[1] - decay.powerClickReqs[0]) * decay.powerClickReqs[0]; return true; }
 			decay.times.sincePowerClick = 0; //so that gc clicks also work
-			for (let i in decay.powerClickReqs) {
-				if (decay.powerClickReqs[i] > decay.power) { decay.power = decay.powerClickReqs[i - 2]; return true; } 
+			for (let i = 0; i < decay.powerClickReqs.length; i++) {
+				if (decay.powerClickReqs[i] > decay.power) { decay.power = decay.powerClickReqs[i - 2] + (decay.power - decay.powerClickReqs[i - 1]) / (decay.powerClickReqs[i] - decay.powerClickReqs[i - 1]) * (decay.powerClickReqs[i - 1] - decay.powerClickReqs[i - 2]); return true; } 
 				else if (decay.powerClickReqs[i] == decay.power) { decay.power = decay.powerClickReqs[i - 1]; return true; }
 			}
 			decay.power = decay.totalPowerLimit; return true;
@@ -7406,13 +7409,13 @@ Game.registerMod("Kaizo Cookies", {
 			components: new Crumbs.component.settings({ globalCompositeOperation: 'lighter' }),
 			behaviors: new Crumbs.behaviorInstance(function() {
 				if (this.delay == Math.round(-0.05 * Game.fps)) {
-					if (this.trigger && this.damage) { decay.wrinklerShockwave(Crumbs.getObjects('w', 'left'), this.damage, this.x, this.y, this.radius); }
+					if (this.trigger && this.damage) { decay.wrinklerShockwave(Crumbs.getObjects('w', 'left'), this.damage, this.x, this.y, this.radius, !this.isFromPC); }
 					if (Game.Has('Thunder marker') && this.isFromPC) { 
 						Crumbs.spawn(decay.shockwaveTemplate, {
 							delay: 0.2 * Game.fps,
-							speed: 10 / Game.fps,
-							radius: 150,
-							speedDecMult: 0.1,
+							speed: 7/5 / Game.fps,
+							radius: 75,
+							speedDecMult: 0.075,
 							alphaDecreaseRate: 0.5 / Game.fps,
 							x: decay.thunderMarkerObj.x,
 							y: decay.thunderMarkerObj.y,
@@ -7420,7 +7423,7 @@ Game.registerMod("Kaizo Cookies", {
 							trigger: true,
 							rotation: Math.random() * Math.PI,
 							imgUsing: Math.round(Math.random()),
-							damage: this.damage
+							damage: this.damage * 2.5
 						});
 					} 
 				}
@@ -7440,25 +7443,31 @@ Game.registerMod("Kaizo Cookies", {
 			let [ox, oy] = Crumbs.h.rv(wrinkler.rotation, 0, 200 * wrinkler.scaleY);
 			if (Math.pow(wrinkler.x + ox - originX, 2) + Math.pow(wrinkler.y + oy - originY, 2) < distS) { return true; } //tail
 			if (Math.pow(wrinkler.x + ox / 2 - originX, 2) + Math.pow(wrinkler.y + oy / 2 - originY, 2) < distS) { return true; } //center
+			let [ox2, oy2] = Crumbs.h.rv(wrinkler.rotation, 50 * wrinkler.scaleX, 100 * wrinkler.scaleY);
+			if (Math.pow(wrinkler.x + ox2 - originX, 2) + Math.pow(wrinkler.y + oy2 - originY, 2) < distS) { return true; } //center right
+			if (Math.pow(wrinkler.x - ox2 - originX, 2) + Math.pow(wrinkler.y + oy2 - originY, 2) < distS) { return true; } //center left
 			return false;
 		}
-		decay.wrinklerShockwave = function(allWrinklersInput, baseDamage, originX, originY, radius) {
+		decay.wrinklerShockwave = function(allWrinklersInput, baseDamage, originX, originY, radius, noKB) {
 			let allWrinklers = [];
 			if (!radius) { 
 				allWrinklers = allWrinklersInput; 
 			} else {
 				for (let i in allWrinklersInput) {
 					const w = allWrinklersInput[i];
-					if (decay.wrinklerInDist(w, radius * radius, originX, originY) || w.getComponent('pointerInteractive').getHoverStatus(w, Crumbs.getPWidth(w), Crumbs.getPHeight(w))) { allWrinklers.push(w); }
+					const pWidth = Crumbs.getPWidth(w);
+					const pHeight = Crumbs.getPHeight(w);
+					if (decay.wrinklerInDist(w, radius * radius, originX, originY) || Crumbs.h.inOval(originX - w.getTrueX(), originY - w.getTrueY(), pWidth / 2, pHeight / 2, Crumbs.getOffsetX(w.anchor, pWidth) - pWidth / 2, Crumbs.getOffsetY(w.anchor, pHeight) - pHeight / 2, w.getTrueRotation())) { allWrinklers.push(w); }
 				}
-				console.log(allWrinklers);
 			}
 			for (let i in allWrinklers) {
 				const specialMult = decay.getSpecialProtectMult.call(allWrinklers[i]);
 				const prevSize = allWrinklers[i].size;
 				if (allWrinklers[i] && !allWrinklers[i].dead && allWrinklers[i].size >= 0) { decay.damageWrinkler.call(allWrinklers[i], baseDamage * specialMult, false, 2); }
-				allWrinklers[i].dist += 0.03;
-				if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.07; }
+				if (!noKB) { 
+					allWrinklers[i].dist += 0.03;
+					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.07; }
+				}
 				allWrinklers[i].hurt += 100;
 				if (allWrinklers[i].size < prevSize) { decay.spawnWrinklerbits(allWrinklers[i], 4, 1.5, 1.5, decay.wrinklerExplosionBitsFunc, originX - allWrinklers[i].x, originY - allWrinklers[i].y); }
 			}
@@ -7473,14 +7482,19 @@ Game.registerMod("Kaizo Cookies", {
 			scaleY: 0.5,
 			grabbed: false,
 			enabled: false,
-			components: new Crumbs.component.pointerInteractive({ onClick: function() { if (decay.grabbedObj.length) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } }}),
 			behaviors: function() {
 				if (this.grabbed) { this.x = this.scope.mouseX; this.y = this.scope.mouseY; }
 				this.x = Math.min(Math.max(this.x, 0), this.scope.l.offsetWidth);
 				this.y = Math.min(Math.max(this.y, 0), this.scope.l.offsetHeight);
 			},
 			x: 100,
-			y: 100
+			y: 100,
+			children: [{
+				width: 24,
+				height: 24,
+				order: 15,
+				components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length) { return; } this.parent.grabbed = true; decay.grabbedObj.push(this.parent); }, onRelease: function() { this.parent.grabbed = false; if (decay.grabbedObj.includes(this.parent)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this.parent), 1); } }}),
+			}]
 		});
 		decay.powerClickToLeftSectionSpeed = 1;
 		decay.setSymptomsFromPowerClicks = function() {
@@ -8268,7 +8282,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.spawnPowerOrbs = function() {
 			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power < decay.powerClickReqs[0] || !decay.powerUnlocked() || decay.covenantStatus('powerGain')) { return; }
 
-			var inverseChance = 0.995;
+			var inverseChance = 0.996;
 			if (Game.Has('Dominions')) { inverseChance = Math.pow(inverseChance, 1.5); }
 			if (decay.isConditional('typing') || decay.isConditional('typingR') || decay.isConditional('power') || decay.isConditional('powerClickWrinklers')) { inverseChance = Math.pow(inverseChance, 6); }
 			if (Math.random() < (1 - inverseChance)) {
@@ -10171,7 +10185,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.achievements.push(new Game.Upgrade('Soul compression', 'While exhausted, normal wrinkler souls halt decay for <b>10%</b> longer.<q>Smaller souls make for an easier ingestion.</q>', 3.6e18, [16, 3, kaizoCookies.images.custImg])); Game.last.order = 25070; 
 			this.achievements.push(new Game.Upgrade('Weightlessness', 'While exhausted, normal and shiny wrinkler souls halt decay for <b>10%</b> longer.<q>Reducing the required processing time by removing the need for supports.</q>', 3.6e33, [17, 3, kaizoCookies.images.custImg])); Game.last.order = 25071;
 
-			this.achievements.push(new Game.Upgrade('Thunder marker', 'Creates a draggable marker; whenever power click shockwaves pass through it, it creates an additional, smaller power click shockwave that hits all wrinklers in range for <b>100%</b> the damage of the original shockwave.<q>Let the destruction unfold!</q>', 1.2e6, [17, 2, kaizoCookies.images.custImg])); 
+			this.achievements.push(new Game.Upgrade('Thunder marker', 'Creates a draggable marker; whenever power click shockwaves pass through it, it creates an additional, smaller power click shockwave that hits all wrinklers in range for <b>250%</b> the damage of the original shockwave.<q>Let the destruction unfold!</q>', 1.2e6, [17, 2, kaizoCookies.images.custImg])); 
 			Game.last.pool = 'prestige'; Game.UpgradesByPool.prestige.push(Game.last); Game.PrestigeUpgrades.push(Game.last); Game.last.order = 272;
 			Game.last.posX = -625; Game.last.posY = -690; Game.last.showIf = function() { return decay.challengeStatus(3); }
 			Game.last.parents = [Game.Upgrades['Enchanted Permanent upgrade slot III'], Game.Upgrades['Unholy bait']];
