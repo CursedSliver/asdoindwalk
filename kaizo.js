@@ -6723,7 +6723,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (!Game.auraMult('Dragon Guts')) { return; }
 			let allWrinklers = Crumbs.getObjects('w', 'left');
 			for (let i in allWrinklers) {
-				allWrinklers[i].dist += 0.01 * Game.auraMult('Dragon Guts');
+				allWrinklers[i].dist += 0.004 * Game.auraMult('Dragon Guts');
 			}
 		});
 		
@@ -6752,7 +6752,6 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
-		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -7142,7 +7141,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		*/
 
 		/*=====================================================================================
         Power clicks
@@ -7484,6 +7482,7 @@ Game.registerMod("Kaizo Cookies", {
 			enabled: false,
 			behaviors: function() {
 				if (this.grabbed) { this.x = this.scope.mouseX; this.y = this.scope.mouseY; }
+				if (Game.T < Game.fps) { return; }
 				this.x = Math.min(Math.max(this.x, 0), this.scope.l.offsetWidth);
 				this.y = Math.min(Math.max(this.y, 0), this.scope.l.offsetHeight);
 			},
