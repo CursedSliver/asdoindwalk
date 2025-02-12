@@ -6723,7 +6723,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (!Game.auraMult('Dragon Guts')) { return; }
 			let allWrinklers = Crumbs.getObjects('w', 'left');
 			for (let i in allWrinklers) {
-				allWrinklers[i].dist += 0.01 * Game.auraMult('Dragon Guts');
+				allWrinklers[i].dist += 0.004 * Game.auraMult('Dragon Guts');
 			}
 		});
 		
