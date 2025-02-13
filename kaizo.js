@@ -7411,7 +7411,7 @@ Game.registerMod("Kaizo Cookies", {
 					if (Game.Has('Thunder marker') && this.isFromPC) { 
 						Crumbs.spawn(decay.shockwaveTemplate, {
 							delay: 0.2 * Game.fps,
-							speed: 7/5 / Game.fps,
+							speed: 7.5 / Game.fps,
 							radius: 75,
 							speedDecMult: 0.075,
 							alphaDecreaseRate: 0.5 / Game.fps,
