@@ -215,7 +215,7 @@ Game.registerMod("Kaizo Cookies", {
 	name: 'Kaizo cookies',
 	init: function() {
 		if (kaizoCookies || l('topbarFrenzy')) { return; }
-		Game.LoadMod('https://glander.club/asjs/9b1GUwLs');
+		if (!App) { Game.LoadMod('https://glander.club/asjs/9b1GUwLs'); }
 		eval('Game.WriteSave='+Game.WriteSave.toString().replace(`Game.toSave=false;`, `if (window.isEE) { return ''; } Game.toSave=false;`));
 		if (l('promptContentChangeLanguage')) { for (let i = 0; i < 30; i++) { Game.Notify('Please select a language before you load the mod!', '', 0); } }
 		kaizoCookies = this;
@@ -291,6 +291,8 @@ Game.registerMod("Kaizo Cookies", {
 		Game.HowMuchPrestige = function(cookies) { return Math.pow(cookies/Game.firstHC,1/Game.HCfactor); }
 		eval('Game.HowManyCookiesReset='+Game.HowManyCookiesReset.toString().replace('1000000000000', 'Game.firstHC'));
 		Game.HCfactor = 4;
+
+		eval('Game.BuildAscendTree='+Game.BuildAscendTree.toString().replace('writeIcon(me.icon)', '""')); 
 
 		eval('Game.Logic='+Game.Logic.toString().replace('Game.CanClick=1;', 'Game.CanClick=1; if (kaizoWarning && Game.T%15==0) { kaizoCookies.warn(); }'));
 		this.warn = function() {
@@ -2592,6 +2594,7 @@ Game.registerMod("Kaizo Cookies", {
 			var mult = 1;
 			if (decay.isConditional('powerClickWrinklers')) { mult *= 2.5; }
 			if (decay.gen > 1) { mult *= Math.pow(decay.gen, 0.2); }
+			if (Game.hasBuff('Trick or treat')) { mult *= Game.hasBuff('Trick or treat').power; }
 			return 1 - Math.pow(base, mult);
 		};
 		decay.setWrinklerResistance = function() {
@@ -2642,9 +2645,9 @@ Game.registerMod("Kaizo Cookies", {
 			const h1 = Math.floor(frames % (60 * Game.fps) / Game.fps);
 			const h2 = Math.floor(frames % (Game.fps * 3600) / (Game.fps * 60));
 			const h3 = Math.floor(frames / (Game.fps * 3600));
-			str = (h2?(h1>=10?h1:('0'+h1)):h1)+'.'+str;
-			if (h2) { str = (h3?(h2>=10?h2:('0'+h2)):h2)+':'+str; }
-			if (h3) { str = (h3>=10?h3:('0'+h3))+':'+str; }
+			str = (h2 ? (h1 >= 10 ? h1 : ('0' + h1)) : h1) + '.' + str;
+			if (h2) { str = (h3 ? (h2 >= 10 ? h2 : ('0' + h2)) : h2) + ':' + str; }
+			if (h3) { str = (h3 >= 10 ? h3 : ('0' + h3)) + ':' + str; }
 
 			return str;
 		}
@@ -4778,11 +4781,11 @@ Game.registerMod("Kaizo Cookies", {
 		Crumbs.spawn({
 			scope: 'background',
 			behaviors: new Crumbs.behaviorInstance(function() {
-				if (!Game.veilOn() || !Game.prefs.fancy) { return; }
+				if (!Game.veilOn() || !Game.prefs.fancy || Game.OnAscend) { return; }
 				//if (Game.T % 2 != 0) { return; }
 
 				decay.veilBackgroundGlintParticle.size = (Math.random() + 0.25) * 50;
-				decay.veilBackgroundGlintParticle.maxLife = 2 * (Math.random() + 0.25) * Game.fps;
+				decay.veilBackgroundGlintParticle.maxLife = 2 * (Math.random() * 0.5 + 0.75) * Game.fps;
 				Crumbs.spawnParticle(decay.veilBackgroundGlintParticle, Math.random() * this.scope.l.offsetWidth, Math.random() * this.scope.l.offsetHeight, Math.random() * Math.PI, 1, 'background');
 			}),
 			order: 0.5,
@@ -5011,18 +5014,17 @@ Game.registerMod("Kaizo Cookies", {
 		.replace("(shortcut for import: ctrl+O)","(shortcut for export: shift+E) (shortcut for import: ctrl+O)")
 		);
 
+		addLoc('Wrinklers appear %1 times as fast for %2!');
         new Game.buffType('trick or treat', function(time, pow) {
 			return {
 				name:'Trick or treat',
-				desc:loc("Wrinklers appear 4 times as fast!", [pow, Game.sayTime(time * Game.fps, -1)]),
+				desc:loc("Wrinklers appear %1 times as fast for %2!", [pow, Game.sayTime(time * Game.fps, -1)]),
 				icon:[19, 8],
 				time:time * Game.fps,
 				power:pow,
 				aura:1
 			};
 		});
-
-		eval('Game.UpdateWrinklers='+Game.UpdateWrinklers.toString().replace("if (Game.Has('Unholy bait')) chance*=5;","if (Game.Has('Unholy bait')) chance*=5; if (Game.hasBuff('Trick or treat')) chance*=4;"));
 
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes['golden'].popFunc.toString().replace("if (me.wrath && Math.random()<0.1) list.push('cursed finger');","if (me.wrath && Math.random()<0.1) list.push('cursed finger'); if (me.wrath>0 && Math.random()<0.05 && Game.season=='halloween') list.push('trick or treat'); if (Math.random()<0.05 && Game.season=='valentines') list.push('lonely');"));
 
@@ -6523,7 +6525,7 @@ Game.registerMod("Kaizo Cookies", {
 			return Math.floor(amount);
 		}
 		Game.getBakeDragonCookieCost = function() {
-			let amount = 100;
+			let amount = 300;
 			if (Game.ascensionMode == 42069 && decay.challengeStatus('dualcast')) { amount /= 2; }
 			return amount;
 		}
@@ -6546,13 +6548,13 @@ Game.registerMod("Kaizo Cookies", {
 				}
 			}
 			Game.dragonLevels[Game.dragonLevels.length-3].cost = function(){var fail=0;for (var i in Game.Objects){if (Game.Objects[i].amount<Game.getBakeDragonCookieCost()) fail=1;}return (fail==0);}
-			Game.dragonLevels[Game.dragonLevels.length-3].buy = function(){for (var i in Game.Objects){Game.Objects[i].sacrifice(Game.getBakeDragonCookieCost());}Game.Unlock('Dragon cookie');}
+			Game.dragonLevels[Game.dragonLevels.length-3].buy = function(){if (!decay.challengeStatus('comboOrbs')) { for (var i in Game.Objects){Game.Objects[i].sacrifice(Game.getBakeDragonCookieCost());} }Game.Unlock('Dragon cookie');}
 			Game.dragonLevels[Game.dragonLevels.length-3].costStr = function(){return loc("%1 of every building",Game.getBakeDragonCookieCost());}
 			Game.dragonLevels[Game.dragonLevels.length-2].cost = function(){var fail=0;for (var i in Game.Objects){if (Game.Objects[i].amount<Game.getDualwieldAuraCost()) fail=1;}return (fail==0);}
-			Game.dragonLevels[Game.dragonLevels.length-2].buy = function(){for (var i in Game.Objects){Game.Objects[i].sacrifice(Game.getDualwieldAuraCost());}}
+			Game.dragonLevels[Game.dragonLevels.length-2].buy = function(){if (!decay.challengeStatus('comboOrbs')) { for (var i in Game.Objects){Game.Objects[i].sacrifice(Game.getDualwieldAuraCost()); }}}
 			Game.dragonLevels[Game.dragonLevels.length-2].costStr = function(){return loc("%1 of every building",Game.getDualwieldAuraCost());}
 			addLoc('requires %1');
-			eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString().replace(`"sacrifice %1"`, `(decay.challengeStatus('comboOrbs')?'requires %1':'sacrifice %1')`))
+			eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString().replace(`"sacrifice %1"`, `(decay.challengeStatus('comboOrbs')?'requires %1':'sacrifice %1')`));
 		}
 
 		Game.auraMult = function(what) {
@@ -6588,7 +6590,7 @@ Game.registerMod("Kaizo Cookies", {
         }
 		else if (choice=='trick or treat')
 		{
-		    buff=Game.gainBuff('trick or treat',Math.ceil(100*effectDurMod),4);
+		    buff=Game.gainBuff('trick or treat',Math.ceil(4*effectDurMod),4);
 		}
 		else if (choice=='lonely')
 	    {
@@ -7493,6 +7495,9 @@ Game.registerMod("Kaizo Cookies", {
 				height: 24,
 				order: 15,
 				components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length) { return; } this.parent.grabbed = true; decay.grabbedObj.push(this.parent); }, onRelease: function() { this.parent.grabbed = false; if (decay.grabbedObj.includes(this.parent)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this.parent), 1); } }}),
+				behaviors: function() {
+					//console.log(this.getComponent('pointerInteractive').hovered);
+				}
 			}]
 		});
 		decay.powerClickToLeftSectionSpeed = 1;
@@ -7582,7 +7587,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.setPowerGainMult = function() {
 			let mult = 1;
 			if (Game.Has('Archangels')) { mult *= 1.5; }
-			if (Game.Has('Seraphim')) { mult *= 1 + decay.currentPC * 0.15; }
+			if (Game.Has('Seraphim')) { mult *= 1 + decay.currentPC * 0.2; }
 			if (decay.challengeStatus('power')) { mult *= 1.5; }
 			if (decay.covenantStatus('powerGain')) { mult *= 1.25; }
 			return mult;
@@ -7611,7 +7616,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.Upgrades['Dominions'].basePrice *= 7**4;
 		replaceDesc('Cherubim', 'Maximum power click capacity increased to <b>3</b>, and makes purifying decay also grant power.<q>Sieging at the first sphere of pastry heaven, the four-faced cherubim serve as heavenly bouncers and bodyguards.</q>');
 		Game.Upgrades['Cherubim'].basePrice *= 7**5;
-		replaceDesc('Seraphim', 'You gain <b>15%</b> more power for each full power click you have stored.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
+		replaceDesc('Seraphim', 'You gain <b>20%</b> more power for each full power click you have stored.<q>Leading the first sphere of pastry heaven, seraphim possess ultimate knowledge of everything pertaining to baking.</q>');
 		Game.Upgrades['Seraphim'].basePrice *= 7**6;
 		replaceDesc('God', 'Maximum power click capacity increased to <b>5</b>.<q>Like Santa, but less fun.</q>');
 		Game.Upgrades['God'].basePrice *= 7**7;
@@ -8279,7 +8284,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		Game.registerHook('reset', function() { decay.killAllPowerOrbs(); decay.resetPower(); });
 		decay.spawnPowerOrbs = function() {
-			if (decay.powerOrbsN > (Game.cookiesEarned>1e40?1:0) || decay.power < decay.powerClickReqs[0] || !decay.powerUnlocked() || decay.covenantStatus('powerGain')) { return; }
+			if (decay.powerOrbsN > 0 || decay.power < decay.powerClickReqs[0] || !decay.powerUnlocked() || decay.covenantStatus('powerGain')) { return; }
 
 			var inverseChance = 0.996;
 			if (Game.Has('Dominions')) { inverseChance = Math.pow(inverseChance, 1.5); }
@@ -10188,6 +10193,13 @@ Game.registerMod("Kaizo Cookies", {
 			Game.last.pool = 'prestige'; Game.UpgradesByPool.prestige.push(Game.last); Game.PrestigeUpgrades.push(Game.last); Game.last.order = 272;
 			Game.last.posX = -625; Game.last.posY = -690; Game.last.showIf = function() { return decay.challengeStatus(3); }
 			Game.last.parents = [Game.Upgrades['Enchanted Permanent upgrade slot III'], Game.Upgrades['Unholy bait']];
+
+			Game.Upgrades['Lucky digit'].showIf = function() { return Game.prestige > 7777; }
+			replaceDesc('Lucky digit', Game.Upgrades['Lucky digit'].baseDesc.replace('your prestige level contains a 7', 'your prestige level is higher than 7777'));
+			Game.Upgrades['Lucky number'].showIf = function() { return Game.prestige > 7777777; }
+			replaceDesc('Lucky number', Game.Upgrades['Lucky number'].baseDesc.replace('your prestige level contains two 7\'s', 'your prestige level is higher than 7777777'));
+			Game.Upgrades['Lucky payout'].showIf = function() { return Game.prestige > 7777777777; }
+			replaceDesc('Lucky payout', Game.Upgrades['Lucky payout'].baseDesc.replace('your prestige level contains four 7\'s', 'your prestige level is higher than 7777777777'));
 
 			this.upgrades = []; //:ortroll:
 
