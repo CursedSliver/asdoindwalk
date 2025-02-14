@@ -3,7 +3,7 @@
 //version 1.2 fixed most problems and added UI to CCCEM, and made keybinds easy to rebind
 
 var gamePause=0
-var gardenStepDifference=Game.Objects.Farm.minigame.nextStep-Date.now()
+var gardenStepDifference=Game.Objects.Farm.minigame?(Game.Objects.Farm.minigame.nextStep-Date.now()):0;
 var pantheonSwapDifference=0
 var lumpTimeDifference=0
 var gfdID=0
