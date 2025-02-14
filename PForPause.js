@@ -3,7 +3,7 @@
 //version 1.2 fixed most problems and added UI to CCCEM, and made keybinds easy to rebind
 
 var gamePause=0
-var gardenStepDifference=Game.Objects.Farm.minigame?(Game.Objects.Farm.minigame.nextStep-Date.now()):0;
+var gardenStepDifference=Game.Objects.Farm.minigame?(Game.Objects.Farm.minigame.nextStep-Date.now()):0
 var pantheonSwapDifference=0
 var lumpTimeDifference=0
 var gfdID=0
@@ -16,8 +16,8 @@ var changeKeyBind=0
 
 function HoldVars() {
     var time=Date.now(); 
-    gardenStepDifference=Game.Objects.Farm.minigame.nextStep-time; 
-    if (Game.Objects.Temple.minigame.swaps<3) {pantheonSwapDifference=time-Game.Objects.Temple.minigame.swapT} 
+    if (Game.Objects.Farm.minigame) { gardenStepDifference=Game.Objects.Farm.minigame.nextStep-time; }
+    if (Game.Objects.Temple.minigame?.swaps<3 && Game.Objects.Temple.minigame) {pantheonSwapDifference=time-Game.Objects.Temple.minigame.swapT} 
     lumpTimeDifference=time-Game.lumpT
     }
 
@@ -56,31 +56,34 @@ function NewKeyBind(key, button) {
     UpdatePForPB();
     }
 
-Game.ObjectsById[7].minigame.spellsById[6].win=function(){
-    var spells=[];
-    var selfCost=Game.ObjectsById[7].minigame.getSpellCost(Game.ObjectsById[7].minigame.spells['gambler\'s fever dream']);
-    for (var i in Game.ObjectsById[7].minigame.spells)
-    {if (i!='gambler\'s fever dream' && (Game.ObjectsById[7].minigame.magic-selfCost)>=Game.ObjectsById[7].minigame.getSpellCost(Game.ObjectsById[7].minigame.spells[i])*0.5) spells.push(Game.ObjectsById[7].minigame.spells[i]);}
-    if (spells.length==0){Game.Popup('<div style="font-size:80%;">'+loc("No eligible spells!")+'</div>',Game.mouseX,Game.mouseY);return -1;}
-    var spell=choose(spells);
-    var cost=Game.ObjectsById[7].minigame.getSpellCost(spell)*0.5;
-    gfdArr[gfdID]=[, 0]
-    gfdArr[gfdID][0]=setInterval(function(spell,cost,seed,gfdID){return function(){
-        if (gfdArr[gfdID][1]>=1000) {
-        if (Game.seed!=seed) return false;
-        var out=Game.ObjectsById[7].minigame.castSpell(spell,{cost:cost,failChanceMax:0.5,passthrough:true});
-        if (!out)
-        {
-            Game.ObjectsById[7].minigame.magic+=selfCost;
-            setTimeout(function(){
-                Game.Popup('<div style="font-size:80%;">'+loc("That's too bad!<br>Magic refunded.")+'</div>',Game.mouseX,Game.mouseY);
-            },1500);
-        }
-        clearInterval(gfdArr[gfdID][0]);}
-    }}(spell,cost,Game.seed,gfdID),1000/Game.fps);
-    gfdID++
-    Game.Popup('<div style="font-size:80%;">'+loc("Casting %1<br>for %2 magic...",[spell.name,Beautify(cost)])+'</div>',Game.mouseX,Game.mouseY);
-    };
+function changeMinigames() {
+    Game.ObjectsById[7].minigame.spellsById[6].win=function(){
+        var spells=[];
+        var selfCost=Game.ObjectsById[7].minigame.getSpellCost(Game.ObjectsById[7].minigame.spells['gambler\'s fever dream']);
+        for (var i in Game.ObjectsById[7].minigame.spells)
+        {if (i!='gambler\'s fever dream' && (Game.ObjectsById[7].minigame.magic-selfCost)>=Game.ObjectsById[7].minigame.getSpellCost(Game.ObjectsById[7].minigame.spells[i])*0.5) spells.push(Game.ObjectsById[7].minigame.spells[i]);}
+        if (spells.length==0){Game.Popup('<div style="font-size:80%;">'+loc("No eligible spells!")+'</div>',Game.mouseX,Game.mouseY);return -1;}
+        var spell=choose(spells);
+        var cost=Game.ObjectsById[7].minigame.getSpellCost(spell)*0.5;
+        gfdArr[gfdID]=[, 0]
+        gfdArr[gfdID][0]=setInterval(function(spell,cost,seed,gfdID){return function(){
+            if (gfdArr[gfdID][1]>=1000) {
+            if (Game.seed!=seed) return false;
+            var out=Game.ObjectsById[7].minigame.castSpell(spell,{cost:cost,failChanceMax:0.5,passthrough:true});
+            if (!out)
+            {
+                Game.ObjectsById[7].minigame.magic+=selfCost;
+                setTimeout(function(){
+                    Game.Popup('<div style="font-size:80%;">'+loc("That's too bad!<br>Magic refunded.")+'</div>',Game.mouseX,Game.mouseY);
+                },1500);
+            }
+            clearInterval(gfdArr[gfdID][0]);}
+        }}(spell,cost,Game.seed,gfdID),1000/Game.fps);
+        gfdID++
+        Game.Popup('<div style="font-size:80%;">'+loc("Casting %1<br>for %2 magic...",[spell.name,Beautify(cost)])+'</div>',Game.mouseX,Game.mouseY);
+        };
+}
+setTimeout(function() { if (Game.ObjectsById[7].minigame && Game.ObjectsById[7].minigameLoaded) { changeMinigames() } })
 
 eval("Game.Loop="+Game.Loop.toString().replace("Game.Logic();","if (!gamePause) {Game.Logic();} else {Game.Objects.Farm.minigame.nextStep=Math.floor(Date.now()+gardenStepDifference); Game.Objects.Temple.minigame.swapT=Math.floor(Date.now()-pantheonSwapDifference); Game.lumpT=Math.floor(Date.now()-lumpTimeDifference)}"))
 eval("Game.Loop="+Game.Loop.toString().replace("Game.accumulatedDelay+=((time-Game.time)-1000/Game.fps);","if (!gamePause) Game.accumulatedDelay+=((time-Game.time)-1000/Game.fps);"))
