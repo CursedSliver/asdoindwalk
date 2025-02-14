@@ -221,7 +221,7 @@ Game.registerMod("Kaizo Cookies", {
 		kaizoCookies = this;
 		if (App) { if (CrumbsEngineLoaded) { this.header(); } else { Game.Notify('Incorrect loading order!', 'Please restart the game, and load Crumbs Engine before Kaizo cookies.', 0); } return; }
 		if (typeof CrumbsEngineLoaded === 'undefined' || !CrumbsEngineLoaded) { 
-			Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://raw.githack.com/CursedSliver/Crumbs-engine/main/Crumbs.js'); 
+			try { Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://raw.githack.com/CursedSliver/Crumbs-engine/main/Crumbs.js'); } catch (err) { Game.Notify('Crumbs engine failed to load!', 'Critical prerequisite failed to load; mod loading halted', 0); console.log(err); }
 		}
 
 		//the cccem solution, fixes import corruption on mod load
@@ -367,9 +367,9 @@ Game.registerMod("Kaizo Cookies", {
 				Game.LoadMod('./buffTimer.js');
 				//Game.LoadMod('./dethrottler.js');
 			} else {
-				Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/PForPause.js');
+				try { Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/PForPause.js'); } catch (err) { Game.Notify('P for Pause failed to load!', 'Please contact the developers about it. (find in info menu)', 0); console.log(err); }
 				//Game.LoadMod(`https://glander.club/asjs/qdNgUW9y`); 
-				Game.LoadMod('https://hellopir2.github.io/cc-mods/buffTimer.js');
+				try { Game.LoadMod('https://hellopir2.github.io/cc-mods/buffTimer.js'); } catch (err) { Game.Notify('P for Pause failed to load!', 'Please contact the developers about it. (find in info menu)', 0); console.log(err); }
 			}
 			Game.registerHook('logic', function() {
 				if (typeof changeKeyBind != 'undefined') { changeKeyBind = 1; }
@@ -5246,7 +5246,7 @@ Game.registerMod("Kaizo Cookies", {
         Credits
         =======================================================================================*/
 		addLoc('Kaizo cookies');
-		addLoc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the decillions range.');
+		addLoc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the quattourdecillions range.');
 		addLoc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:');
 		addLoc('You can find a non-comprehensive changelog of the mod <a href="%1" target="_blank" class="highlightHover">here</a>, but we recommend against spoiling yourself with that information.');
 		addLoc('join our <a href="%1" target="_blank" class="highlightHover smallWhiteButton">Discord server</a>! Any feedback is welcome!');
@@ -5262,7 +5262,7 @@ Game.registerMod("Kaizo Cookies", {
 		'<div class="section">'+loc("Kaizo cookies")+'</div>'+
 
 		'<div class="selectable">'+
-			'<div class="listing">'+loc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the decillions range.')+'</div>'+
+			'<div class="listing">'+loc('Kaizo cookies is a Cookie clicker content mod made by a few members of Dashnet Forums, featuring drastic changes that aims to make the game faster and more active. The mod is currently not complete, with content ending at the quattourdecillions range.')+'</div>'+
 			'<div class="listing">'+loc('You can find a non-comprehensive changelog of the mod <a href="%1" target="_blank" class="highlightHover">here</a>, but we recommend against spoiling yourself with that information.', 'https://docs.google.com/document/d/1uicVSbhYwOjKJSPHEt7dpqKpriPGsWJeyZl1BVeltXA/edit?usp=sharing')+'</div>'+
 			'<div class="listing block" style="margin:8px 32px;font-size:11px;line-height:110%;color:rgb(255, 200, 200);background:rgba(255, 179, 128, 0.15);">'+
 				loc('Developing this mod took a lot of thought and effort over almost a year, culminating into one of the biggest cookie clicker content mod ever made, and we\'d really appreciate some support! Here\'s how:')+
@@ -6766,6 +6766,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -7155,6 +7156,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
