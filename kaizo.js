@@ -202,10 +202,10 @@ function preLoads() {
 	}
 }
 
-let gp = Game.Objects['Wizard tower'].minigame; //grimoire proxy
-let pp = Game.Objects['Temple'].minigame; //pantheon proxy
-let gap = Game.Objects['Farm'].minigame; //garden proxy
-let sp = Game.Objects['Bank'].minigame; //stock market proxy
+var gp = Game.Objects['Wizard tower'].minigame; //grimoire proxy
+var pp = Game.Objects['Temple'].minigame; //pantheon proxy
+var gap = Game.Objects['Farm'].minigame; //garden proxy
+var sp = Game.Objects['Bank'].minigame; //stock market proxy
 var grimoireUpdated = false;
 var gardenUpdated = false;
 var pantheonUpdated = false;
@@ -403,7 +403,17 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.pausingCooldown) { decay.pausingCooldown--; }
 		});
 		this.skippedGameCanOnPause = ['openStats', 'closeNotifs'];
+		let gamePauseL = document.createElement('div');
+		addLoc('GAME PAUSED');
+		gamePauseL.innerText = loc('GAME PAUSED');
+		gamePauseL.id = 'gamePauseText';
+		gamePauseL.classList.add('title');
+		gamePauseL.classList.add('gamePauseText');
+		injectCSS('.gamePauseText { pointer-events: none; position: absolute; bottom: 10px; right: 24px; padding: 10px; z-index: 100000; font-size: 60px; font-family: \'Merriweather\', Georgia,serif; font-style: bold; text-shadow:0px 1px 8px #000, 0px -1px 8px #ff0000; }');
+		l('game').appendChild(gamePauseL);
+		decay.gamePauseL = gamePauseL;
 		decay.gamePausedCount = 0;
+		decay.gamePauseL.style.display = 'none';
 		this.pauseGame = function() {
 			if (kaizoCookies.paused) { return; }
 			decay.gamePausedCount++;
@@ -414,6 +424,7 @@ Game.registerMod("Kaizo Cookies", {
 				kaizoCookies.prepauseAllowanceSettings[i] = decay.gameCan[i];
 				if (!kaizoCookies.skippedGameCanOnPause.includes(i)) { decay.gameCan[i] = false; }
 			}
+			decay.gamePauseL.style.display = '';
 		}
 		this.unpauseGame = function() {
 			if (!kaizoCookies.paused) { return; }
@@ -422,6 +433,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in decay.gameCan) {
 				decay.gameCan[i] = kaizoCookies.prepauseAllowanceSettings[i];
 			}
+			decay.gamePauseL.style.display = 'none';
 		}
 		addLoc('Assist option; shortcuts: Shift+C OR Shift+P');
 		addLoc('Pause'); addLoc('Unpause');
