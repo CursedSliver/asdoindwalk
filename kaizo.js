@@ -221,7 +221,7 @@ Game.registerMod("Kaizo Cookies", {
 		kaizoCookies = this;
 		if (App) { if (CrumbsEngineLoaded) { this.header(); } else { Game.Notify('Incorrect loading order!', 'Please restart the game, and load Crumbs Engine before Kaizo cookies.', 0); } return; }
 		if (typeof CrumbsEngineLoaded === 'undefined' || !CrumbsEngineLoaded) { 
-			try { Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://raw.githack.com/CursedSliver/Crumbs-engine/main/Crumbs.js'); } catch (err) { Game.Notify('Crumbs engine failed to load!', 'Critical prerequisite failed to load; mod loading halted', 0); console.log(err); }
+			try { Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://cursedsliver.github.io/Crumbs-engine/Crumbs.js'); } catch (err) { Game.Notify('Crumbs engine failed to load!', 'Critical prerequisite failed to load; mod loading halted', 0); console.log(err); }
 		}
 
 		//the cccem solution, fixes import corruption on mod load
@@ -384,13 +384,29 @@ Game.registerMod("Kaizo Cookies", {
 				kaizoCookies.togglePause();
 				Game.UpdateMenu();
 			});
+			if (Crumbs.mobile) {
+				var metaTag = document.createElement('meta');
+				metaTag.name = 'viewport';
+				metaTag.content = 'initial-scale=0.5';
+
+				document.head.appendChild(metaTag);
+
+				l('game').style.touchAction = 'manipulation';
+				l('game').style.webkitUserSelect = 'none';
+				l('game').style.userSelect = 'none';
+
+				Game.Notify('Mobile', '', 0, 100000000, false, true);
+			}
 		}
 		this.paused = false;
+		this.lastPause = 0;
+		addLoc('Too soon!');
 		this.prepauseAllowanceSettings = {};
 		decay.pausingCooldown = 0;
 		addLoc('On cooldown (%1s left)');
 		this.togglePause = function() {
 			if (Game.OnAscend) { return; }
+			if (Game.T - kaizoCookies.lastPause < 0.25 * Game.fps && !kaizoCookies.paused) { Game.Notify(loc('Too soon!'), '', 0, 1); return; }
 			if (kaizoCookies.paused) { 
 				kaizoCookies.unpauseGame(); 
 			} else {
@@ -398,6 +414,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (decay.prefs.comp) { decay.pausingCooldown = 90 * Game.fps; }
 				kaizoCookies.pauseGame(); 
 			}
+			kaizoCookies.lastPause = Game.T;
 		}
 		Game.registerHook('logic', function() {
 			if (decay.pausingCooldown) { decay.pausingCooldown--; }
@@ -711,6 +728,9 @@ Game.registerMod("Kaizo Cookies", {
 			tickSpeed *= decay.broken;
 			tickSpeed *= Math.pow(decay.shatterManifestation, 2);
 			tickSpeed *= Game.eff('decayRate');
+			if (Game.resets < 1) {
+				tickSpeed *= Math.max(decay.gen + 0.15, 1);
+			}
 			if (Game.veilOn()) { tickSpeed *= 1 - Game.getVeilBoost(); }
 			if (Game.Has('Rift to the beyond') && decay.gen <= 1 && !Game.hasBuff('Coagulated')) { tickSpeed *= 0.5; }
 			if (Game.hasGod) {
@@ -1429,7 +1449,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			wrinkler: {
 				title: 'Wrinklers',
-				desc: 'Wrinklers now spawn passively and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging or flinging them into it, temporarily stopping decay.',
+				desc: 'Wrinklers now spawn passively and do very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging or flinging them into it, temporarily stopping decay.',
 				icon: [19, 8]
 			},
 			wrath: {
@@ -1610,7 +1630,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			options: {
 				title: 'Options',
-				desc: 'Look into the options menu for accessibility options (especially if you play on a touchpad), the ability to pause the game, and to replay these informational notifications!<br>Also, a tip: try scrolling while hovering over the big cookie or a wrinkler.',
+				desc: 'Look into the options menu for accessibility options (especially if you play on a touchpad), the ability to pause the game, and to replay these informational notifications!<br>Also, a tip: try scrolling while hovering over the big cookie or a wrinkler. (scroll clicking has a cps cap, so scrolling faster doesn\'t do anything past a point)',
 				icon: 0,
 				noPause: true
 			},
@@ -1662,7 +1682,7 @@ Game.registerMod("Kaizo Cookies", {
 		Game.registerHook('logic', decay.checkTriggerNotifs);
 		decay.onWin = function(what) {
 			if (['Morale boost', 'Glimmering hope', 'Saving grace', 'Last chance', 'Mass x velocity'].includes(what)) {
-				decay.purifyAll(1, 1, 1);
+				//decay.purifyAll(1, 1, 1);
 			}
 			if (what == 'Mass x velocity') { decay.triggerNotif('momentum'); decay.autoPauseGame(); }
 			if (what == 'Wrinkler poker') {
@@ -4009,8 +4029,8 @@ Game.registerMod("Kaizo Cookies", {
 				return 4 + Math.min(Math.floor(Math.log2(decay.challengesCompleted + 1)), 4);
 			}, function() {
 				//implement upgrade later
-				const button = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e10 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e10); decay.shinyCondenserUnlocked = true; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul', Beautify(2e10)) + '</div>');
-				const buttonAlt = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e18 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e18); decay.shinyCondenserUpgrades++; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to make shiny condensation more efficient', Beautify(2e18)) + '</div>');
+				const button = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e10 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e10); decay.shinyCondenserUnlocked = true; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul', loc('%1 cookie', Beautify(2e10))) + '</div>');
+				const buttonAlt = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e18 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e18); decay.shinyCondenserUpgrades++; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to make shiny condensation more efficient', loc('%1 cookie', Beautify(2e18))) + '</div>');
 				const buttonCapped = '<div class="block capped">' + loc('Shiny condenser acquired') + '</div>';
 				const prompt = '<div class="block incomplete shinyColor">' + loc('Complete <b>%1</b> more unshackled decay challenges to raise maximum storage by <b>%2</b> (Currently: <b>+%3</b>)', [Beautify(Math.pow(2, Math.floor(Math.log2(decay.challengesCompleted + 1)) + 1) - 1 - decay.challengesCompleted), 1, Math.floor(Math.log2(decay.challengesCompleted + 1))]) + '</div>';
 				const promptCapped = '<div class="block capped">' + loc('Complete unshackled decay challenges to raise maximum storage (Maxed out: <b>+%1</b>)', Beautify(4)) + '</div>';
@@ -5568,7 +5588,7 @@ Game.registerMod("Kaizo Cookies", {
 					Game.Popup('<div style="font-size:80%;">'+loc("Corruption cleared!")+'</div>',Game.mouseX,Game.mouseY);
 				},
 				fail: function() {
-					decay.amplifyAll(10, 0.5);
+					decay.amplifyAll(2, 0.5);
 					Game.Popup('<div style="font-size:80%;">'+loc("Backfire! Corruption intensified!")+'</div>',Game.mouseX,Game.mouseY);
 				}
 			}
@@ -6766,6 +6786,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
+		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -7155,6 +7176,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
+		*/
 
 		/*=====================================================================================
         Power clicks
@@ -10265,7 +10287,8 @@ Game.registerMod("Kaizo Cookies", {
 			Game.registerHook('logic', decay.checkPurityUpgrades);
 			this.upgrades.push(new Game.Achievement('Weak grail material', 'Obtain a CpS multiplier from purity of <b>+10,000%</b> or higher.<q>As the mysterious developer walked onto the stage, surrounded by distraught and hopeless fans, he said, in the most gentle of all voices: "The players will find a way. They will."<br>And thus the crowd quieted down, relieved by the antidote of hope.</q>', [0, 2, kaizoCookies.images.custImg]));
 			Game.Achievements['Weak grail material'].order = 70000; Game.Achievements['Weak grail material'].pool = 'shadow';
-			let willPurifyDecayStr = '<div class="line"></div>Obtaining this achievement <b>purifies all of your decay</b>.';
+			//let willPurifyDecayStr = '<div class="line"></div>Obtaining this achievement <b>purifies all of your decay</b>.';
+			let willPurifyDecayStr = '';
 			this.upgrades.push(new Game.Achievement('Morale boost', 'Obtain a CpS multiplier from decay of <b>-50%</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Morale boost'].order = 7500.1;
 			this.upgrades.push(new Game.Achievement('Glimmering hope', 'Obtain a CpS multiplier from decay of <b>-99%</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Glimmering hope'].order = 7500.2;
 			this.upgrades.push(new Game.Achievement('Saving grace', 'Obtain a CpS multiplier from decay of <b>-99.99%</b> or less.'+willPurifyDecayStr, [3, 1, kaizoCookies.images.custImg])); Game.Achievements['Saving grace'].order = 7500.3;
