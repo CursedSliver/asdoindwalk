@@ -5852,7 +5852,7 @@ Game.registerMod("Kaizo Cookies", {
 				.replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieFreq+=0.01*mult;effs.itemDrops+=0.01*mult;`, `effs.decayRate *= 1 - 0.02*mult; effs.decayMomentum *= 1 - 0.02*mult;`)
 				.replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieEffDur+=0.001*mult;`, `effs.goldenCookieGain+=0.05*mult;effs.goldenCookieEffDur+=0.001*mult;`)
 				.replace(`'shriekbulb') {effs.cps*=1-0.02*mult;}`, `'shriekbulb') {effs.cps*=1-0.02*mult;} else if (name=='tidygrass') { effs.decayMomentum *= 1 - 0.05*mult; } else if (name=='everdaisy') { effs.decayRate *= 1 - 0.03*mult; }`)
-				.replace(`else if (name=='whiteChocoroot') effs.goldenCookieGain+=0.01*mult;`, `else if (name=='whiteChocoroot') effs.goldenCookieGain+=1.88*mult;`)
+				.replace(`effs.goldenCookieFreq+=0.01*mult;`, `{effs.goldenCookieFreq+=0.005*mult;effs.goldenCookieEffDur+=0.02*mult;}`)
 			);
 			decay.halts['bakeberry'] = new decay.haltChannel({
 				keep: 3,
@@ -5891,11 +5891,32 @@ Game.registerMod("Kaizo Cookies", {
 				overtimeEfficiency: 0.1
 			});
 			M.plants['crumbspore'].onDie = function() {
-				decay.stop(6, 'crumbspore');
+				decay.stop(8, 'crumbspore');
 				Game.Popup('Decay halted!',Game.mouseX,Game.mouseY);
 			}
 			M.plants['doughshroom'].onDie = function() {
-				decay.purifyAll(1.15, 0.15, 5);
+				decay.purifyAll(1.2, 0.2, 5);
+			}
+			M.plants['greenRot'].onHarvest = function(x, y, age) {
+				if (age < this.mature) { return; }
+				for (let i = 0; i < 1; i++) {
+					let h = new Game.shimmer('golden', { type: 'reflective blessing', noWrath: true }, true);
+					h.sizeMult = 0.6;
+					h.dur = Math.ceil((Math.random()*6+12));
+					h.life = Math.ceil(h.dur * Game.fps);
+				}
+			}
+			M.plants['chocoroot'].onHarvest = function(x, y, age) {
+				if (age < this.mature) { return; }
+				let allWrinklers = Crumbs.getObjects('w');
+				for (let i in allWrinklers) {
+					allWrinklers[i].dist += 0.015;
+					if (allWrinklers[i] && !allWrinklers[i].dead) { decay.damageWrinkler.call(allWrinklers[i], 10 * decay.wrinklerResistance); }
+				}
+			}
+			M.plants['whiteChocoroot'].onHarvest = function(x, y, age) {
+				if (age < this.mature) { return; }
+				if (decay.exhaustion) { decay.exhaustion = Math.max(decay.exhaustion - 3 * Game.fps, 1); }
 			}
 			addLoc('all decay-halting sources\' effect');
 			addLoc('wrath cookies replacement');
@@ -5908,6 +5929,9 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('harvest when mature to purify decay');
 			addLoc('explodes and temporarily halts decay at the end of its lifecycle');
 			addLoc('explodes and purifies decay at the end of its lifecycle');
+			addLoc('summons a reflective blessing on mature harvest');
+			addLoc('harvest when mature to damage and knock back all wrinklers');
+			addLoc('harvest when mature to recover %1 worth of exhaustion');
 			M.plants['wardlichen'].effsStr = '<div class="green">&bull; ' + loc("all decay-halting sources' effect") + ' +2%</div><div class="gray">&bull; ' + loc("wrath cookies replacement") + ' -2%</div>';
 			M.plants['wrinklegill'].effsStr = '<div class="green">&bull; ' + loc("wrinklers approach speed") + ' -2%</div>';
 			M.plants['elderwort'].effsStr = '<div class="green">&bull; ' + loc("wrinklers approach speed") + ' -1%</div><div class="green">&bull; ' + loc("all decay-halting source' effect") + ' +1%</div><div class="green">&bull; ' + loc("%1 CpS", Game.Objects['Grandma'].single) + ' +1%</div><div class="green">&bull; ' + loc("immortal") + '</div><div class="gray">&bull; ' + loc("surrounding plants (%1x%1) age %2% faster", [3, 3]) + '</div>';
@@ -5919,13 +5943,16 @@ Game.registerMod("Kaizo Cookies", {
 			M.plants['whiskerbloom'].effsStr = '<div class="green">&bull;' + loc("milk effects") + ' +0.05%</div>';
 			M.plants['glovemorel'].effsStr = '<div class="green">&bull;' + loc("cookies/click") + ' +4%</div><div class="green">&bull; ' + loc("%1 CpS", Game.Objects['Cursor'].single) + ' +0.5%</div><div class="red">&bull; ' + loc("CpS") + ' -1%</div>';
 			M.plants['goldenClover'].effsStr = '<div class="green">&bull; ' + loc("golden cookie frequency") + ' +3%</div><div class="green">&bull; ' + loc("golden cookie gains") + ' +3.89%</div><div class="red">&bull; ' + loc('golden cookie effect duration') + ' -3%</div>';
+			M.plants['clover'].effsStr = '<div class="green">&bull; '+loc("golden cookie frequency")+' +0.5%</div>' + '<div class="green">&bull; '+loc("golden cookie effect duration")+' +2%</div>';
 			M.plants['bakeberry'].effsStr = '<div class="green">&bull; '+loc("CpS")+' +1%</div><div class="green">&bull; '+loc("harvest when mature to temporarily halt decay")+'</div>'; //hellrangers idea
 			M.plants['queenbeet'].effsStr = '<div class="green">&bull; '+loc("golden cookie effect duration")+' +0.3%</div><div class="red">&bull; '+loc("CpS")+' -2%</div><div class="green">&bull; '+loc("harvest when mature to purify decay")+'</div>'; //also hellrangers idea
 			M.plants['duketater'].effsStr = '<div class="green">&bull; '+loc('harvest when mature to temporarily halt decay')+'</div><div class="green">&bull; '+loc('harvest when mature to purify decay')+'</div>'; //also hellrangers idea
 			M.plants['crumbspore'].effsStr = '<div class="green">&bull; '+loc("explodes and temporarily halts decay at the end of its lifecycle")+'</div><div class="red">&bull; '+loc("may overtake nearby plants")+'</div>';
 			M.plants['doughshroom'].effsStr = '<div class="green">&bull; '+loc("explodes and purifies decay at the end of its lifecycle")+'</div><div class="red">&bull; '+loc("may overtake nearby plants")+'</div>';
+			M.plants['greenRot'].effsStr = '<div class="green">&bull; '+loc("golden cookie duration")+' +0.5%</div><div class="green">&bull; '+loc("golden cookie frequency")+' +1%</div><div class="green">&bull; '+loc("summons a reflective blessing on mature harvest")+'</div>'; //ig the random drop increase can be left in as an easter egg
+			M.plants['chocoroot'].effsStr = '<div class="green">&bull; '+loc("CpS")+' +1%</div><div class="green">&bull; '+loc("harvest when mature to damage and knock back all wrinklers")+'</div><div class="green">&bull; '+loc("predictable growth")+'</div>';
+			M.plants['whiteChocoroot'].effsStr = '<div class="green">&bull; '+loc("golden cookie gains")+' +1%</div><div class="green">&bull; '+loc("harvest when mature to recover %1 worth of exhaustion",[Game.sayTime(3*Game.fps)])+'</div><div class="green">&bull; '+loc("predictable growth")+'</div>';
 			eval("M.tools['info'].descFunc="+M.tools['info'].descFunc.toString().replace(`buildingCost:{n:'building costs',rev:true},`, `buildingCost:{n:'building costs',rev:true}, wrinklerApproach:{n:'wrinklers approach speed',rev:true}, wrathReplace:{n:'wrath cookies replacement',rev:true}, haltPower:{n:'decay-halting power'}, decayRate:{n:'decay rates',rev:true}, decayMomentum:{n:'decay momentum',rev:true}`));
-				
 
 			eval("M.convert="+M.convert.toString().replace("Game.gainLumps(10);","Game.gainLumps(30);").replace(`M.unlockSeed(M.plants['bakerWheat']);`, `M.unlockProtectedSeeds();`));
 
