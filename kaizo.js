@@ -387,13 +387,13 @@ Game.registerMod("Kaizo Cookies", {
 			if (Crumbs.mobile) {
 				var metaTag = document.createElement('meta');
 				metaTag.name = 'viewport';
-				metaTag.content = 'width=device-width, initial-scale=0.5, maximum-scale=1';
+				metaTag.content = 'initial-scale=0.5';
 
 				document.head.appendChild(metaTag);
 
 				l('game').style.touchAction = 'manipulation';
-				l('game').style.webkitUserSelect = 'text';
-				l('game').style.userSelect = 'text';
+				l('game').style.webkitUserSelect = 'none';
+				l('game').style.userSelect = 'none';
 			}
 		}
 		this.paused = false;
