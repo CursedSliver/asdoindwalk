@@ -394,10 +394,7 @@ Game.registerMod("Kaizo Cookies", {
 				l('game').style.touchAction = 'manipulation';
 				l('game').style.webkitUserSelect = 'text';
 				l('game').style.userSelect = 'text';
-
-				Crumbs.spawn({ imgs: 'glint.png', x: Crumbs.scopedCanvas.foreground.l.offsetWidth / 2, y: Crumbs.scopedCanvas.foreground.l.offsetHeight / 2, scaleX: 10, scaleY: 10, behaviors: function() { this.x = this.scope.l.offsetWidth / 2; this.y = this.scope.l.offsetHeight / 2; } });
 			}
-			Crumbs.spawn({ imgs: 'glint.png', x: Crumbs.scopedCanvas.foreground.l.offsetWidth / 2, y: Crumbs.scopedCanvas.foreground.l.offsetHeight / 2, scaleX: 1, scaleY: 1, behaviors: function() { this.x = this.scope.l.offsetWidth / 2; this.y = this.scope.l.offsetHeight / 2; } });
 		}
 		this.paused = false;
 		this.lastPause = 0;
@@ -1450,7 +1447,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			wrinkler: {
 				title: 'Wrinklers',
-				desc: 'Wrinklers now spawn passively and does very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging or flinging them into it, temporarily stopping decay.',
+				desc: 'Wrinklers now spawn passively and do very bad things upon reaching the big cookie. Luckily, if you manage to pop them, you get to extract their souls which you can offer to the big cookie by dragging or flinging them into it, temporarily stopping decay.',
 				icon: [19, 8]
 			},
 			wrath: {
