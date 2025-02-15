@@ -394,7 +394,10 @@ Game.registerMod("Kaizo Cookies", {
 				l('game').style.touchAction = 'manipulation';
 				l('game').style.webkitUserSelect = 'text';
 				l('game').style.userSelect = 'text';
+
+				Crumbs.spawn({ imgs: 'glint.png', x: Crumbs.scopedCanvas.foreground.l.offsetWidth / 2, y: Crumbs.scopedCanvas.foreground.l.offsetHeight / 2, scaleX: 10, scaleY: 10, behaviors: function() { this.x = this.scope.l.offsetWidth / 2; this.y = this.scope.l.offsetHeight / 2; } });
 			}
+			Crumbs.spawn({ imgs: 'glint.png', x: Crumbs.scopedCanvas.foreground.l.offsetWidth / 2, y: Crumbs.scopedCanvas.foreground.l.offsetHeight / 2, scaleX: 1, scaleY: 1, behaviors: function() { this.x = this.scope.l.offsetWidth / 2; this.y = this.scope.l.offsetHeight / 2; } });
 		}
 		this.paused = false;
 		this.lastPause = 0;
@@ -404,7 +407,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('On cooldown (%1s left)');
 		this.togglePause = function() {
 			if (Game.OnAscend) { return; }
-			if (Game.T - kaizoCookies.lastPause < 0.25 * Game.fps) { Game.Notify(loc('Too soon!'), '', 0, 1); return; }
+			if (Game.T - kaizoCookies.lastPause < 0.25 * Game.fps && !kaizoCookies.paused) { Game.Notify(loc('Too soon!'), '', 0, 1); return; }
 			if (kaizoCookies.paused) { 
 				kaizoCookies.unpauseGame(); 
 			} else {
