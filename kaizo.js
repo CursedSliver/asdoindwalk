@@ -403,7 +403,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('On cooldown (%1s left)');
 		this.togglePause = function() {
 			if (Game.OnAscend) { return; }
-			if (Game.T - kaizoCookies.lastPause < 0.25 * Game.fps && !kaizoCookies.paused) { Game.Notify(loc('Too soon!'), '', 0, 1); return; }
+			if (Game.T - kaizoCookies.lastPause < 0.2 * Game.fps && !kaizoCookies.paused) { Game.Notify(loc('Too soon!'), '', 0, 1); return; }
 			if (kaizoCookies.paused) { 
 				kaizoCookies.unpauseGame(); 
 			} else {
@@ -419,7 +419,8 @@ Game.registerMod("Kaizo Cookies", {
 		this.skippedGameCanOnPause = ['openStats', 'closeNotifs'];
 		let gamePauseL = document.createElement('div');
 		addLoc('GAME PAUSED');
-		gamePauseL.innerText = loc('GAME PAUSED');
+		addLoc('(Shift + C to pause or unpause)');
+		gamePauseL.innerHTML = '<div style="font-size: 16px; text-align: right; line-height: 20px;">'+loc('(Shift + C to pause or unpause)')+'</div>'+loc('GAME PAUSED');
 		gamePauseL.id = 'gamePauseText';
 		gamePauseL.classList.add('title');
 		gamePauseL.classList.add('gamePauseText');
@@ -1747,7 +1748,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Shift to Power click');
 		addLoc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift');
 		addLoc('Competition mode');
-		addLoc('Adds limitations to pausing; adds a 1 minute, 30 seconds long cooldown to pausing the game.');
+		addLoc('Adds a 1 minute, 30 seconds long cooldown to pausing the game.');
 		injectCSS(`.block.infoSnippetBox { margin-top: 5px; text-align: center; }`);
 		decay.getPrefButtons = function() {
 			var str = '';
@@ -1761,7 +1762,7 @@ Game.registerMod("Kaizo Cookies", {
 			str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 			str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time.')+')</label><br>';
 			str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
-			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds limitations to pausing; adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
+			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
 			str += '<div class="line"></div><b>Replay information snippets:</b><br><div class="block infoSnippetBox">';
 			var str2 = '';
 			for (let i in decay.notifs) {
@@ -3302,8 +3303,8 @@ Game.registerMod("Kaizo Cookies", {
 			return Crumbs.spawn(decay.wrinklerSoulTemplate, { 
 				x: x,
 				y: y,
-				scaleX: shiny?0.9:1.3, 
-				scaleY: shiny?0.9:1.3,  
+				scaleX: shiny?1:1.3, 
+				scaleY: shiny?1:1.3,  
 				imgs: shiny?kaizoCookies.images.shinySoul:kaizoCookies.images.wrinklerSoul,
 				shiny: shiny,
 				children: ([decay.wrinklerSoulShine1].concat(Game.prefs.fancy?decay.wrinklerSoulShine2:[])),
@@ -3404,7 +3405,12 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		});
 		addLoc('Reflective blessing!');
-		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*15`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, mult * Game.cookiesPs * 180) + 13; Game.Earn(toEarn); Game.Popup('<div style="font-size: 80%;">'+loc('Reflective blessing!')+'</div>'+(Game.cookies<(mult * Game.cookiesPs * 180)?'<div>'+loc('Cookies doubled!')+'</div>':'')+'<div style="font-size: 60%;">(' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + ')</div>', me.x, me.y); } else if (choice=='cookie storm drop')`).replace('this.last=choice;', 'if (choice != "reflective blessing") this.last=choice;'));
+		decay.getReflectiveBlessingPopup = function(mult, toEarn) {
+			return '<div style="font-size: 80%;">' + loc('Reflective blessing!') + '</div>' + (Game.cookies < (mult * Game.cookiesPs * 360) ?
+				'<div>' + loc('Cookies doubled!') + '</div><div style="font-size: 60%;">(' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + ')</div>' :
+				'<div>' + loc('+%1!', loc('%1 cookie', Beautify(toEarn))) + '</div><div style="font-size: 60%;">(' + loc('CpS too low to double') + ')</div>');
+		}
+		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`Game.cookies*0.15,Game.cookiesPs*60*15`, `Game.cookies*0.33,Game.cookiesPs*60*15`).replace(`else if (choice=='cookie storm drop')`, `else if (choice=='reflective blessing') { decay.triggerNotif('shinySoulEffect'); const toEarn = Math.min(Game.cookies, mult * Game.cookiesPs * 360) + 13; Game.Earn(toEarn); Game.Popup(decay.getReflectiveBlessingPopup(mult, toEarn), me.x, me.y); } else if (choice=='cookie storm drop')`).replace('this.last=choice;', 'if (choice != "reflective blessing") this.last=choice;'));
 		decay.indicator = Crumbs.spawn({
 			id: 'soulClaimIndicator',
 			width: 2 * 72,
