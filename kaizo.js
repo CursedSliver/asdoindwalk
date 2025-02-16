@@ -2154,7 +2154,7 @@ Game.registerMod("Kaizo Cookies", {
 			//the bigger the building, the more "space" they take up, thus increasing decay by more
 			let c = 0;
 			let add = 0;
-			if (Game.Has('Thousand fingers')) add +=    Math.log10(Game.BuildingsOwned); 
+			if (Game.Has('Thousand fingers')) add +=    Math.log10(Game.BuildingsOwned + 1); 
 			if (Game.Has('Million fingers')) add+=		0.6989700043360189; //log10(5)
 			if (Game.Has('Billion fingers')) add+=		1; //log10(10)
 			if (Game.Has('Trillion fingers')) add+=		1.3010299956639813; //log10(20)
@@ -2179,7 +2179,7 @@ Game.registerMod("Kaizo Cookies", {
 			c += Game.Objects['Antimatter condenser'].amount * 2.5 + Game.Objects['Prism'].amount + Game.Objects['Chancemaker'].amount * 1.5;
 			c += Game.Objects['Fractal engine'].amount * 2.71828 + Math.pow(Game.Objects['Javascript console'].amount, 1.2);
 			c += Game.Objects['Idleverse'].amount * 7.5 + Game.Objects['Cortex baker'].amount * 6 + Game.Objects['You'].amount * 2;
-			return c;
+			return c + 1;
 		}
 		decay.setOthers = function() {
 			decay.powerGainMult = decay.setPowerGainMult();
@@ -5439,7 +5439,7 @@ Game.registerMod("Kaizo Cookies", {
 			} catch(err) {
 				Game.Notify('adding spells failed!', 'uh oh', 0, 1e21, false, true);
 			}
-			eval('gp.logic='+gp.logic.toString().replace('M.magicPS=Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.002;', 'M.magicPS = Math.min(1.5, decay.gen) * Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.006;'));
+			eval('gp.logic='+gp.logic.toString().replace('M.magicPS=Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.002;', 'M.magicPS = Math.min(1.5, decay.gen) * Game.eff(\'magicRegenSpeed\') * Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.006;'));
 			eval('gp.logic='+replaceAll('M.','gp.',gp.logic.toString()));
 			eval("gp.spells['spontaneous edifice'].win=" + Game.Objects['Wizard tower'].minigame.spells['spontaneous edifice'].win.toString().replace("{if ((Game.Objects[i].amount<max || n==1) && Game.Objects[i].getPrice()<=Game.cookies*2 && Game.Objects[i].amount<400) buildings.push(Game.Objects[i]);}", "{if (Game.Objects[i].amount>0 && decay.seFrees[Game.Objects[i].id] < 20) buildings.push(Game.Objects[i]);}").replace('building.buyFree(1);', 'decay.seFrees[building.id] += 5; building.getFree(5);'));
 			gp.spells['spontaneous edifice'].fail = function() {
@@ -5855,7 +5855,7 @@ Game.registerMod("Kaizo Cookies", {
 				.replace("effs.cursorCps+=0.01*mult","effs.cursorCps+=0.005*mult")
 				.replace("goldenClover') effs.goldenCookieFreq+=0.03*mult;","goldenClover') { effs.goldenCookieFreq+=0.03*mult; effs.goldenCookieEffDur*=1-0.03; effs.goldenCookieGain+=0.0389; }")
 				.replace("else if (name=='whiskerbloom') effs.milk+=0.002*mult;","else if (name=='whiskerbloom') effs.milk+=0.001*mult;")
-				.replace('buildingCost:1,', 'buildingCost:1, wrinklerApproach:1, wrathReplace:1, haltPower:1, decayRate:1, decayMomentum:1')
+				.replace('buildingCost:1,', 'buildingCost:1, wrinklerApproach:1, wrathReplace:1, haltPower:1, decayRate:1, decayMomentum:1, magicRegenSpeed:1')
 				.replace(`else if (name=='wardlichen') {effs.wrinklerSpawn*=1-0.15*mult;effs.wrathCookieFreq*=1-0.02*mult;}`, `else if (name=='wardlichen') {effs.haltPower+=0.02*mult; effs.wrathReplace*=1-0.02*mult;}`)
 				.replace(`else if (name=='wrinklegill') {effs.wrinklerSpawn+=0.02*mult;effs.wrinklerEat+=0.01*mult;}`,`else if (name=='wrinklegill') {effs.wrinklerApproach*=1-0.02*mult;}`)
 				.replace(`effs.wrathCookieGain+=0.01*mult;effs.wrathCookieFreq+=0.01*mult;`,`effs.wrinklerApproach*=1-0.01*mult; effs.haltPower+=0.01*mult;`)
@@ -5863,6 +5863,7 @@ Game.registerMod("Kaizo Cookies", {
 				.replace(`effs.goldenCookieGain+=0.01*mult;effs.goldenCookieEffDur+=0.001*mult;`, `effs.goldenCookieGain+=0.05*mult;effs.goldenCookieEffDur+=0.001*mult;`)
 				.replace(`'shriekbulb') {effs.cps*=1-0.02*mult;}`, `'shriekbulb') {effs.cps*=1-0.02*mult;} else if (name=='tidygrass') { effs.decayMomentum *= 1 - 0.05*mult; } else if (name=='everdaisy') { effs.decayRate *= 1 - 0.03*mult; }`)
 				.replace(`effs.goldenCookieFreq+=0.01*mult;`, `{effs.goldenCookieFreq+=0.005*mult;effs.goldenCookieEffDur+=0.02*mult;}`)
+				.replace(`effs.cps+=0.03*mult;effs.click*=1-0.05*mult;effs.goldenCookieFreq*=1-0.1*mult;`, `effs.magicRegenSpeed+=0.04*mult;effs.click*=1-0.05*mult;`)
 			);
 			decay.halts['bakeberry'] = new decay.haltChannel({
 				keep: 3,
@@ -5928,6 +5929,16 @@ Game.registerMod("Kaizo Cookies", {
 				if (age < this.mature) { return; }
 				if (decay.exhaustion) { decay.exhaustion = Math.max(decay.exhaustion - 3 * Game.fps, 1); }
 			}
+			decay.halts['jqb'] = new decay.haltChannel({
+				power: 1000,
+				keep: 0,
+				factor: 0.9
+			});
+			M.plants['queenbeetLump'].onHarvest = function() {
+				//if (age < this.mature) { return; }
+				decay.stop(6, 'jqb');
+				decay.purifyAll(1, 1, 1);
+			}
 			addLoc('all decay-halting sources\' effect');
 			addLoc('wrath cookies replacement');
 			addLoc('wrinklers approach speed');
@@ -5942,6 +5953,9 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('summons a reflective blessing on mature harvest');
 			addLoc('harvest when mature to damage and knock back all wrinklers');
 			addLoc('harvest when mature to recover %1 worth of exhaustion');
+			addLoc('magic regeneration speed');
+			addLoc('harvest when mature to completely stop decay for a maximum of %1');
+			addLoc('harvest when mature to purify all decay');
 			M.plants['wardlichen'].effsStr = '<div class="green">&bull; ' + loc("all decay-halting sources' effect") + ' +2%</div><div class="gray">&bull; ' + loc("wrath cookies replacement") + ' -2%</div>';
 			M.plants['wrinklegill'].effsStr = '<div class="green">&bull; ' + loc("wrinklers approach speed") + ' -2%</div>';
 			M.plants['elderwort'].effsStr = '<div class="green">&bull; ' + loc("wrinklers approach speed") + ' -1%</div><div class="green">&bull; ' + loc("all decay-halting source' effect") + ' +1%</div><div class="green">&bull; ' + loc("%1 CpS", Game.Objects['Grandma'].single) + ' +1%</div><div class="green">&bull; ' + loc("immortal") + '</div><div class="gray">&bull; ' + loc("surrounding plants (%1x%1) age %2% faster", [3, 3]) + '</div>';
@@ -5962,7 +5976,9 @@ Game.registerMod("Kaizo Cookies", {
 			M.plants['greenRot'].effsStr = '<div class="green">&bull; '+loc("golden cookie duration")+' +0.5%</div><div class="green">&bull; '+loc("golden cookie frequency")+' +1%</div><div class="green">&bull; '+loc("summons a reflective blessing on mature harvest")+'</div>'; //ig the random drop increase can be left in as an easter egg
 			M.plants['chocoroot'].effsStr = '<div class="green">&bull; '+loc("CpS")+' +1%</div><div class="green">&bull; '+loc("harvest when mature to damage and knock back all wrinklers")+'</div><div class="green">&bull; '+loc("predictable growth")+'</div>';
 			M.plants['whiteChocoroot'].effsStr = '<div class="green">&bull; '+loc("golden cookie gains")+' +1%</div><div class="green">&bull; '+loc("harvest when mature to recover %1 worth of exhaustion",[Game.sayTime(3*Game.fps)])+'</div><div class="green">&bull; '+loc("predictable growth")+'</div>';
-			eval("M.tools['info'].descFunc="+M.tools['info'].descFunc.toString().replace(`buildingCost:{n:'building costs',rev:true},`, `buildingCost:{n:'building costs',rev:true}, wrinklerApproach:{n:'wrinklers approach speed',rev:true}, wrathReplace:{n:'wrath cookies replacement',rev:true}, haltPower:{n:'decay-halting power'}, decayRate:{n:'decay rates',rev:true}, decayMomentum:{n:'decay momentum',rev:true}`));
+			M.plants['drowsyfern'].effsStr = '<div class="green">&bull; '+loc('magic regeneration speed')+' +4%</div><div class="red">&bull; '+loc('cookies/click')+' -5%</div>';
+			M.plants['queenbeetLump'].effsStr = '<div class="red">&bull; '+loc("CpS")+' -10%</div><div class="red">&bull; '+loc("surrounding plants (%1x%1) are %2% less efficient",[3,20])+'</div><div class="green">&bull; '+loc('harvest when mature to completely stop decay for a maximum of %1', Game.sayTime(6 * Game.fps))+'</div><div class="green">&bull; '+loc('harvest when mature to purify all decay')+'</div>';
+			eval("M.tools['info'].descFunc="+M.tools['info'].descFunc.toString().replace(`buildingCost:{n:'building costs',rev:true},`, `buildingCost:{n:'building costs',rev:true}, wrinklerApproach:{n:'wrinklers approach speed',rev:true}, wrathReplace:{n:'wrath cookies replacement',rev:true}, haltPower:{n:'decay-halting power'}, decayRate:{n:'decay rates',rev:true}, decayMomentum:{n:'decay momentum',rev:true}, magicRegenSpede:{n:'magic regeneration speed'}`));
 
 			eval("M.convert="+M.convert.toString().replace("Game.gainLumps(10);","Game.gainLumps(30);").replace(`M.unlockSeed(M.plants['bakerWheat']);`, `M.unlockProtectedSeeds();`));
 
@@ -5984,7 +6000,6 @@ Game.registerMod("Kaizo Cookies", {
 			eval('M.tools.convert.func='+M.tools.convert.func.toString().replace(`PlaySound('snd/toneTick.mp3');`, `if (!decay.gameCan.useGardenTools) { return; } PlaySound('snd/toneTick.mp3');`));
 
 			M.buildPanel();
-
 
 			M.tools['convert'].desc=loc("A swarm of sugar hornets comes down on your garden, <span class=\"red\">destroying every plant as well as every seed you've unlocked</span> - leaving only a %1 seed.<br>In exchange, they will grant you <span class=\"green\">%2</span>.<br>This action is only available with a complete seed log.",[loc("Baker's wheat"),loc("%1 sugar lump",LBeautify(30))]);
 			eval("M.askConvert="+M.askConvert.toString().replace("10","30"));
