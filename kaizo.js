@@ -1298,6 +1298,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.spellsCastTotalNGM = 0;
 			decay.harvestsTotalNGM = 0;
 
+			kaizoCookies.lastPause = 0;
+
 			for (let i in Game.Objects) {
 				Game.Objects[i].everUnlocked = false;
 			}
@@ -1384,6 +1386,8 @@ Game.registerMod("Kaizo Cookies", {
 
 			decay.fatigue = 0;
 			decay.exhaustion = 0;
+
+			kaizoCookies.lastPause = 0;
 
 			decay.ascendUtenglobe();
 
@@ -4369,7 +4373,7 @@ Game.registerMod("Kaizo Cookies", {
 		//breaking point
 		replaceDesc('Legacy', "This is the first heavenly upgrade; it unlocks the <b>Heavenly chips</b> system.<div class=\"line\"></div>Each time you ascend, the cookies you made in your past life are turned into <b>heavenly chips</b> and <b>prestige</b>.<div class=\"line\"></div><b>Heavenly chips</b> can be spent on a variety of permanent transcendental upgrades.<div class=\"line\"></div>Your <b>prestige level</b> also gives you a permanent <b>+1% CpS</b> per level.<div class=\"line\"></div>Decay starts to <b>break after -90%</b>, becoming more powerful the more decay you have: ascending is no longer immediate and you gain a decay propagation increase that scales with current decay.<div class=\"line\"></div>In addition, wrinklers have also inherited a part of the power: popping any that has already reached the big cookie will now inflict Coagulated and Cursed, and they explode if sucking on the big cookie for long enough. Their speed also increases the more decay you have, for up to the point where decay breaks.<q>We've all been waiting for you. And some more.</q>");
 		Game.Upgrades['Legacy'].icon = [7, 3, kaizoCookies.images.custImg];
-		decay.minimumPrestigeAmountToAscend = 14 + 200; //legacy + power clck + heavenly cookies + dragon + 200 for good measure
+		decay.minimumPrestigeAmountToAscend = 300; 
 		decay.eligibleForAscend = function() {
 			if (Game.resets >= 1) { return true; }
 			let chips = Math.pow(Game.cookiesEarned / Game.firstHC, 1 / Game.HCfactor);
