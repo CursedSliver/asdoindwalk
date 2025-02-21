@@ -605,7 +605,11 @@ Game.registerMod("Kaizo Cookies", {
 			powerClickShiftReverse: 0,
 			easyPurchases: 0,
 			autoPause: 1,
-			fatigueWarning: 1
+			fatigueWarning: 1,
+			bigSouls: 0,
+			bigOrbs: 0,
+			slowSouls: 0,
+			slowOrbs: 0
 		}
 		Game.TCount = 0;
 
@@ -1758,6 +1762,66 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			l(button).className='smallFancyButton prefButton option'+((decay.prefs[prefName]^invert)?'':' off');
 		}
+		decay.prefPreset = function(name, desc, turnOns, turnOffs) {
+			this.name = name;
+			this.desc = desc;
+			this.turnOns = turnOns;
+			this.turnOffs = turnOffs;
+			this.turnOnStr = '';
+			for (let i in this.turnOns) {
+				this.turnOnStr += '<b>' + decay.prefToNameMap[this.turnOns[i]] + '</b>, ';
+			}
+			this.turnOnStr = this.turnOnStr.slice(0, this.turnOnStr.length - 2);
+			this.turnOffStr = '';
+			for (let i in this.turnOffs) {
+				this.turnOffStr += '<b>' + decay.prefToNameMap[this.turnOffs[i]] + '</b>, ';
+			}
+			this.turnOffStr = this.turnOffStr.slice(0, this.turnOffStr.length - 2);
+
+			decay.prefPresets.push(this);
+		}
+		decay.prefToNameMap = {
+			easyPurchases: loc('Convenient purchasing'),
+			widget: loc('Informational widget'),
+			typingDisplay: loc('Typing display'),
+			fatigueWarning: loc('Fatigue warning'),
+			bigSouls: loc('Big souls'),
+			slowSouls: loc('Slow souls'),
+			bigOrbs: loc('Big orbs'),
+			slowOrbs: loc('Slow orbs'),
+			comp: loc('Competition mode'),
+			wipeOnInf: loc('Wipe save on infinite decay')
+		}
+		addLoc('Are you sure?');
+		addLoc('You are about to apply the preset <b>"%1"</b>');
+		addLoc('Applying this preset will have the following changes:');
+		addLoc('%1 will be turned <b>ON</b>');
+		addLoc('%1 will be turned <b>OFF</b>');
+		decay.prefPreset.prototype.getPrompt = function() {
+			//prompt when clicking to confirm and verify the settings that will be changed
+			Game.Prompt(`<id prefPresetConfirmPrompt><h3>${loc('Are you sure?')}</h3><div class="block" style="line-height: 14px;">${loc('You are about to apply the preset <b>"%1"</b>', this.name)}.<br><small>"${this.desc}"</small></div>
+			<div class="block" style="line-height: 14px;">
+				${loc('Applying this preset will have the following changes:')}<div class="line"></div>
+				${loc('%1 will be turned <b>ON</b>', this.turnOnStr)}<div class="line"></div>
+				${loc('%1 will be turned <b>OFF</b>', this.turnOffStr)}
+			</div>`, [[loc('Yes!'), 'decay.prefPresets['+decay.prefPresets.indexOf(this)+'].apply();Game.ClosePrompt();'], [loc('Nevermind')]], 0, 'widePrompt');
+		}
+		decay.prefPreset.prototype.apply = function() {
+			for (let i in this.turnOns) {
+				decay.prefs[this.turnOns[i]] = 1;
+			}
+			for (let i in this.turnOffs) {
+				decay.prefs[this.turnOffs[i]] = 0;
+			}
+			Game.UpdateMenu();
+		}
+		decay.prefPresets = [];
+		decay.lockedPreset = null;
+		addLoc('Accessible'); addLoc('Intended / Default'); addLoc('True comp'); addLoc('True kaizo');
+		new decay.prefPreset(loc('Accessible'), loc('A friendly and smooth experience, containing all the QoL and assistance tools available.'), ['easyPurchases', 'fatigueWarning', 'typingDisplay', 'widget', 'bigSouls', 'bigOrbs', 'slowSouls', 'slowOrbs'], ['wipeOnInf', 'comp']);
+		new decay.prefPreset(loc('Intended / Default'), loc('The original designed experience of this mod, with QoL but minimal assistance tools.'), ['fatigueWarning', 'typingDisplay', 'widget', 'bigOrbs'], ['wipeOnInf', 'easyPurchases', 'comp', 'bigSouls', 'slowSouls', 'slowOrbs']);
+		new decay.prefPreset(loc('True comp'), loc('A somewhat challenging experience, with a limited capacity to pause the game.'), ['typingDisplay', 'comp', 'widget'], ['fatigueWarning', 'wipeOnInf', 'easyPurchases', 'bigSouls', 'bigOrbs', 'slowSouls', 'slowOrbs']);
+		new decay.prefPreset(loc('True kaizo'), loc('A challenging experience, with a limited access to information and only one live!'), ['comp', 'wipeOnInf'], ['typingDisplay', 'fatigueWarning', 'widget', 'easyPurchases', 'bigSouls', 'bigOrbs', 'slowSouls', 'slowOrbs']);
 		decay.writePrefButton = function(prefName,button,on,off,callback,invert) {
 			//I love stealing code from orteil
 			var invert=invert?1:0;
@@ -1769,6 +1833,9 @@ Game.registerMod("Kaizo Cookies", {
 			if (!decay.prefs.preventNotifs[decay.notifs[prefName].pref]) { return ''; }
 			return '<a class="smallFancyButton" style="margin: 5px; " id="'+button+'"'+Game.clickStr+'="decay.triggerNotif(\''+prefName+'\', true);">'+decay.notifs[prefName].title+'</a>';
 		}
+		addLoc('Kaizo cookies settings');
+		addLoc('Invoking a difficulty preset configures your Kaizo cookies settings, and can be readjusted at any time. Presets do not override all settings.');
+		addLoc('Difficulty presets:');
 		addLoc('Ascend on infinite decay');
 		addLoc('Wipe save on infinite decay');
 		addLoc('Upon reaching infinite decay, ascend without gaining any prestige or heavenly chips');
@@ -1789,7 +1856,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Shows a more accurate timer of the legacy started stat.');
 		addLoc('<b>none.</b><br><small>(You can see and replay information snippets you\'ve collected throughout the game here. The first one occurs at 5,555 cookies baked this ascension.)</small>');
 		addLoc('Typing display');
-		addLoc('Shows your keyboard inputs in real time.');
+		addLoc('Shows your keyboard inputs in real time. Only works with the Script writer heavenly upgrade.');
 		addLoc('Shift to Power click');
 		addLoc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift');
 		addLoc('Competition mode');
@@ -1800,23 +1867,52 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Automatically pauses the game if it detects that you haven\'t been looking at it for 5 seconds.');
 		addLoc('Fatigue warning');
 		addLoc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.');
+		addLoc('Big souls');
+		addLoc('All wrinkler souls are much bigger');
+		addLoc('Big orbs');
+		addLoc('All power orbs are much bigger');
+		decay.prefToNameMap = {
+			easyPurchases: loc('Convenient purchasing'),
+			widget: loc('Informational widget'),
+			typingDisplay: loc('Typing display'),
+			fatigueWarning: loc('Fatigue warning'),
+			bigSouls: loc('Big souls'),
+			slowSouls: loc('Slow souls'),
+			bigOrbs: loc('Big orbs'),
+			slowOrbs: loc('Slow orbs'),
+			comp: loc('Competition mode'),
+			wipeOnInf: loc('Wipe save on infinite decay')
+		}
 		injectCSS(`.block.infoSnippetBox { margin-top: 5px; text-align: center; }`);
 		decay.getPrefButtons = function() {
-			var str = '';
+			var str = '</div><div class="title">'+loc('Kaizo cookies settings')+'</div><div class="listing">';
+			str += '<b>'+loc('Difficulty presets:')+'</b><br>';
+				str += '<label style="margin-bottom: 12px; margin-top: 4px; padding-left: 0px; padding-right: 0px;">' + loc('Invoking a difficulty preset configures your Kaizo cookies settings, and can be readjusted at any time. Presets do not override all settings.') + '</label><br><br>';
+				for (let i in decay.prefPresets) {
+					str += '<a class="smallFancyButton" style="margin: 5px; " id=""'+Game.clickStr+'="decay.prefPresets['+i+'].getPrompt();">'+decay.prefPresets[i].name+'</a><label>('+decay.prefPresets[i].desc+')</label><br>';
+				}
+			str += '<div class="line"></div>';
 			//str += decay.writePrefButton('ascendOnInf', 'AscOnInfDecayButton', loc('Ascend on infinite decay')+' ON', loc('Ascend on infinite decay')+' OFF')+'<label>('+loc("Upon reaching infinite decay, ascend without gaining any prestige or heavenly chips")+')</label><br>';
-			str += decay.writePrefButton('scrollClick', 'scrollClickButton', loc('Easy clicks')+' ON', loc('Easy clicks')+' OFF')+'<label>('+loc('Allows you to click the big cookie by scrolling, but click speed is capped to 10 clicks per second.')+')</label><br>';
-			str += decay.writePrefButton('scrollWrinklers', 'scrollWrinklersButton', loc('Easy wrinklers')+' ON', loc('Easy wrinklers')+' OFF')+'<label>('+loc('Allows you to automatically click wrinklers you are hovering over by scrolling, but click speed is capped to 10 clicks per second.')+')</label><br>';
-			str += decay.writePrefButton('touchpad', 'touchpadButton', loc('Touchpad mode')+' ON', loc('Touchpad mode')+' OFF')+'<label>('+loc('For touchpad users; changes the mod to be more accomodating of touchpads. See the list of changes <span onclick="decay.touchpadModePrompt();" style="text-decoration: underline; cursor: pointer;">here</span>.')+')</label><br>';
-			str += decay.writePrefButton('easyPurchases', 'easyPurchasesButton', loc('Convenient purchasing')+' ON', loc('Convenient purchasing')+' OFF')+'<label>('+loc('Assist option; allows you to perform simple actions such as interacting with minigames, purchasing upgrades, and using switches while paused.')+')</label><br>';
-			str += decay.writePrefButton('autoPause', 'autoPauseButton', loc('Auto pause on leave')+' ON', loc('Auto pause on leave')+' OFF')+'<label>('+loc('Automatically pauses the game if it detects that you haven\'t been looking at it for 5 seconds.')+')</label><br>';
-			str += decay.writePrefButton('wipeOnInf', 'WipeOnInfDecayButton', loc('Wipe save on infinite decay')+' ON', loc('Wipe save on infinite decay')+' OFF')+'<label>('+loc("Upon reaching infinite decay, wipe save")+')</label><br>';
-			str += decay.writePrefButton('widget', 'widgetButton', loc('Informational widget')+' ON', loc('Informational widget')+' OFF')+'<label>('+loc('Widget below the big cookie that displays information without having to look into the stats menu. (only works when decay is unlocked)')+')</label><br>';
-			str += decay.writePrefButton('RunTimer','RunTimerButton',loc("Show run timer")+' ON',loc("Show run timer")+' OFF', 'if (decay.prefs.RunTimer) { l(\'Timer\').style.display = \'\'; } else { l(\'Timer\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the run started stat.')+')</label><br>';
-			str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
-			str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time.')+')</label><br>';
-			str += decay.writePrefButton('fatigueWarning', 'fatigueWarningButton', loc('Fatigue warning')+' ON', loc('Fatigue warning')+' OFF',)+'<label>('+loc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.')+')</label><br>';
-			str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
-			str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
+				str += decay.writePrefButton('scrollClick', 'scrollClickButton', loc('Easy clicks')+' ON', loc('Easy clicks')+' OFF')+'<label>('+loc('Allows you to click the big cookie by scrolling, but click speed is capped to 10 clicks per second.')+')</label><br>';
+				str += decay.writePrefButton('scrollWrinklers', 'scrollWrinklersButton', loc('Easy wrinklers')+' ON', loc('Easy wrinklers')+' OFF')+'<label>('+loc('Allows you to automatically click wrinklers you are hovering over by scrolling, but click speed is capped to 10 clicks per second.')+')</label><br>';
+				str += decay.writePrefButton('touchpad', 'touchpadButton', loc('Touchpad mode')+' ON', loc('Touchpad mode')+' OFF')+'<label>('+loc('For touchpad users; changes the mod to be more accomodating of touchpads. See the list of changes <span onclick="decay.touchpadModePrompt();" style="text-decoration: underline; cursor: pointer;">here</span>.')+')</label><br>';
+				str += decay.writePrefButton('autoPause', 'autoPauseButton', loc('Auto pause on leave')+' ON', loc('Auto pause on leave')+' OFF')+'<label>('+loc('Automatically pauses the game if it detects that you haven\'t been looking at it for 5 seconds.')+')</label><br>';
+				str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
+				str += decay.writePrefButton('RunTimer','RunTimerButton',loc("Show run timer")+' ON',loc("Show run timer")+' OFF', 'if (decay.prefs.RunTimer) { l(\'Timer\').style.display = \'\'; } else { l(\'Timer\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the run started stat.')+')</label><br>';
+				str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
+				str += '<div class="line"></div>';
+				if (!decay.lockedPreset) {
+					str += decay.writePrefButton('easyPurchases', 'easyPurchasesButton', loc('Convenient purchasing')+' ON', loc('Convenient purchasing')+' OFF')+'<label>('+loc('Assist option; allows you to perform simple actions such as interacting with minigames, purchasing upgrades, and using switches while paused.')+')</label><br>';
+					str += decay.writePrefButton('widget', 'widgetButton', loc('Informational widget')+' ON', loc('Informational widget')+' OFF')+'<label>('+loc('Widget below the big cookie that displays information without having to look into the stats menu. (only works when decay is unlocked)')+')</label><br>';
+					str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time. Only works with the Script writer heavenly upgrade.')+')</label><br>';
+					str += decay.writePrefButton('fatigueWarning', 'fatigueWarningButton', loc('Fatigue warning')+' ON', loc('Fatigue warning')+' OFF')+'<label>('+loc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.')+')</label><br>';
+					str += decay.writePrefButton('bigSouls', 'bigSoulsButton', loc('Big souls')+' ON', loc('Big souls')+' OFF')+'<label>('+loc('All wrinkler souls are much bigger')+')</label><br>';
+					str += decay.writePrefButton('slowSouls', 'slowSoulsButton', loc('Slow souls')+' ON', loc('Slow souls')+' OFF')+'<label>('+loc('All wrinkler souls are significantly slower')+')</label><br>';
+					str += decay.writePrefButton('bigOrbs', 'bigOrbsButton', loc('Big orbs')+' ON', loc('Big orbs')+' OFF')+'<label>('+loc('All power orbs are much bigger')+')</label><br>';
+					str += decay.writePrefButton('slowOrbs', 'slowOrbsButton', loc('Slow orbs')+' ON', loc('Slow orbs')+' OFF')+'<label>('+loc('All power orbs are significantly slower')+')</label><br>';
+					str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
+					str += decay.writePrefButton('wipeOnInf', 'WipeOnInfDecayButton', loc('Wipe save on infinite decay')+' ON', loc('Wipe save on infinite decay')+' OFF')+'<label>('+loc("Upon reaching infinite decay, wipe save")+')</label><br>';
+				}
 			str += '<div class="line"></div><b>Replay information snippets:</b><br><div class="block infoSnippetBox">';
 			var str2 = '';
 			for (let i in decay.notifs) {
@@ -1825,7 +1921,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (str2 == '') {
 				str2 = loc('<b>none.</b><br><small>(You can see and replay information snippets you\'ve collected throughout the game here. The first one occurs at 5,555 cookies baked this ascension.)</small>');
 			}
-			return str + str2 + '</div>';
+			return str + str2 + '</div></div>';
 		}
 		eval('Game.UpdateMenu='+Game.UpdateMenu.toString()
 			 .replace(`rs; game will reload")+')</label><br>'+`, `rs; game will reload")+')</label><br>'+decay.getPrefButtons()+`)
@@ -3359,13 +3455,13 @@ Game.registerMod("Kaizo Cookies", {
 			return Crumbs.spawn(decay.wrinklerSoulTemplate, { 
 				x: x,
 				y: y,
-				scaleX: shiny?1:1.3, 
-				scaleY: shiny?1:1.3,  
+				scaleX: shiny?1:1.3 * decay.prefs.bigSouls?1.5:1, 
+				scaleY: shiny?1:1.3 * decay.prefs.bigSouls?1.5:1,  
 				imgs: shiny?kaizoCookies.images.shinySoul:kaizoCookies.images.wrinklerSoul,
 				shiny: shiny,
 				children: ([decay.wrinklerSoulShine1].concat(Game.prefs.fancy?decay.wrinklerSoulShine2:[])),
 				behaviors: [
-					new Crumbs.behaviorInstance(decay.wSoulMovement, { ddy: ddy * (shiny?1.35:1), dx: dx * (shiny?1.4:1) }),
+					new Crumbs.behaviorInstance(decay.wSoulMovement, { ddy: ddy * (shiny?1.35:1) * (decay.slowSouls?0.75:1), dx: dx * (shiny?1.4:1) * (decay.slowSouls?0.4:1) }),
 					new Crumbs.behaviorInstance(decay.wSoulClaim),
 					new Crumbs.behaviorInstance(decay.wSoulDeposit)
 				],
@@ -8229,7 +8325,10 @@ Game.registerMod("Kaizo Cookies", {
 				let newVector = this.mouseVector.copy().toPolar();
 				newVector[0] = Math.pow(newVector[0], 0.15);
 				this.velocity.addPolar(newVector);
-				this.scale *= 2;
+				this.scale *= 1.75;
+			}
+			if (decay.prefs.bigOrbs) {
+				this.scale *= 1.6;
 			}
 			if (Game.hasBuff('Haggler\'s misery')) {
 				this.velocity.multiply(3);
@@ -8350,6 +8449,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 
 			vel.multiply(Math.min(1, 1.5 - Math.pow(this.hp / this.hpMax, 2))); //decreased momentum if above some health
+			if (decay.prefs.slowOrbs) { vel.multiply(0.5); }
 			this.velToAdd.add(vel);
 		}
 		Game.randomRad = function() {
@@ -8479,7 +8579,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.spawnAura();
 			decay.triggerNotif('powerOrb');
 			
-			me.velocity.add(decay.polar((Math.random() * 50 + 50) * (1 - 0.8 * this.hp / this.hpMax), 2 * Math.PI * (Math.random() - 0.5)));
+			me.velocity.add(decay.polar((Math.random() * 50 + 50) * (1 - 0.8 * this.hp / this.hpMax) * (decay.prefs.slowOrbs?0.5:1), 2 * Math.PI * (Math.random() - 0.5)));
 			me.times.sinceLastClick = 0;
 			me.fleeIn += 20 * Game.fps;
 			if (this.mode == 'teleporting' || this.mode == 'fleeing') {
@@ -9539,12 +9639,12 @@ Game.registerMod("Kaizo Cookies", {
 		new decay.challenge('combo1', loc('Get a <b>Click frenzy</b> in the first <b>%1</b> of the run.', Game.sayTime(10 * 60 * Game.fps)) + '<br>' + loc('(Note: Click frenzies cannot be gotten from <b>naturally</b> spawning Golden cookies or Wrath cookies in this mod)'), function(c) { if (Game.TCount >= 600 * Game.fps) { c.makeCannotComplete(); } return Game.hasBuff('Click frenzy'); }, function(hide) { return loc('Click frenzy from Force the Hand of Fate Grimoire spell <b>base</b> chance <b>%1</b> --> <b>%2</b>', ['100%', '125%']) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'CpS']) + (hide?'':(' ' + loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1))+'%'))); }, decay.challengeUnlockModules.vial);
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`!Game.hasBuff('Dragonflight')`, `false`));
 		
-		addLoc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.');
+		addLoc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> (or any other golden cookie buff) active simultaneously in the first <b>%1</b> of the run.');
 		//addLoc('(Golden cookies not spawning fast enough? Maybe your permanent upgrade slots can help with that...)');
 		addLoc('(does not contribute to future click power multiplier checks)');
 		addLoc('<span class="highlightHover underlined" %1>Lucky day</span> no longer resets on ascension');
 		addLoc('(Currently: <b>%1</b>)');
-		new decay.challenge('combo2', loc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> active simultaneously in the first <b>%1</b> of the run.', Game.sayTime(4.5 * 60 * Game.fps, -1)), function(c) { if (Game.TCount >= 270 * Game.fps) { c.makeCannotComplete(); } return (Game.hasBuff('Click frenzy') && Game.hasBuff('Frenzy')); }, function(hide) { return loc('<span class="highlightHover underlined" %1>Lucky day</span> no longer resets on ascension', decay.getUpgradeTooltipCSS('Lucky day')) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'click power']) + ' ' + loc('(does not contribute to future click power multiplier checks)') + (hide?'':(' '+loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1))+'%'))) }, decay.challengeUnlockModules.vial, { onCompletion: function() { decay.triggerNotif('combos'); }, prereq: 'combo1' });
+		new decay.challenge('combo2', loc('Get a <b>Click frenzy</b> and a <b>Frenzy</b> (or any other golden cookie buff) active simultaneously in the first <b>%1</b> of the run.', Game.sayTime(4.5 * 60 * Game.fps, -1)), function(c) { if (Game.TCount >= 270 * Game.fps) { c.makeCannotComplete(); } return (Game.hasBuff('Click frenzy') && Game.gcBuffCount() >= 2); }, function(hide) { return loc('<span class="highlightHover underlined" %1>Lucky day</span> no longer resets on ascension', decay.getUpgradeTooltipCSS('Lucky day')) + '<br>' + loc('A <b>%1</b> %2 multiplier that gradually decreases with your current progress in a run', ['+' + Beautify(909) + '%', 'click power']) + ' ' + loc('(does not contribute to future click power multiplier checks)') + (hide?'':(' '+loc('(Currently: <b>%1</b>)', '+'+Beautify(909 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1))+'%'))) }, decay.challengeUnlockModules.vial, { onCompletion: function() { decay.triggerNotif('combos'); }, prereq: 'combo1' });
 		Game.registerHook('cookiesPerClick', function(out) { if (decay.challengeStatus('combo2')) { return out * (1 + 9.09 / (Math.max(Game.log10Cookies - 12, 0) / 5 + 1)); } return out; });
 		
 		addLoc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> in the first <b>%2</b> of the run.');
@@ -10865,7 +10965,7 @@ Game.registerMod("Kaizo Cookies", {
 		str += '/' + decay.saveUtenglobe() + '/' + decay.saveMaterialCounts() + '/' + decay.saveHaltValues() + '/' + decay.shattered;
 		str += '/' + (decay.shatterFuseDrain ?? 'NA') + '/' + decay.highestReachedChallenged + '/' + decay.wrinklersPoppedTotal
 		str += '/' + decay.saveEverBoughts() + '/' + decay.pausingCooldown + '/' + (decay.everUnlocked?1:0) + '/' + decay.saveTouchOfForce() + '/' + decay.saveBoundlessSack();
-		str += '/' + decay.thunderMarkerObj.x + ',' + decay.thunderMarkerObj.y + '/' + (decay.clickHaltDisplayHidden?1:0);
+		str += '/' + decay.thunderMarkerObj.x + ',' + decay.thunderMarkerObj.y + '/' + (decay.clickHaltDisplayHidden?1:0) + '/' + (decay.lockedPreset==null?'NA':decay.lockedPreset);
         return str;
     },
 	loadStr: '',
@@ -11163,6 +11263,8 @@ Game.registerMod("Kaizo Cookies", {
 		} else {
 			l('clickHaltDisplayContainer').style.display = 'none'; 
 		}
+
+		if (isv(str[43]) && str[43] != 'NA') { decay.lockedPreset = parseInt(str[43]); }
 		
 		decay.checkBuildingEverUnlocks();
     	Game.storeToRefresh=1;
