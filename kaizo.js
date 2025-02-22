@@ -607,7 +607,7 @@ Game.registerMod("Kaizo Cookies", {
 			autoPause: 1,
 			fatigueWarning: 1,
 			bigSouls: 0,
-			bigOrbs: 0,
+			bigOrbs: 1,
 			slowSouls: 0,
 			slowOrbs: 0
 		}
@@ -2750,7 +2750,10 @@ Game.registerMod("Kaizo Cookies", {
 				else if (godLvl == 2) { mult *= 1/0.8; }
 				else if (godLvl == 3) { mult *= 1/0.9; }
 			}
-			if (decay.challengeStatus('buildingsAlternate')) { mult *= 1/0.9; }
+			if (decay.challengeStatus('buildingsAlternate')) { mult *= 1 / 0.9; }
+			if (decay.challengeStatus('veil')) { mult *= 1 / 0.9; }
+			if (decay.challengeStatus('comboGSwitch')) { mult *= 1 / 0.9; }
+			if (Game.Has('Stevia Caelestis')) { mult *= 1 / 0.95; }
 			return Math.min(Math.sqrt(Game.log10Cookies + 20), (Game.Has('Legacy')?10:3)) * 0.00125 * (1 / mult) + 
 			(Game.resets > 0?(1 / Math.max(5, base * mult / (Math.log(1 / Math.min(1, Math.pow(Math.max(Math.min(decay.gen, (1 / (1 + Math.max(Math.min(Game.log10Cookies - 30, 40), 0) / 7))), decay.breakingPoint), decay.wrinklerApproachPow))) / Math.log(decay.wrinklerApproachFactor)))):0);
 		};
@@ -2816,6 +2819,7 @@ Game.registerMod("Kaizo Cookies", {
 				base *= 1 + Math.max(Game.santaLevel - 7, 0) * 0.01;
 			}
 			if (Game.Has('Unholy bait')) { base *= 1.1; }
+			if (Game.Has('Stevia Caelestis')) { base *= 1.05; }
 			if (decay.isConditional('powerClickWrinklers')) { base *= 0.5; }
 			if (decay.isConditional('reindeer')) { base *= 1.4; }
 			base *= 1 / (1 + Math.max(Game.log10Cookies - 18, 0) / 30);
@@ -2958,7 +2962,7 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		decay.wrinklerAI = new Crumbs.behavior(function() {
 			const toAdd = -this.speedMult * (decay.wrinklerApproach / Game.fps) * (this.bomber?2.5:1);
-			this.dist = Math.max(this.dist + toAdd * (1 / Math.max((this.hurt - 10) / 10, 1)), 0);
+			this.dist = Math.max(this.dist + toAdd * (1 / Math.max((this.hurt - 10) / (Game.Has('Diabetica Daemonicus')?5:10), 1)), 0);
 			this.lastDistMoved = toAdd;
 		});
 		decay.wrinklerStats = new Crumbs.behavior(function() {
@@ -6795,6 +6799,9 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		eval('Game.shimmerTypes.reindeer.initFunc='+Game.shimmerTypes.reindeer.initFunc.toString().replace(`if (Game.Has('Weighted sleighs')) dur*=2;`, `if (Game.Has('Weighted sleighs') && !Game.hasBuff('Reindeer frenzy')) dur*=2;`));
 
+		replaceDesc('Stevia Caelestis', 'Wrinklers approach the big cookie <b>5%</b> slower.<br>You deal <b>5%</b> more damage to wrinklers.', true);
+		replaceDesc('Diabetica Daemonicus', 'The wrinkler stun effect on damage is <b>twice</b> as potent.', true);
+
 		Game.synergyPriceFunc = function() { return (this.buildingTie1.basePrice*this.buildingTie2.basePrice)*Game.Tiers[this.tier].price*(Game.Has('Chimera')?0.98:1); }
 		Game.Tiers.synergy1.price = 200;
 		Game.Tiers.synergy2.price = 2000000000;
@@ -7856,7 +7863,7 @@ Game.registerMod("Kaizo Cookies", {
 					allWrinklers[i].dist += 0.03;
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.07; }
 				}
-				allWrinklers[i].hurt += 100;
+				allWrinklers[i].hurt += 100 * (Game.Has('Diabetica Daemonicus') + 1);
 				if (allWrinklers[i].size < prevSize) { decay.spawnWrinklerbits(allWrinklers[i], 4, 1.5, 1.5, decay.wrinklerExplosionBitsFunc, originX - allWrinklers[i].x, originY - allWrinklers[i].y); }
 			}
 		}
@@ -9332,7 +9339,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('You start with the Shimmering veil turned on, but if the Shimmering veil collapses, force ascend. Having purity greatly heals the veil.');
 		addLoc('While exhausted, wrinkler souls halt decay for <b>10%</b> longer');
-		new decay.challenge('veil', loc('You start with the Shimmering veil turned on, but if the Shimmering veil collapses, force ascend. Having purity greatly heals the veil.')+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(1e33)), function() { return Game.cookiesEarned>=1e33; }, loc('While exhausted, wrinkler souls halt decay for <b>10%</b> longer'), function() { return decay.challengeUnlockModules.box && Game.Has('Shimmering veil'); }, { prereq: ['powerClickWrinklers', 'earthShatterer'], category: 'box', conditional: true });
+		new decay.challenge('veil', loc('You start with the Shimmering veil turned on, but if the Shimmering veil collapses, force ascend. Having purity greatly heals the veil.')+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(1e33)), function() { return Game.cookiesEarned>=1e33; }, loc('While exhausted, wrinkler souls halt decay for <b>10%</b> longer') + '<br>' + loc('Wrinklers approach the big cookie <b>10%</b> slower'), function() { return decay.challengeUnlockModules.box && Game.Has('Shimmering veil'); }, { prereq: ['powerClickWrinklers', 'earthShatterer'], category: 'box', conditional: true });
 		
 		addLoc('Reindeers spawn constantly, regardless of season, and massively amplify decay when clicked. Easy clicks and wrinklers are disabled.');
 		new decay.challenge('reindeer', loc('Reindeers spawn constantly, regardless of season, and massively amplify decay when clicked. Easy clicks and wrinklers are disabled.')+'<br>'+loc('Bake <b>%1</b> cookies.', Beautify(1e24)), function() { return Game.cookiesEarned>=1e24; }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.1'), decay.challengeUnlockModules.box, { prereq: 'powerClickWrinklers', conditional: true });
@@ -9720,8 +9727,8 @@ Game.registerMod("Kaizo Cookies", {
 		new decay.challenge('comboDragonCursor', loc('Get a <b>direct</b> click power multiplier of at least <b>x%1</b> with only one buff active, without Santa\'s helpers, while not having a Dragonflight, and without help from the Garden. Then, click a naturally spawning golden cookie with Reaper of Fields slotted. (while the click power requirement is met)', [Beautify(1165)]), function(c) { if (Game.Has('Santa\'s helpers')) { c.makeCannotComplete(); } return false; }, loc('All dragon auras cost <b>50 less</b> buildings to unlock') + '<br>' + loc('Your dragon starts out hatched with the first aura unlocked'), decay.challengeUnlockModules.vial, { prereq: 'combo3' });
 		
 		addLoc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.');
-		addLoc('The Golden switch is <b>%1%</b> cheaper.');
-		new decay.challenge('comboGSwitch', loc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.', [Beautify(1000), Game.sayTime(3 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 180 * Game.fps) { c.makeCannotComplete(); } return (gp.spellsCast <= 1 && Game.clickMult >= 1000 && Game.Has('Golden switch [off]')); }, loc('The Golden switch is <b>%1%</b> cheaper.', 25) + '<br>' + loc('Cookie production multiplier <b>+%1%</b>.', 10), function() { return (decay.challengeUnlockModules.box() && Game.Has('Golden switch')); }, { category: 'box', prereq: ['combo2', 'earthShatterer'] });
+		addLoc('The Golden switch is <b>%1%</b> cheaper');
+		new decay.challenge('comboGSwitch', loc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.', [Beautify(1000), Game.sayTime(3 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 180 * Game.fps) { c.makeCannotComplete(); } return (gp.spellsCast <= 1 && Game.clickMult >= 1000 && Game.Has('Golden switch [off]')); }, loc('The Golden switch is <b>%1%</b> cheaper', 25) + '<br>' + loc('Cookie production multiplier <b>+%1%</b>.', 10) + '<br>' + loc('Wrinklers approach the big cookie <b>10%</b> slower'), function() { return (decay.challengeUnlockModules.box() && Game.Has('Golden switch')); }, { category: 'box', prereq: ['combo2', 'earthShatterer'] });
 		Game.Upgrades['Golden switch [off]'].priceFunc = function() {return Game.cookiesPs*60*60*(decay.challengeStatus('comboGSwitch')?0.75:1);}
 		Game.Upgrades['Golden switch [on]'].priceFunc = function() {return Game.cookiesPs*60*60*(decay.challengeStatus('comboGSwitch')?0.75:1);}
 		
