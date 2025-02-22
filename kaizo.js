@@ -1442,8 +1442,6 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.challengeStatus('pledge')) { Game.Upgrades['Touch of force [ACTIVE]'].buy(); }
 
 			decay.boundlessSackOrbCount = 0;
-			if (Game.Has('Virtues')) { Game.Upgrades['Boundless sack'].bought = 1; }
-			Game.Upgrades['Boundless sack'].icon = [34, 12];
 
 			for (let i in Game.Objects) {
 				Game.Objects[i].everUnlocked = false;
@@ -1464,7 +1462,14 @@ Game.registerMod("Kaizo Cookies", {
 
 			decay.performConditionalInits();
 		}
+		decay.onAfterReincarnation = function() {
+			if (Game.Has('Virtues')) { Game.Upgrades['Boundless sack'].bought = 1; }
+			Game.Upgrades['Boundless sack'].icon = [34, 12];
+
+			decay.setRates();
+		}
 		Game.registerHook('reset', decay.onReincarnation);
+		Game.registerHook('reincarnate', decay.onAfterReincarnation);
 		Game.registerHook('reset', function(hard) { if (kaizoCookies.paused) { kaizoCookies.togglePause(); } if (hard) { decay.wipeSave(); } });
 		eval('Game.HardReset='+Game.HardReset.toString().replace('Game.lumpRefill=0;', 'Game.lumpRefill=0; decay.setRates();'));
 		decay.getCpSBoostFromPrestige = function() {
@@ -2344,7 +2349,6 @@ Game.registerMod("Kaizo Cookies", {
 		decay.rawCpsMults = function(mult) {
 			//mult *= (1 + 3 * Math.pow(1 - decay.incMult, 12));
 			if (decay.challengeStatus('combo1')) { mult *= 1 + 9.09 / (Math.max(Game.log10Cookies - 10, 0) / 2 + 1); }
-			if (decay.challengeStatus('comboGSwitch')) { mult *= 1.1; }
 			if (Game.Has('Wrinkler ambergris')) { mult *= 1.06; }
 			if (decay.covenantStatus('wrathBan')) { mult *= 0.75; }
 			for (let i in Game.UpgradesByPool['tech']) {
@@ -3113,7 +3117,7 @@ Game.registerMod("Kaizo Cookies", {
             }
 		}
 		decay.getSpecialProtectMult = function() {
-			return (this.shiny?0.333:1) * (this.bomber?2:1);
+			return (this.shiny?(0.333 * (Game.Has('Sugar aging process')?(1 + Math.min(Game.Objects.Grandma.amount, 800) * 0.0005):1)):1) * (this.bomber?2:1);
 		}
 		decay.onWrinklerClick = function() {
 			if (!decay.gameCan.popWrinklers) { return; }
@@ -3339,6 +3343,9 @@ Game.registerMod("Kaizo Cookies", {
 			if (!decay.unlocked || decay.wrinklersN >= 72) { return; }
 			let obj = {};
 			obj.size = decay.getCurrentWrinklerSize(Math.random() * 100);
+			if (Game.Has('Sucralosia Inutilis') && Math.random() < 0.1) { 
+				obj.size = Math.max(obj.size - 4, 1);
+			}
 			obj.rad = Math.random() * Math.PI * 2;
 			obj.speedMult = Math.random() * 0.6 + 0.7;
 			for (let i = 0; i < Math.floor(Math.random() * (Math.sqrt(Game.log10Cookies))); i++) {
@@ -3359,7 +3366,10 @@ Game.registerMod("Kaizo Cookies", {
 			if (obj.size <= 14) { 
 				obj.size = Math.round(Math.max(obj.size - Math.min(Math.max(Math.pow(14 - obj.size, 0.6), 0), 5) - 1, 0)); 
 			} else {
-				obj.size = Math.max(obj.size - 1, 0);
+				obj.size -= 1;
+			}
+			if (Game.Has('Sucralosia Inutilis') && Math.random() < 0.1) { 
+				obj.size = Math.max(obj.size - 4, 1);
 			}
 			obj.rad = Math.random() * Math.PI * 2;
 			obj.speedMult = Math.random() * 0.8 + 0.6;
@@ -4443,7 +4453,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.purifyFromShimmer = function(obj) {
 			if (obj.type == 'reindeer') {
 				if (decay.isConditional('reindeer')) { decay.amplifyAll(2, 0); } else if (obj.noPurity) { decay.amplifyAll(10, 0); Game.Notify('LOL', '', [12, 8]); }// else { decay.purifyAll(1.3 * (1 + Game.Has('Weighted sleighs') * 0.25), 0.2, 5); decay.triggerNotif('reindeer'); }
-				if (Game.Has('Weighted sleighs')) { decay.stop(5, 'reindeer'); }
+				if (Game.Has('Weighted sleighs')) { decay.stop(7, 'reindeer'); }
 				return;
 			} 
 			if (obj.type == 'a mistake') {
@@ -4508,6 +4518,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.halts['reindeer'] = new decay.haltChannel({
 			keep: 0.4,
 			overtimeEfficiency: 1,
+			overtimeDec: 0,
 			overtimeLimit: 1e6,
 			power: 1.2
 		});
@@ -6801,6 +6812,9 @@ Game.registerMod("Kaizo Cookies", {
 
 		replaceDesc('Stevia Caelestis', 'Wrinklers approach the big cookie <b>5%</b> slower.<br>You deal <b>5%</b> more damage to wrinklers.', true);
 		replaceDesc('Diabetica Daemonicus', 'The wrinkler stun effect on damage is <b>twice</b> as potent.', true);
+		replaceDesc('Sugar aging process', 'Each grandma (up to 800) increases damage against shiny wrinklers by <b><span>0.<span>0</span>5</span>%</b>.', true);
+		replaceDesc('Sucralosia Inutilis', 'Each wrinkler has a <b>10%</b> chance to spawn with <b>4</b> less layers.', true);
+		Game.Upgrades['Kitten wages'].basePrice /= 1000;
 
 		Game.synergyPriceFunc = function() { return (this.buildingTie1.basePrice*this.buildingTie2.basePrice)*Game.Tiers[this.tier].price*(Game.Has('Chimera')?0.98:1); }
 		Game.Tiers.synergy1.price = 200;
@@ -9728,7 +9742,7 @@ Game.registerMod("Kaizo Cookies", {
 		
 		addLoc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.');
 		addLoc('The Golden switch is <b>%1%</b> cheaper');
-		new decay.challenge('comboGSwitch', loc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.', [Beautify(1000), Game.sayTime(3 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 180 * Game.fps) { c.makeCannotComplete(); } return (gp.spellsCast <= 1 && Game.clickMult >= 1000 && Game.Has('Golden switch [off]')); }, loc('The Golden switch is <b>%1%</b> cheaper', 25) + '<br>' + loc('Cookie production multiplier <b>+%1%</b>.', 10) + '<br>' + loc('Wrinklers approach the big cookie <b>10%</b> slower'), function() { return (decay.challengeUnlockModules.box() && Game.Has('Golden switch')); }, { category: 'box', prereq: ['combo2', 'earthShatterer'] });
+		new decay.challenge('comboGSwitch', loc('Obtain a <b>direct</b> click power multiplier of at least <b>x%1</b> during a Frenzy in the first <b>%2</b> of the run, without casting more than one spell, and with the Golden switch turned on.', [Beautify(1000), Game.sayTime(3 * 60 * Game.fps)]), function(c) { if (Game.TCount >= 180 * Game.fps) { c.makeCannotComplete(); } return (gp.spellsCast <= 1 && Game.clickMult >= 1000 && Game.Has('Golden switch [off]')); }, loc('The Golden switch is <b>%1%</b> cheaper', 25) + '<br>' + loc('Wrinklers approach the big cookie <b>10%</b> slower'), function() { return (decay.challengeUnlockModules.box() && Game.Has('Golden switch')); }, { category: 'box', prereq: ['combo2', 'earthShatterer'] });
 		Game.Upgrades['Golden switch [off]'].priceFunc = function() {return Game.cookiesPs*60*60*(decay.challengeStatus('comboGSwitch')?0.75:1);}
 		Game.Upgrades['Golden switch [on]'].priceFunc = function() {return Game.cookiesPs*60*60*(decay.challengeStatus('comboGSwitch')?0.75:1);}
 		
