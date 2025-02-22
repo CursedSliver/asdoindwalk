@@ -7139,7 +7139,6 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
-		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -7529,7 +7528,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		*/
 
 		/*=====================================================================================
         Power clicks
