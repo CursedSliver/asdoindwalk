@@ -1868,9 +1868,13 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Fatigue warning');
 		addLoc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.');
 		addLoc('Big souls');
-		addLoc('All wrinkler souls are much bigger');
+		addLoc('Assist option; all wrinkler souls are much bigger');
 		addLoc('Big orbs');
-		addLoc('All power orbs are much bigger');
+		addLoc('Assist option; all power orbs are much bigger');
+		addLoc('Slow souls');
+		addLoc('Assist option; all wrinkler souls are significantly slower');
+		addLoc('Slow orbs');
+		addLoc('Assist option; all power orbs are significantly slower');
 		decay.prefToNameMap = {
 			easyPurchases: loc('Convenient purchasing'),
 			widget: loc('Informational widget'),
@@ -1906,10 +1910,10 @@ Game.registerMod("Kaizo Cookies", {
 					str += decay.writePrefButton('widget', 'widgetButton', loc('Informational widget')+' ON', loc('Informational widget')+' OFF')+'<label>('+loc('Widget below the big cookie that displays information without having to look into the stats menu. (only works when decay is unlocked)')+')</label><br>';
 					str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time. Only works with the Script writer heavenly upgrade.')+')</label><br>';
 					str += decay.writePrefButton('fatigueWarning', 'fatigueWarningButton', loc('Fatigue warning')+' ON', loc('Fatigue warning')+' OFF')+'<label>('+loc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.')+')</label><br>';
-					str += decay.writePrefButton('bigSouls', 'bigSoulsButton', loc('Big souls')+' ON', loc('Big souls')+' OFF')+'<label>('+loc('All wrinkler souls are much bigger')+')</label><br>';
-					str += decay.writePrefButton('slowSouls', 'slowSoulsButton', loc('Slow souls')+' ON', loc('Slow souls')+' OFF')+'<label>('+loc('All wrinkler souls are significantly slower')+')</label><br>';
-					str += decay.writePrefButton('bigOrbs', 'bigOrbsButton', loc('Big orbs')+' ON', loc('Big orbs')+' OFF')+'<label>('+loc('All power orbs are much bigger')+')</label><br>';
-					str += decay.writePrefButton('slowOrbs', 'slowOrbsButton', loc('Slow orbs')+' ON', loc('Slow orbs')+' OFF')+'<label>('+loc('All power orbs are significantly slower')+')</label><br>';
+					str += decay.writePrefButton('bigSouls', 'bigSoulsButton', loc('Big souls')+' ON', loc('Big souls')+' OFF')+'<label>('+loc('Assist option; all wrinkler souls are much bigger')+')</label><br>';
+					str += decay.writePrefButton('slowSouls', 'slowSoulsButton', loc('Slow souls')+' ON', loc('Slow souls')+' OFF')+'<label>('+loc('Assist option; all wrinkler souls are significantly slower')+')</label><br>';
+					str += decay.writePrefButton('bigOrbs', 'bigOrbsButton', loc('Big orbs')+' ON', loc('Big orbs')+' OFF')+'<label>('+loc('Assist option; all power orbs are much bigger')+')</label><br>';
+					str += decay.writePrefButton('slowOrbs', 'slowOrbsButton', loc('Slow orbs')+' ON', loc('Slow orbs')+' OFF')+'<label>('+loc('Assist option; all power orbs are significantly slower')+')</label><br>';
 					str += decay.writePrefButton('comp', 'compButton', loc('Competition mode')+' ON', loc('Competition mode')+' OFF')+'<label>('+loc('Adds a 1 minute, 30 seconds long cooldown to pausing the game.')+')</label><br>';
 					str += decay.writePrefButton('wipeOnInf', 'WipeOnInfDecayButton', loc('Wipe save on infinite decay')+' ON', loc('Wipe save on infinite decay')+' OFF')+'<label>('+loc("Upon reaching infinite decay, wipe save")+')</label><br>';
 				}
@@ -4435,7 +4439,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.purifyFromShimmer = function(obj) {
 			if (obj.type == 'reindeer') {
 				if (decay.isConditional('reindeer')) { decay.amplifyAll(2, 0); } else if (obj.noPurity) { decay.amplifyAll(10, 0); Game.Notify('LOL', '', [12, 8]); }// else { decay.purifyAll(1.3 * (1 + Game.Has('Weighted sleighs') * 0.25), 0.2, 5); decay.triggerNotif('reindeer'); }
-				if (Game.Has('Weighted sleighs')) { decay.stop(5); }
+				if (Game.Has('Weighted sleighs')) { decay.stop(5, 'reindeer'); }
 				return;
 			} 
 			if (obj.type == 'a mistake') {
@@ -4497,6 +4501,12 @@ Game.registerMod("Kaizo Cookies", {
 			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && !(decay.powerClicksOn() && Game.Has('Mammon') && decay.power >= decay.firstPowerClickReq) && !decay.isConditional('reindeer') && ((decay.prefs.scrollClick && Game.Scroll!=0) || (Game.keys[65] && decay.prefs.touchpad) || decay.easyClicksEnable) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105) { Game.ClickCookie(); Game.BigCookieState = 1; decay.bounceBackInForce = 1 + randomFloor(Math.random()); }`)
 			.replace(`Beautify(Game.prestige)]);`, `Beautify(decay.getCpSBoostFromPrestige())]);`)
 		);
+		decay.halts['reindeer'] = new decay.haltChannel({
+			keep: 0.4,
+			overtimeEfficiency: 1,
+			overtimeLimit: 1e6,
+			power: 1.2
+		});
 		Game.registerHook('logic', function() {
 			if (decay.bounceBackInForce > 0) {
 				decay.bounceBackInForce--;
@@ -6683,6 +6693,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.ToggleSpecialMenu='+Game.ToggleSpecialMenu.toString()
 			.replace('var moni=Math.pow(Game.santaLevel+1,Game.santaLevel+1);', 'var moni=(Game.Has("Season switcher")?1:1e9)*Math.pow((Game.santaLevel+1)*1.2,(Game.santaLevel+1)*1.2);')
 			.replace(`'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+loc("sacrifice %1",'<div'+(Game.cookies>moni?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(Math.pow(Game.santaLevel+1,Game.santaLevel+1)))+'</div>')+'</div>'+`, `'<div style="display:table-cell;vertical-align:middle;font-size:65%;">'+'<div'+((Game.cookies>moni&&decay.utenglobeStorage.soul.amount>=Game.santaSoulReqGet(Game.santaLevel)&&decay.utenglobeStorage.shinySoul.amount>=Game.santaShinySoulReqGet(Game.santaLevel))?'':' style="color:#777;"')+'>'+loc("%1 cookie",LBeautify(moni))+'<br>'+((Game.santaSoulReqGet(Game.santaLevel) > 0)?loc('%1 soul',LBeautify(Game.santaSoulReqGet(Game.santaLevel))):'')+(Game.santaShinySoulReqGet(Game.santaLevel)>0?('<br>'+loc('%1 shiny soul',LBeautify(Game.santaShinySoulReqGet(Game.santaLevel)))):'')+'</div></div>'+`)
+			.replace(`if (Game.santaLevel<14)`, `if (Game.santaLevel>=14) { str += decay.getSantaFinalStageContents(); } else if (Game.santaLevel<14)`)
 		);
 		addLoc('Also makes all santa\'s gifts <b>%1</b> times cheaper.');
 		replaceDesc('Season switcher', 'Allow you to <b>trigger seasonal events</b> at will, for a price.' + '<br>' + loc('Also makes all santa\'s gifts <b>%1</b> times cheaper.', Beautify(1e9)) + '<q>' + 'There will always be time.' + '</q>');
@@ -6738,6 +6749,50 @@ Game.registerMod("Kaizo Cookies", {
 			Game.Upgrades[Game.santaDrops[i]].desc = Game.Upgrades[Game.santaDrops[i]].desc.slice(0, Game.Upgrades[Game.santaDrops[i]].desc.indexOf('<q>')) + '<br>' + loc('Cost increases by <b>12 times</b> for each santa upgrade bought.') + Game.Upgrades[Game.santaDrops[i]].desc.slice(Game.Upgrades[Game.santaDrops[i]].desc.indexOf('<q>'), Game.Upgrades[Game.santaDrops[i]].desc.length);
 			Game.Upgrades[Game.santaDrops[i]].desc = Game.Upgrades[Game.santaDrops[i]].desc.replace('<br>'+loc('Cost scales with Santa level.'), '');
 		}
+		decay.getSantaFinalStageContents = function() {
+			return '<div class="line"></div>'+
+			'<div class="optionBox" style="margin-bottom:0px;"><a style="line-height:80%;" class="option framed large title" '+Game.clickStr+'="decay.summonReindeerFrenzy();">'+
+				'<div style="display:table-cell;vertical-align:middle;line-height:100%;">'+loc("Summon reindeer frenzy")+'</div>'+
+				'<div style="display:table-cell;vertical-align:middle;padding:4px 12px;">|</div>'+
+				'<div style="display:table-cell;vertical-align:middle;font-size:65%;width:30%;">'+'<div '+((decay.utenglobeStorage.soul.amount>=16&&decay.utenglobeStorage.shinySoul.amount>=4)?'':'style="color:#777;"')+'>'+
+					loc('%1 soul',LBeautify(16))+'<br>'+
+					loc('%1 shiny soul',LBeautify(4))+
+				'</div></div>'+
+			'</a></div>';
+		}
+		addLoc('Reindeer frenzy');
+		addLoc('Reindeers incoming!')
+		new Game.buffType('reindeerFrenzy', function(time) {
+			return {
+				name: loc('Reindeer frenzy'),
+				desc: loc('Reindeers incoming!'),
+				icon: [21, 2, kaizoCookies.images.custImg],
+				time: time*Game.fps,
+				add: true,
+				aura: 1
+			}
+		});
+		decay.summonReindeerFrenzy = function() {
+			if (!(decay.utenglobeStorage.soul.amount>=16&&decay.utenglobeStorage.shinySoul.amount>=4)) { return; }
+			Game.gainBuff('reindeerFrenzy', 7);
+			decay.reindeerFrenzyLastSpawn = Game.T;
+			decay.utenglobeStorage.soul.lose(16);
+			decay.utenglobeStorage.shinySoul.lose(4);
+			Game.ToggleSpecialMenu(1);
+		}
+		decay.reindeerFrenzyLastSpawn = 0;
+		Game.registerHook('logic', function() {
+			if (!Game.hasBuff('Reindeer frenzy')) { 
+				return;
+			}
+
+			if (Math.random() < (Game.T - decay.reindeerFrenzyLastSpawn) / (Game.fps / 2)) {
+				let h = new Game.shimmer('reindeer');
+				h.spawnLead = 1; 
+				decay.reindeerFrenzyLastSpawn = Game.T;
+			}
+		});
+		eval('Game.shimmerTypes.reindeer.initFunc='+Game.shimmerTypes.reindeer.initFunc.toString().replace(`if (Game.Has('Weighted sleighs')) dur*=2;`, `if (Game.Has('Weighted sleighs') && !Game.hasBuff('Reindeer frenzy')) dur*=2;`));
 
 		Game.synergyPriceFunc = function() { return (this.buildingTie1.basePrice*this.buildingTie2.basePrice)*Game.Tiers[this.tier].price*(Game.Has('Chimera')?0.98:1); }
 		Game.Tiers.synergy1.price = 200;
