@@ -3459,8 +3459,8 @@ Game.registerMod("Kaizo Cookies", {
 			return Crumbs.spawn(decay.wrinklerSoulTemplate, { 
 				x: x,
 				y: y,
-				scaleX: shiny?1:1.3 * decay.prefs.bigSouls?1.5:1, 
-				scaleY: shiny?1:1.3 * decay.prefs.bigSouls?1.5:1,  
+				scaleX: (shiny?1:1.3) * (decay.prefs.bigSouls?1.5:1), 
+				scaleY: (shiny?1:1.3) * (decay.prefs.bigSouls?1.5:1),  
 				imgs: shiny?kaizoCookies.images.shinySoul:kaizoCookies.images.wrinklerSoul,
 				shiny: shiny,
 				children: ([decay.wrinklerSoulShine1].concat(Game.prefs.fancy?decay.wrinklerSoulShine2:[])),
@@ -4163,7 +4163,7 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Complete unshackled decay challenges to raise maximum storage (Maxed out: <b>+%1</b>)');
 		addLoc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul');
 		addLoc('Offer <b>%1</b> to make shiny condensation more efficient');
-		addLoc('Shiny condenser acquired');
+		addLoc('Shiny condenser complete');
 		decay.utenglobeSoulCookieUpgradeCount = 0;
 		decay.ugSoulCookieUpgradeCostMap = [1e9, 1e10, 1e11, 1e12, 1e14, 1e17, 1e21, 1e26, 1e32, 1e39, 1e47, 1e56];
 		decay.tryBuyUtenglobeCookieUpgrade = function() {
@@ -4210,7 +4210,7 @@ Game.registerMod("Kaizo Cookies", {
 				//implement upgrade later
 				const button = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e10 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e10); decay.shinyCondenserUnlocked = true; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to unlock the shiny condenser, converting normal souls to a shiny soul', loc('%1 cookie', Beautify(2e10))) + '</div>');
 				const buttonAlt = ('<div class="option framed utenglobeUpgrade" '+Game.clickStr+'="if (Game.cookies > 2e18 && decay.gameCan.upgradeUtenglobe) { Game.Spend(2e18); decay.shinyCondenserUpgrades++; decay.updateUtenglobe(); }">' + loc('Offer <b>%1</b> to make shiny condensation more efficient', loc('%1 cookie', Beautify(2e18))) + '</div>');
-				const buttonCapped = '<div class="block capped">' + loc('Shiny condenser acquired') + '</div>';
+				const buttonCapped = '<div class="block capped">' + loc('Shiny condenser complete') + '</div>';
 				const prompt = '<div class="block incomplete shinyColor">' + loc('Complete <b>%1</b> more unshackled decay challenges to raise maximum storage by <b>%2</b> (Currently: <b>+%3</b>)', [Beautify(Math.pow(2, Math.floor(Math.log2(decay.challengesCompleted + 1)) + 1) - 1 - decay.challengesCompleted), 1, Math.floor(Math.log2(decay.challengesCompleted + 1))]) + '</div>';
 				const promptCapped = '<div class="block capped">' + loc('Complete unshackled decay challenges to raise maximum storage (Maxed out: <b>+%1</b>)', Beautify(4)) + '</div>';
 				return (decay.shinyCondenserUnlocked?(decay.shinyCondenserUpgrades?buttonCapped:buttonAlt):button) + (decay.challengesCompleted<31?prompt:promptCapped);
@@ -6779,6 +6779,7 @@ Game.registerMod("Kaizo Cookies", {
 			decay.utenglobeStorage.soul.lose(16);
 			decay.utenglobeStorage.shinySoul.lose(4);
 			Game.ToggleSpecialMenu(1);
+			Game.Win('Mass reindeer duplication');
 		}
 		decay.reindeerFrenzyLastSpawn = 0;
 		Game.registerHook('logic', function() {
@@ -10668,6 +10669,8 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('Burst <b>%1</b> bomber wrinklers.');
 			this.upgrades.push(new Game.Achievement('The red wire', loc('Burst <b>%1</b> bomber wrinklers.', Beautify(66)), [13, 1, kaizoCookies.images.custImg])); Game.Achievements['The red wire'].order = 21000.2631;
 			this.upgrades.push(new Game.Achievement('Innocence farmer', loc('Burst <b>%1</b> bomber wrinklers.', Beautify(6666)), [13, 1, kaizoCookies.images.custImg])); Game.Achievements['Innocence farmer'].order = 21000.2632;
+
+			this.upgrades.push(new Game.Achievement('Mass reindeer duplication', 'Trigger a <b>Reindeer frenzy</b>.', [21, 2, kaizoCookies.images.custImg])); Game.Achievements['Mass reindeer duplication'].order = 22200;
 
 			this.checkChallengeAchievs = function() {
 				const completions = decay.challengesCompleted;
