@@ -1716,7 +1716,7 @@ Game.registerMod("Kaizo Cookies", {
 			},
 			difficultyRamping: {
 				title: 'Difficulty ramping',
-				desc: 'While the less cookies you have baked this ascension the weaker decay is, you can\'t stay at that low level forever. After some time has elapsed since the start of an ascension, the effective cookie count will start to steadily increase, eventually reaching up to one thousandth of your cookies baked all time - if you haven\'t reached that already.<br>If ramping is currently inflating the difficulty, you can see the exact cookie count your game is using to calculate decay-based mechanics in the stats menu.',
+				desc: 'While the less cookies you have baked this ascension the weaker decay is, you can\'t stay at that low level forever. After some time has elapsed since the start of an ascension, the effective cookie count will start to steadily increase, eventually reaching up to a small portion of your cookies baked all time - if you haven\'t reached that already.<br>If ramping is currently inflating the difficulty, you can see the exact cookie count your game is using to calculate decay-based mechanics in the stats menu.',
 				icon: 0,
 				noPause: true
 			}
@@ -2381,7 +2381,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.resets == 0 || !decay.prefs.difficultyRamping) { Game.log10CookiesSimulated = Game.log10Cookies; return; }
 
 			const log10Max = Math.log10(Game.cookiesEarned + Game.cookiesReset);
-			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, Math.min(Math.max(Game.TCount - 40 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps, 0) / (80 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps), 1) * (log10Max - 3));
+			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, Math.min(Math.max(Game.TCount - 40 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps, 0) / (80 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps), 1) * (log10Max - log10Max / 6));
 			if (Game.log10CookiesSimulated > Game.log10Cookies) { 
 				decay.triggerNotif('difficultyRamping');
 				if (!Game.hasTriggeredDifficultyRampingNotif) { 
@@ -8012,7 +8012,7 @@ Game.registerMod("Kaizo Cookies", {
 			[186, 12, 248],
 			[251, 7, 217]
 		];
-		addLoc('The duration of Power poked and Power surge <b>+%1%</b>');
+		addLoc('The duration of Power poked and Power surge <b>+%1%</b>.');
 		replaceDesc('Ichor syrup', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 7)+'<br>'+loc("Sugar lumps mature <b>%1</b> sooner.",Game.sayTime(7*60*Game.fps))+'<br>'+loc("Dropped by %1 plants.",loc("Ichorpuff").toLowerCase())+'<q>Tastes like candy. The smell is another story.</q>');
 		replaceDesc('Fern tea', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 3)+'<br>'+loc("Dropped by %1 plants.",loc("Drowsyfern").toLowerCase())+'<q>A chemically complex natural beverage, this soothing concoction has been used by mathematicians to solve equations in their sleep.</q>');
 		replaceDesc('Fortune #102', loc('The duration of Power poked and Power surge <b>+%1%</b>.', 10)+'<br>'+'<q>Help, I\'m trapped in a '+(App?'computer':'browser')+' game!</q>');
@@ -11071,11 +11071,11 @@ Game.registerMod("Kaizo Cookies", {
 			addLoc('Your Scroll of prestige escalation is ready to use again!');
 			addLoc('Not enough souls!');
 			addLoc('The scroll is not on cooldown!');
-			new decay.scroll('Scroll of prestige unbound', 'Type "unleash the hidden will" to refresh the cooldown on the Scroll of prestige escalation, at the cost of <b>12 normal souls</b> or <b>3 shiny souls</b>, priortizing normal souls when both are available.<br>The effect cap of the Scroll of prestige escalation is increased to <b>+225%</b> unleashed prestige.', 2e8, [26, 4, kaizoCookies.images.custImg], ['Scroll of prestige escalation'], 308, 906, 'unleash the hidden will', 0, function() { 
+			new decay.scroll('Scroll of prestige unbound', 'Type "unleash the hidden will" to refresh the cooldown on the Scroll of prestige escalation, at the cost of <b>9 normal souls</b> or <b>3 shiny souls</b>, priortizing normal souls when both are available.<br>The effect cap of the Scroll of prestige escalation is increased to <b>+225%</b> unleashed prestige.', 2e8, [26, 4, kaizoCookies.images.custImg], ['Scroll of prestige escalation'], 308, 906, 'unleash the hidden will', 0, function() { 
 				if (!decay.scrolls['Scroll of prestige escalation'].cooldown) { Game.Notify(loc('The scroll is not on cooldown!'), '', 0, 3); return; }
 
-				if (decay.utenglobeStorage.soul.amount >= 12) {
-					decay.utenglobeStorage.soul.lose(12);
+				if (decay.utenglobeStorage.soul.amount >= 9) {
+					decay.utenglobeStorage.soul.lose(9);
 				} else if (decay.utenglobeStorage.shinySoul.amount >= 3) {
 					decay.utenglobeStorage.shinySoul.lose(3);
 				} else {
