@@ -1465,7 +1465,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			decay.checkBuildingEverUnlocks();
 
-			decay.dragonGutsKBMeter = decay.dragonGutsKBMeterMax;
+			decay.dragonGutsKBMeter = 0;
 
 			decay.grabbedObj = [];
 			
@@ -1944,7 +1944,7 @@ Game.registerMod("Kaizo Cookies", {
 					str += decay.writePrefButton('widget', 'widgetButton', loc('Informational widget')+' ON', loc('Informational widget')+' OFF')+'<label>('+loc('Widget below the big cookie that displays information without having to look into the stats menu. (only works when decay is unlocked)')+')</label><br>';
 					str += decay.writePrefButton('typingDisplay', 'typingDisplayButton', loc('Typing display')+' ON', loc('Typing display')+' OFF', 'if (decay.prefs.typingDisplay) { l(\'typingDisplayContainer\').style.display = \'\' } else { l(\'typingDisplayContainer\').style.display = \'none\'; }')+'<label>('+loc('Shows your keyboard inputs in real time. Only works with the Script writer heavenly upgrade.')+')</label><br>';
 					str += decay.writePrefButton('fatigueWarning', 'fatigueWarningButton', loc('Fatigue warning')+' ON', loc('Fatigue warning')+' OFF')+'<label>('+loc('Warns you about how close you are to becoming exhausted upon reaching certain fatigue thresholds.')+')</label><br>';
-					str += decay.writePrefButton('easyTyping', 'easyTypingButton', loc('Easy typing')+' ON', loc('Easy typing')+' OFF')+'<label>('+loc('Assist option; allows you to use the Script writer while paused')+')</label>';
+					str += decay.writePrefButton('easyTyping', 'easyTypingButton', loc('Easy typing')+' ON', loc('Easy typing')+' OFF')+'<label>('+loc('Assist option; allows you to use the Script writer while paused')+')</label><br>';
 					str += decay.writePrefButton('bigSouls', 'bigSoulsButton', loc('Big souls')+' ON', loc('Big souls')+' OFF')+'<label>('+loc('Assist option; all wrinkler souls are much bigger')+')</label><br>';
 					str += decay.writePrefButton('slowSouls', 'slowSoulsButton', loc('Slow souls')+' ON', loc('Slow souls')+' OFF')+'<label>('+loc('Assist option; all wrinkler souls are significantly slower')+')</label><br>';
 					str += decay.writePrefButton('bigOrbs', 'bigOrbsButton', loc('Big orbs')+' ON', loc('Big orbs')+' OFF')+'<label>('+loc('Assist option; all power orbs are much bigger')+')</label><br>';
@@ -2812,6 +2812,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.challengeStatus('veil')) { mult *= 1 / 0.9; }
 			if (decay.challengeStatus('comboGSwitch')) { mult *= 1 / 0.9; }
 			if (Game.Has('Stevia Caelestis')) { mult *= 1 / 0.95; }
+			if (decay.isConditional('knockbackTutorial')) { mult *= 1 / 3; }
 			return Math.min(Math.sqrt(Game.log10CookiesSimulated + 20), (Game.Has('Legacy')?10:3)) * 0.00125 * (1 / mult) + 
 			(Game.resets > 0?(1 / Math.max(5, base * mult / (Math.log(1 / Math.min(1, Math.pow(Math.max(Math.min(decay.gen, (1 / (1 + Math.max(Math.min(Game.log10CookiesSimulated - 30, 40), 0) / 7))), decay.breakingPoint), decay.wrinklerApproachPow))) / Math.log(decay.wrinklerApproachFactor)))):0);
 		};
@@ -3416,6 +3417,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (pool.length) { obj[choose(pool)] = true; }
 			}
 			if (obj.bomber) { decay.times.sinceBomberSpawn = 0; }
+			if (decay.isConditional('knockbackTutorial')) { obj.dist = 0.15; }
 			return decay.spawnWrinkler(obj); 
 		};
 		decay.spawnWrinklerDistorted = function() {
@@ -4571,6 +4573,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.exhaustion > 0 && !Game.veilOn()) { base *= 1 - Math.min(decay.times.sinceLastExhaustion / (Game.fps * 5), 1); }
 			if (decay.covenantStatus('click')) { base /= 2; }
 			if (decay.isConditional('reindeer')) { base *= 1.5; }
+			if (decay.isConditional('knockbackTutorial')) { base *= 3; }
 			decay.stop(base, 'click');
 
 			if (decay.exhaustion > 0 || Game.veilOn()) { return; }
@@ -6382,7 +6385,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			eval('M.computeEffs='+M.computeEffs.toString()
 				.replace("effs.cursorCps+=0.01*mult","effs.cursorCps+=0.005*mult")
-				.replace("goldenClover') effs.goldenCookieFreq+=0.03*mult;","goldenClover') { effs.goldenCookieFreq+=0.03*mult; effs.goldenCookieEffDur*=1-0.03; effs.goldenCookieGain+=0.0389; }")
+				.replace("goldenClover') effs.goldenCookieFreq+=0.03*mult;","goldenClover') { effs.goldenCookieFreq+=0.03*mult; effs.goldenCookieEffDur*=1-0.03*mult; effs.goldenCookieGain+=0.0389*mult; }")
 				.replace("else if (name=='whiskerbloom') effs.milk+=0.002*mult;","else if (name=='whiskerbloom') effs.milk+=0.001*mult;")
 				.replace('buildingCost:1,', 'buildingCost:1, wrinklerApproach:1, wrathReplace:1, haltPower:1, decayRate:1, decayMomentum:1, magicRegenSpeed:1')
 				.replace(`else if (name=='wardlichen') {effs.wrinklerSpawn*=1-0.15*mult;effs.wrathCookieFreq*=1-0.02*mult;}`, `else if (name=='wardlichen') {effs.haltPower+=0.02*mult; effs.wrathReplace*=1-0.02*mult;}`)
@@ -6405,6 +6408,7 @@ Game.registerMod("Kaizo Cookies", {
 
 				decay.stop(4, 'bakeberry');
 				Game.Popup('Decay halted!',Game.mouseX,Game.mouseY);
+				M.dropUpgrade('Bakeberry cookies',0.015);
 			}
 			M.plants['queenbeet'].onHarvest = function(x, y, age) {
 				if (age < this.mature) { return; }
@@ -6445,6 +6449,7 @@ Game.registerMod("Kaizo Cookies", {
 					h.dur = Math.ceil((Math.random()*6+12));
 					h.life = Math.ceil(h.dur * Game.fps);
 				}
+				M.dropUpgrade('Green yeast digestives',0.005);
 			}
 			M.plants['chocoroot'].onHarvest = function(x, y, age) {
 				if (age < this.mature) { return; }
@@ -7440,7 +7445,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		decay.dragonGutsKBMeter = 0;
 		decay.dragonGutsKBMeterMax = 0.2;
-		decay.dragonGutsKBRegenPerSec = 0.008 * 1; //1 cps maximum
+		decay.dragonGutsKBRegenPerSec = 0.008 * 0.75; //0.75 cps maximum
 		decay.dragonGutsUses = 0;
 		decay.dragonGutsParticleTemplate = {
 			width: 48,
@@ -9362,7 +9367,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in ch) {
 				if ((!ch[i].unlocked || (ch[i].complete && !decay.showCompletedChallenges) || (!ch[i].complete && !decay.showIncompleteChallenges)) && !decay.isConditional(ch[i].key)) { continue; }
 				str2 += '<div class="'+(ch[i].rewardEnabled?'singleChallenge':'singleChallenge rewardDisabled');
-				if ((ch[i].cannotComplete || (decay.currentConditional && i != decay.currentConditional)) && !ch[i].complete && Game.ascensionMode == 42069) { cannotCompleteWarning = true; str2 += ' cannotComplete'; } 
+				if ((ch[i].cannotComplete || (decay.currentConditional && !decay.isConditional(ch[i].key))) && !ch[i].complete && Game.ascensionMode == 42069) { cannotCompleteWarning = true; str2 += ' cannotComplete'; } 
 				str2 += '" '+(ch[i].complete?(Game.clickStr+'="if (Game.keys[16]) { decay.challenges[\''+ch[i].key+'\'].toggleReward(); }"'):'');
 				if (decay.isConditional(ch[i].key)) {
 					str2 += ' id="activeConditional"';
@@ -9689,7 +9694,11 @@ Game.registerMod("Kaizo Cookies", {
 			return (decay.challengeStatus('eggs')?('<div style="text-align: center;">' + loc('Improved by challenge <b>%1</b>! <b>+%2%</b> more prestige unleashed!', [decay.challenges['eggs'].name, 10]) + '</div><div class="line"></div>'):'') + '<div style="text-align:center;">'+loc("Current boost:")+' <b>+'+Beautify((1-Math.pow(1-Math.min(Game.TCount / Game.fps / 3600 / 12, 1), 3))*0.25*100,1)+'%</b></div><div class="line"></div>'+this.ddesc;
 		}
 		eval('Game.dropRateMult='+Game.dropRateMult.toString().replace('return rate;', 'if (decay.challengeStatus("seasonalCookies")) { rate *= 1.15; } if (decay.challengeStatus("eggs")) { rate *= 1.15; } return rate;'))
-		new decay.challenge('sb3', decay.challengeDescModules.bakeFast(1e6, 15*60), function(c) { if (Game.TCount >= 15 * 60 * Game.fps) { c.makeCannotComplete(); } return (Game.cookiesEarned >= 1e6); }, 'Speed baking III', function() { return false && decay.challengeUnlockModules.always; }, { onCompletion: function() { Game.Win('Speed baking III'); }, prereq: 'sb2', order: -1 });
+
+		addLoc('The <b>Dragon Guts</b> aura is always slotted.'); addLoc('Wrinklers spawn closer to the big cookie and moves faster.'); addLoc('Your clicks halt decay <b>3 times</b> faster.'); addLoc('Bake <b>%1</b>.');
+		new decay.challenge('knockbackTutorial', loc('The <b>Dragon Guts</b> aura is always slotted.') + '<br>' + loc('Wrinklers spawn closer to the big cookie and moves faster.') + '<br>' + loc('Your clicks halt decay <b>3 times</b> faster.') + '<br>' + loc('Bake <b>%1</b>.', loc('%1 cookie', Beautify(1e39))), function(c) { return (Game.cookiesEarned > 1e39); }, loc('Slotting auras no longer sacrifice any buildings'), decay.challengeUnlockModules.box, { init: function() { decay.gameCan.slotAuras = false; Game.Upgrades['A crumbly egg'].earn(); Game.dragonLevel = 25; Game.dragonAura = 21; }, reset: function() { decay.gameCan.slotAuras = true; }, conditional: true, prereq: 'combo4', order: 32.2 });
+		addLoc('Switching your auras is <b>free</b> because you have completed challenge <b>%1</b>.');
+		eval('Game.SelectDragonAura='+Game.SelectDragonAura.toString().replace(`loc("The cost of switching your aura is <b>%1</b>.<br>This will affect your CpS!",loc("%1 "+highestBuilding.bsingle,LBeautify(1)))`, `(decay.challengeStatus('knockbackTutorial')?loc('Switching your auras is <b>free</b> because you have completed challenge <b>%1</b>.', decay.challenges['knockbackTutorial'].name):loc("The cost of switching your aura is <b>%1</b>.<br>This will affect your CpS!",loc("%1 "+highestBuilding.bsingle,LBeautify(1))))`).replace(`Game.ObjectsById['+highestBuilding.id+'].sacrifice(1);`, `if (!decay.challengeStatus("knockbackTutorial")) { Game.ObjectsById['+highestBuilding.id+'].sacrifice(1); }`));
 		
 		addLoc('Enchanted Permanent upgrade slot I'); addLoc('Rift to the beyond');
 		new decay.challenge(1, decay.challengeDescModules.bakeAndKeep(1e18, 60), decay.quickCheck(decay.checkerBundles.bakeAndKeep, decay.checkerBundles.bakeAndKeep.init(1e18, 60 * Game.fps)), '<span class="highlightHover underlined" '+decay.getUpgradeTooltipCSS('Enchanted Permanent upgrade slot I')+'>' + loc('Enchanted Permanent upgrade slot I') + '</span><br><span class="highlightHover underlined" '+decay.getUpgradeTooltipCSS('Rift to the beyond')+'>' + loc('Rift to the beyond') + '</span>', decay.challengeUnlockModules.vial, { prereq: 'combo1' }); addLoc('Enchanted Permanent upgrade slot II'); addLoc('Stabilizing crystal')
