@@ -612,6 +612,7 @@ Game.registerMod("Kaizo Cookies", {
 			slowOrbs: 0,
 			difficultyRamping: 1,
 			easyTyping: 1,
+			scrollCDDisplay: 1
 		}
 		Game.TCount = 0;
 
@@ -1472,6 +1473,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.broken = 1;
 			decay.gen = 1;
 
+			decay.checkHasScrollOnCooldown();
+
 			decay.recalcAccStats();
 
 			decay.performConditionalInits();
@@ -1909,6 +1912,8 @@ Game.registerMod("Kaizo Cookies", {
 		addLoc('Slowly increases minimum effective progress for calculating decay-related stats over time, up to a fraction of the total amount of cookies you have baked across all ascensions');
 		addLoc('Easy typing');
 		addLoc('Assist option; allows you to use the Script writer while paused');
+		addLoc('Scroll cooldown display');
+		addLoc('Displays active scroll cooldowns in a panel above the buildings and minigames');
 		decay.prefToNameMap = {
 			easyPurchases: loc('Convenient purchasing'),
 			widget: loc('Informational widget'),
@@ -1936,6 +1941,7 @@ Game.registerMod("Kaizo Cookies", {
 				str += decay.writePrefButton('touchpad', 'touchpadButton', loc('Touchpad mode')+' ON', loc('Touchpad mode')+' OFF')+'<label>('+loc('For touchpad users; changes the mod to be more accomodating of touchpads. See the list of changes <span onclick="decay.touchpadModePrompt();" style="text-decoration: underline; cursor: pointer;">here</span>.')+')</label><br>';
 				str += decay.writePrefButton('autoPause', 'autoPauseButton', loc('Auto pause on leave')+' ON', loc('Auto pause on leave')+' OFF')+'<label>('+loc('Automatically pauses the game if it detects that you haven\'t been looking at it for 5 seconds.')+')</label><br>';
 				str += decay.writePrefButton('powerClickShiftReverse', 'PCShiftReverseButton', loc('Shift to Power click')+' ON', loc('Shift to Power click')+' OFF')+'<label>('+loc('Instead of holding shift to prevent power clicks from being used, have power clicks only enabled while holding shift')+')</label><br>';
+				str += decay.writePrefButton('scrollCDDisplay', 'scrollCDDisplayButton', loc('Scroll cooldown display')+' ON', loc('Scroll cooldown display')+' OFF', 'decay.checkHasScrollOnCooldown();')+'<label>('+loc('Displays active scroll cooldowns in a panel above the buildings and minigames')+')</label><br>';
 				str += decay.writePrefButton('RunTimer','RunTimerButton',loc("Show run timer")+' ON',loc("Show run timer")+' OFF', 'if (decay.prefs.RunTimer) { l(\'Timer\').style.display = \'\'; } else { l(\'Timer\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the run started stat.')+')</label><br>';
 				str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 				str += '<div class="line"></div>';
@@ -2381,7 +2387,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.resets == 0 || !decay.prefs.difficultyRamping) { Game.log10CookiesSimulated = Game.log10Cookies; return; }
 
 			const log10Max = Math.log10(Game.cookiesEarned + Game.cookiesReset);
-			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, Math.min(Math.max(Game.TCount - 40 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps, 0) / (80 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps), 1) * (log10Max - log10Max / 6));
+			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, Math.min(Math.max(Game.TCount - 60 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps, 0) / (100 * Math.pow(1 / log10Max, 0.5) * 60 * Game.fps), 1) * (log10Max - log10Max / 6));
 			if (Game.log10CookiesSimulated > Game.log10Cookies) { 
 				decay.triggerNotif('difficultyRamping');
 				if (!Game.hasTriggeredDifficultyRampingNotif) { 
@@ -5524,12 +5530,43 @@ Game.registerMod("Kaizo Cookies", {
 
 			if (cooldown) { replaceDesc(name, desc.slice(0, desc.indexOf('<q>')==-1?desc.length:desc.indexOf('<q>')) + '<br>'+loc('Has a cooldown of <b>%1</b>.', Game.sayTime(cooldown * Game.fps, -1)), true); }
 
-			this.SWCodeObj = new decay.SWCode(code, (function(context) { return function() { if (context.cooldown) { Game.Notify(loc('On cooldown! (%1 left)', Beautify(context.cooldown / Game.fps)+'s'), '', 0, 2); return; } if (!context.onActivation()) { context.cooldown = context.cooldownToSet; } } })(this), { req: (function(context) { return function() { return Game.Has(context.name); } })(this) });
+			this.SWCodeObj = new decay.SWCode(code, (function(context) { return function() { if (context.cooldown) { Game.Notify(loc('On cooldown! (%1 left)', Beautify(context.cooldown / Game.fps)+'s'), '', 0, 2); return; } if (!context.onActivation() && context.cooldownToSet) { context.setCooldown(); } } })(this), { req: (function(context) { return function() { return Game.Has(context.name); } })(this) });
 			this.code = this.SWCodeObj.code;
 
 			decay.scrolls[name] = this;
 			this.id = decay.scrollsById.length;
 			decay.scrollsById.push(this);
+		}
+		decay.scroll.prototype.setCooldown = function() {
+			this.cooldown = this.cooldownToSet;
+
+			if (l('scrollBox'+this.id)) { l('scrollBox'+this.id).remove(); }
+			let div = document.createElement('div');
+			div.classList.add('scrollCDBox');
+			div.id = 'scrollBox' + this.id;
+			div.innerHTML = decay.getScrollCDBoxInnerHTML.call(this);
+			l('scrollCDs').appendChild(div);
+
+			decay.hasScrollOnCooldown = true;
+			if (decay.prefs.scrollCDDisplay) { l('scrollCooldownContainer').style.display = ''; }
+		}
+		decay.scroll.prototype.updateCooldownDisplay = function() {
+			decay.scrollCDL.querySelector('#scrollBox'+this.id).getElementsByClassName('CDMeter')[0].getElementsByClassName('CDMeterFill')[0].style.width = (this.cooldown / this.cooldownToSet * 100) + '%';
+		}
+		decay.scroll.prototype.removeCooldownDisplay = function() {
+			decay.scrollCDL.querySelector('#scrollBox'+this.id).remove();
+		}
+		decay.hasScrollOnCooldown = false;
+		decay.checkHasScrollOnCooldown = function() {
+			for (let i in decay.scrolls) {
+				if (decay.scrolls[i].cooldown) {
+					decay.hasScrollOnCooldown = true; 
+					if (decay.prefs.scrollCDDisplay) { l('scrollCooldownContainer').style.display = ''; } else { l('scrollCooldownContainer').style.display = 'none'; }
+					return;
+				}
+			}
+			decay.hasScrollOnCooldown = false;
+			l('scrollCooldownContainer').style.display = 'none';
 		}
 		addLoc('On cooldown! (%1 left)');
 		addLoc('Scroll "%1" reloaded!');
@@ -5538,8 +5575,11 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in decay.scrolls) {
 				if (decay.scrolls[i].cooldown) {
 					decay.scrolls[i].cooldown--; 
+					if (Game.T % 2 == 0) { decay.scrolls[i].updateCooldownDisplay(); }
 					if (!decay.scrolls[i].cooldown) {
 						Game.Notify(loc('Scroll "%1" reloaded!', decay.scrolls[i].name), '', decay.scrolls[i].upgrade.icon, 10, true, true);
+						decay.scrolls[i].removeCooldownDisplay()
+						decay.checkHasScrollOnCooldown();
 					}
 				}
 			}
@@ -5555,8 +5595,13 @@ Game.registerMod("Kaizo Cookies", {
 		decay.loadScrolls = function(str) {
 			let arr = str.split(',');
 			for (let i in arr) {
-				if (isv(arr[i])) { decay.scrollsById[i].cooldown = parseFloat(arr[i]); }
+				if (isv(arr[i]) && parseFloat(arr[i])) { 
+					decay.scrollsById[i].setCooldown(); 
+					decay.scrollsById[i].cooldown = parseFloat(arr[i]); 
+					decay.scrollsById[i].updateCooldownDisplay();
+				}
 			}
+			decay.checkHasScrollOnCooldown();
 		}
 		decay.saveScrollExtras = function() {
 			return '';
@@ -5570,8 +5615,39 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			decay.prestigeEscalationScrollBoostCount = 0;
 		}
-
-		//since scrolls are upgrades they are declared in the upgrades section
+		let scrollCDDiv = document.createElement('div');
+		scrollCDDiv.id = 'scrollCooldownContainer';
+		scrollCDDiv.style.display = 'none';
+		decay.scrollCooldownContainerL = scrollCDDiv;
+		injectCSS(`#scrollCooldownContainer { min-height: 24px; background:#999; background:url(img/darkNoise.jpg); width: 100%; box-shadow:0px 0px 4px #000 inset; position: relative; text-align: center; margin-bottom: 8px; }`);
+		injectCSS(`#game.onMenu #scrollCooldownContainer { display: none; }`);
+		injectCSS(`#scrollCDs { width: 100%; padding-bottom: 12px; vertical-align: middle; display: flex; justify-content: center; align-items: center; font-family: 'Merriweather', Georgia,serif; font-size: 12px; font-variant: small-caps; flex-wrap: wrap; }`)
+		scrollCDDiv.innerHTML = `
+		<div id="scrollCDs">
+		
+		</div>
+		<div class="separatorBottom" style="position: absolute; bottom: -8px; z-index: 0;"></div>
+		`; //hiding option in decay.prefs
+		l('buildingsTitle').insertAdjacentElement('beforebegin', scrollCDDiv);
+		decay.scrollCDL = l('scrollCDs');
+		addLoc('<b>%1</b> left');
+		decay.scrollCDTooltip = function(id) {
+			return '<div style="width: '+(decay.scrollsById[id].cooldown>(3600 * Game.fps)?'300':'200')+'px; text-align: center;">'+'<div style="font-size: 80%; margin: 0px;">'+decay.scrollsById[id].name+'</div>'+loc('<b>%1</b> left', Game.sayTime(decay.scrollsById[id].cooldown, -1))+'</div>';
+		}
+		decay.getScrollCDBoxInnerHTML = function() {
+			return `
+			<div class="CDMeterTitle"><b>${this.name}</b></div>
+			<div class="CDMeter" style="background: rgba(255, 255, 255, 0.1);" ${Game.getDynamicTooltip(`function() { return decay.scrollCDTooltip(${this.id}); }`, '', true)}>
+				<div class="CDMeterFill" style="width: 100%;"></div>
+				${tinyIcon(this.upgrade.icon, 'transform: scale(0.5) translate(0%, -85%);')}
+			</div>
+			`;
+		}
+		injectCSS(`.scrollCDBox { jusify-content: center; align-items: center; margin-left: 16px; margin-right: 16px; }`);
+		injectCSS(`.CDMeterTitle { display: inline; margin: auto; line-height: 20px; text-shadow: 0px -1px 2px rgb(223, 255, 253, 0.5); }`);
+		injectCSS(`.CDMeter { width: 120px; height: 24px; padding: 1px; border: 2px ridge white; border-radius: 4px; margin: auto; background: rgba(255, 255, 255, 0.1); box-shadow: 0px 0px 3px rgb(223, 255, 253); }`);
+		injectCSS(`.CDMeterFill { background: rgb(232, 249, 255); height: 100%; }`);
+		//since scrolls are also upgrades they are declared in the upgrades section
 	
 		decay.helpDesc = [
 			'Typing "activatepartymode" will unlock party mode!', 
@@ -6427,6 +6503,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.stop(6, 'duketater');
 				Game.Popup('Decay halted!',Game.mouseX,Game.mouseY);
 				decay.purifyAll(1.15, 0.15, 5);
+				M.dropUpgrade('Duketater cookies',0.005);
 			}
 			decay.halts['crumbspore'] = new decay.haltChannel({
 				keep: 3,
@@ -11084,6 +11161,8 @@ Game.registerMod("Kaizo Cookies", {
 
 				decay.scrolls['Scroll of prestige escalation'].cooldown = 0;
 				Game.Notify(loc('Cooldown refreshed!'), loc('Your Scroll of prestige escalation is ready to use again!'), [26, 4, kaizoCookies.images.custImg], 6); 
+				decay.checkHasScrollOnCooldown();
+				decay.scrolls['Scroll of prestige escalation'].removeCooldownDisplay();
 
 				if (!Game.prefs.particles) { return; }
 				for (let i = 0; i < 120; i++) { 
