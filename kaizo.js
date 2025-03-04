@@ -10387,7 +10387,7 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace('for (var i in Game.cookieUpgrades)', 'var upgradeCount = 0; for (var i in Game.cookieUpgrades)').replace(`mult*=(1+(typeof(me.power)==='function'?me.power(me):me.power)*0.01);`, `mult*=(1+(typeof(me.power)==='function'?me.power(me):me.power)*0.01); upgradeCount++;`).replace(`if (Game.Has('Specialized chocolate chips')) mult*=1.01;`, `if (decay.challengeStatus('earthShatterer')) { mult *= 1 + upgradeCount * 0.01; } if (Game.Has('Specialized chocolate chips')) mult*=1.01;`));
 
 		addLoc('The game becomes <b>very weird</b>.');
-		new decay.challenge('anchorWack', loc('The game becomes <b>very weird</b>.') + '<br>' + loc('Bake <b>%1</b>.', loc('%1 cookie', LBeautify(1e44))), function() { return (Game.cookiesEarned > 1e44); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', 1.1), decay.challengeUnlockModules.box, { conditional: true, reset: function() { 
+		new decay.challenge('anchorWack', loc('The game becomes <b>very weird</b>.') + '<br>' + loc('Bake <b>%1</b>.', loc('%1 cookie', LBeautify(1e44))), function() { return (Game.cookiesEarned > 1e44); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', 1.1), decay.challengeUnlockModules.box, { conditional: true, prereq: ['earthShatterer', 'powerClickWrinklers', 3], reset: function() { 
 			decay.anchorOffsetX = 0;
 			decay.anchorOffsetY = 0;
 
