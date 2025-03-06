@@ -3467,7 +3467,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Math.random() < 0.025 && Game.cookiesEarned > decay.featureUnlockThresholds.shiny) { obj.shiny = true; }
 			if (Math.random() < 0.01 && Game.cookiesEarned > decay.featureUnlockThresholds.phantom) { obj.phantom = true; }
 			if (Math.random() < 0.01 && Game.cookiesEarned > decay.featureUnlockThresholds.armored) { obj.armored = true; }
-			if (Math.random() < 0.01 && (obj.shiny || obj.bomber || obj.armored || obj.phantom)) { obj.lumpCarrying = true; }
+			if (Math.random() < 0.025 && (obj.shiny || obj.armored || obj.phantom)) { obj.lumpCarrying = true; }
 			decay.times.sinceBomberSpawn = 0;
 			return decay.spawnWrinkler(obj);
 		};
@@ -3772,9 +3772,11 @@ Game.registerMod("Kaizo Cookies", {
 		decay.updateSoulClaimAuraPowers = function() {
 			if (decay.soulClaimAuraPower > 0) {
 				decay.soulClaimAuraPower -= Math.max(decay.times.sinceSoulClaim - Game.fps, 0) / Game.fps / 4;
+				decay.soulClaimAuraPower = Math.max(decay.soulClaimAuraPower, 0);
 			} 
 			if (decay.shinySoulClaimAuraPower > 0) {
 				decay.shinySoulClaimAuraPower -= Math.max(decay.times.sinceSoulClaim - Game.fps, 0) / Game.fps / 4;
+				decay.shinySoulClaimAuraPower = Math.max(decay.shinySoulClaimAuraPower, 0);
 			}
 		}
 		Game.registerHook('logic', decay.updateSoulClaimAuraPowers);
@@ -5465,7 +5467,8 @@ Game.registerMod("Kaizo Cookies", {
 		decay.createDefaultSWCodes = function() {
 			new decay.SWCode(["arrowup", "arrowup", "arrowdown", "arrowdown", "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a"], function() { Game.Notify(`You thought something will happen, didn't you?`, ``, [7, 1, kaizoCookies.images.custImg], 10, 1); });
 			addLoc('(repeating this code may yield different effects)');
-			new decay.SWCode('omaruvu', function() { Game.Notify(`How can I help you, sir?`, choose(decay.helpDesc) + '<br>' + loc('(repeating this code may yield different effects)'), [8, 1, kaizoCookies.images.custImg], 1000000000000000000000, 1); });
+			addLoc('How can I help you, sir?');
+			new decay.SWCode('omaruvu', function() { Game.Notify(loc('How can I help you, sir?'), choose(decay.helpDesc) + '<br>' + loc('(repeating this code may yield different effects)'), [8, 1, kaizoCookies.images.custImg], 1000000000000000000000, 1); });
 			new decay.SWCode('activatepartymode', function() { Game.PARTY = 1; });
 			new decay.SWCode('opendebug', function() { Game.OpenSesame(); Game.Notify(`Debug tool activated!`,``, [10,6], 10, 1);});
 			new decay.SWCode('limes', function() { window.open("https://cookieclicker.wiki.gg/wiki/Grimoire", "_blank"); });
@@ -11725,10 +11728,17 @@ Game.registerMod("Kaizo Cookies", {
 
 		Game.RebuildUpgrades();
 
+		this.testCompute = function() {
+			let hhhh = Date.now();
+			Game.Logic();
+			Game.Draw();
+			return Date.now() - hhhh;
+		}
+
 		if (Crumbs.mobile) { 
 			Game.Notify('Mobile notice', 'If you are currently using a phone to play Kaizo cookies, we strongly suggest that you use the horizontal orientation (long side on the bottom).', 0, 30);
 		}
- 
+
 		//if (Game.cookiesEarned + Game.cookiesReset < 1000) { kaizoWarning = false; }
 		allValues('init completion');
 
@@ -11894,6 +11904,9 @@ Game.registerMod("Kaizo Cookies", {
 		if (kaizoCookies.unpauseGame) { kaizoCookies.unpauseGame(); }
 		str = str.split('/'); 
 		Game.CloseNotes();
+		if (Crumbs.mobile) { 
+			Game.Notify('Mobile notice', 'If you are currently using a phone to play Kaizo cookies, we strongly suggest that you use the horizontal orientation (long side on the bottom).', 0, 30);
+		}
 		decay.killAllPowerOrbs();
 		if (decay.DEBUG) {
 			if (Crumbs.mobile) {
