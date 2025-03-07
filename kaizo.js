@@ -863,7 +863,7 @@ Game.registerMod("Kaizo Cookies", {
 			let u = false;
 			if (Game.Has('Unshackled Purity')) { u = true; }
 			if (Game.Has('Purity factory')) { cap *= 1.5; }
-			const bp = (Game.auraMult('Fierce Hoarder')>0?decay.bankedPurification:0);
+			const bp = ((Game.auraMult('Fierce Hoarder')>0)?decay.bankedPurification:0);
 			for (let i in decay.mults) {
 				if (decay.purify(i, mult + bp, 1 - Math.pow(1 / (1 + bp), 0.5) * (1 - close), cap * (1 + bp / 3), u, true)) { decay.triggerNotif('purityCap'); }
 			}
