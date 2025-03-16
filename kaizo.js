@@ -2831,7 +2831,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.challengeStatus('buildingsAlternate')) { mult *= 1 / 0.9; }
 			if (decay.challengeStatus('veil')) { mult *= 1 / 0.9; }
 			if (decay.challengeStatus('comboGSwitch')) { mult *= 1 / 0.9; }
-			if (Game.Has('Stevia Caelestis')) { mult *= 1 / 0.95; }
+			if (Game.Has('Mangled cookies')) { mult *= 1 / 0.95; }
 			if (decay.isConditional('knockbackTutorial')) { mult *= 1 / 3; }
 			if (Game.hasBuff('Sugar boost')) { mult *= 1 / 10; }
 			return Math.min(Math.sqrt(Game.log10CookiesSimulated + 20), (Game.Has('Legacy')?10:3)) * 0.00125 * (1 / mult) + 
@@ -2908,7 +2908,7 @@ Game.registerMod("Kaizo Cookies", {
 				base *= 1 + Math.max(Game.santaLevel - 7, 0) * 0.01;
 			}
 			if (Game.Has('Unholy bait')) { base *= 1.1; }
-			if (Game.Has('Stevia Caelestis')) { base *= 1.05; }
+			if (Game.Has('Mangled cookies')) { base *= 1.05; }
 			if (decay.isConditional('powerClickWrinklers')) { base *= 0.5; }
 			if (decay.isConditional('reindeer')) { base *= 1.4; }
 			base *= 1 / (1 + Math.max(Game.log10CookiesSimulated - 18, 0) / 30);
@@ -3054,7 +3054,7 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		decay.wrinklerAI = new Crumbs.behavior(function() {
 			const toAdd = -this.speedMult * (decay.wrinklerApproach / Game.fps) * (this.bomber?2.5:1);
-			this.dist = Math.max(this.dist + toAdd * (1 / Math.max((this.hurt - decay.wrinklerHurtNoEffectMinimum) / (Game.Has('Diabetica Daemonicus')?15:30), 1)), 0);
+			this.dist = Math.max(this.dist + toAdd * (1 / Math.max((this.hurt - decay.wrinklerHurtNoEffectMinimum) / (Game.Has('Eternal light')?15:30), 1)), 0);
 			this.lastDistMoved = toAdd;
 		});
 		decay.wrinklerHurtDecRate = 120;
@@ -3222,7 +3222,7 @@ Game.registerMod("Kaizo Cookies", {
             }
 		}
 		decay.getSpecialProtectMult = function() {
-			return (this.shiny?(0.333 * (Game.Has('Sugar aging process')?(1 + Math.min(Game.Objects.Grandma.amount, 800) * 0.0005):1)):1) * ((this.bomber && !this.lumpCarrying)?2:1) * (this.lumpCarrying?0.33:1);
+			return (this.shiny?(0.333 * (Game.Has('Ancient shiny busters')?(1 + Math.min(Game.Objects.Grandma.amount, 800) * 0.0005):1)):1) * ((this.bomber && !this.lumpCarrying)?2:1) * (this.lumpCarrying?(0.33 * (1 + 0.3 * Game.Has('Diabetica Daemonicus'))):1);
 		}
 		decay.onWrinklerClick = function() {
 			if (!decay.gameCan.popWrinklers) { return; }
@@ -3490,9 +3490,9 @@ Game.registerMod("Kaizo Cookies", {
 			let mult = 1;
 			if (Game.hasGod && Game.BuildingsOwned % 10 == 0) {
 				let godLvl = Game.hasGod('order');
-				if (godLvl == 1) { mult *= 2.5; }
-				else if (godLvl == 2) { mult *= 2; } 
-				else if (godLvl == 3) { mult *= 1.5; }
+				if (godLvl == 1) { mult *= 1.75; }
+				else if (godLvl == 2) { mult *= 1.5; } 
+				else if (godLvl == 3) { mult *= 1.25; }
 			}
 			return mult;
 		}
@@ -3531,9 +3531,6 @@ Game.registerMod("Kaizo Cookies", {
 			if (!decay.unlocked || decay.wrinklersN >= 72) { return; }
 			let obj = {};
 			obj.size = decay.getCurrentWrinklerSize(Math.random() * 100);
-			if (Game.Has('Sucralosia Inutilis') && Math.random() < 0.1) { 
-				obj.size = Math.max(obj.size - 4, 1);
-			}
 			obj.rad = Math.random() * Math.PI * 2;
 			obj.speedMult = Math.random() * 0.6 + 0.7;
 			for (let i = 0; i < Math.floor(Math.random() * (Math.sqrt(Game.log10CookiesSimulated))); i++) {
@@ -3546,7 +3543,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (pool.length) { obj[choose(pool)] = true; }
 			}
 			if (obj.bomber) { decay.times.sinceBomberSpawn = 0; }
-			if (!obj.lumpCarrying && (obj.shiny || obj.bomber || obj.armored || obj.phantom) && Game.cookiesEarned > 1e9 && Math.random() < 1 - Math.pow(0.96, decay.getLumpWrinklerReplaceMultiplier())) { 
+			if (!obj.lumpCarrying && (obj.shiny || obj.bomber || obj.armored || obj.phantom) && Game.cookiesEarned > 1e9 && Math.random() < 1 - Math.pow(0.975, decay.getLumpWrinklerReplaceMultiplier())) { 
 				obj.lumpCarrying = decay.getRandomLumpType.call(this); 
 			} //roughly 20 minutes per lump early on
 			//increase lump strength or smth
@@ -3561,15 +3558,12 @@ Game.registerMod("Kaizo Cookies", {
 			} else {
 				obj.size -= 1;
 			}
-			if (Game.Has('Sucralosia Inutilis') && Math.random() < 0.1) { 
-				obj.size = Math.max(obj.size - 4, 1);
-			}
 			obj.rad = Math.random() * Math.PI * 2;
 			obj.speedMult = Math.random() * 0.8 + 0.6;
 			if (Math.random() < 0.025 && Game.cookiesEarned > decay.featureUnlockThresholds.shiny) { obj.shiny = true; }
 			if (Math.random() < 0.01 && Game.cookiesEarned > decay.featureUnlockThresholds.phantom) { obj.phantom = true; }
 			if (Math.random() < 0.01 && Game.cookiesEarned > decay.featureUnlockThresholds.armored) { obj.armored = true; }
-			if (Math.random() < 1 - Math.pow(0.96, decay.getLumpWrinklerReplaceMultiplier()) && (obj.shiny || obj.armored || obj.phantom) && Game.cookiesEarned > 1e9) { obj.lumpCarrying = decay.getRandomLumpType.call(this); }
+			if (Math.random() < 1 - Math.pow(0.975, decay.getLumpWrinklerReplaceMultiplier()) && (obj.shiny || obj.armored || obj.phantom) && Game.cookiesEarned > 1e9) { obj.lumpCarrying = decay.getRandomLumpType.call(this); }
 			decay.times.sinceBomberSpawn = 0;
 			return decay.spawnWrinkler(obj);
 		};
@@ -3577,7 +3571,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.keys[65] && decay.prefs.touchpad && this.getComponent('pointerInteractive').hovered) { this.grabbed = true; }
 			if (!this.grabbed) { this.y -= p.dy * (this.inMilk?0.5:1); }
 			if (this.grabbed) {
-				if (!this.getComponent('pointerInteractive').click) { this.grabbed = false; }
+				if (!this.getComponent('pointerInteractive').click && !Game.keys[65]) { this.grabbed = false; }
 				p.dx += ((Math.min(this.scope.mouseX, this.leftSection.offsetWidth) - this.x)) * 0.2;
 				p.dx *= 0.9;
 				p.dy += ((this.y - this.scope.mouseY)) * 0.2;
@@ -4831,15 +4825,17 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in allLumps) {
 				if (allLumps[i].type == 5) { hasCaramel = true; break; }
 			}
-			let loops = 1;
+			let loops = 1 + 0.25 * Game.Has('Stevia Caelestis');
 			for (let i = 0; i < randomFloor(loops); i++) {
 				if (Math.random() < 0.2) { pool.push(2); }
 				if (Math.random() < 0.01) { pool.push(3); }
-				if (Math.random() < (!this.shiny)?0.3:0.1) { pool.push(4); }
+				if (Math.random() < ((!this.shiny)?0.3:0.1) * (Game.Has('Sugar aging process')?(1 + Math.min(Game.Objects.Grandma.amount, 666) * 0.0006):1)) { pool.push(4); }
 				if (Math.random() < 0.05 && !hasCaramel && decay.times.sinceLastCaramelClaim > 15 * 60 * Game.fps) { pool.push(5); }
 			}
 			return choose(pool);
 		}
+		addLoc('Minigame refills triggered!');
+		addLoc('Triggered a garden tick with forced mutations, maxed out worship swaps, and filled 100 magic.')
 		decay.claimLump = function(lump) {
 			let toGain = 0;
 			switch (lump.type) {
@@ -4847,7 +4843,7 @@ Game.registerMod("Kaizo Cookies", {
 					toGain = 1; 
 					break;
 				case 2: 
-					toGain = randomFloor(1.5); 
+					toGain = randomFloor(1.5 + 0.25 * Game.Has('Sucralosia Inutilis')); 
 					Game.Win('Sugar sugar'); 
 					break;
 				case 3: 
@@ -4858,13 +4854,19 @@ Game.registerMod("Kaizo Cookies", {
 					Game.Win('All-natural cane sugar'); 
 					break;
 				case 4: 
-					toGain = choose([0, 0, 1, 2, 2]); 
+					toGain = randomFloor(choose([0, 0, 1, 2, 2]) * (Game.Has('Sugar aging process')?(1 + Math.min(Game.Objects.Grandma.amount, 666) * 0.0006):1)); 
 					Game.Win('Sweetmeats'); 
 					break;
 				case 5: 
 					toGain = choose([1, 2, 3]); 
-					Game.lumpRefill = 0; 
-					Game.Notify(loc("Sugar lump cooldowns cleared!"), '', [29,27]); 
+					Game.lumpRefill = 0;
+					gp.lumpRefill.click();
+					Game.lumpRefill = 0;
+					gap.lumpRefill.click();
+					Game.lumpRefill = 0;
+					pp.lumpRefill.click();
+					Game.gainLumps(3);
+					Game.Notify(loc('Minigame refills triggered!'), loc('Triggered a garden tick with forced mutations, maxed out worship swaps, and filled 100 magic.'), [29, 27]);
 					decay.times.sinceLastCaramelClaim = 0;
 					Game.Win('Maillard reaction'); 
 					break;
@@ -5855,7 +5857,7 @@ Game.registerMod("Kaizo Cookies", {
 				Game.Notify(loc('Wrinkler report'),
 				loc('HP: pops all %1 layers in %2 clicks (%3 at 10 clicks/second)', [Beautify(w.size), Beautify(Math.ceil(hp / (decay.wrinklerResistance * decay.getSpecialProtectMult(w)))), Game.sayTime(Math.ceil(hp / (decay.wrinklerResistance * decay.getSpecialProtectMult(w))) / 10 * Game.fps)])+'<br>'+
 				loc('Speed: %1%/s (%2 to reach)', [Beautify(w.speedMult * decay.wrinklerApproach * (w.bomber?2:1) * 100, 2), Game.sayTime(decay.EOTWObj.frames)])+'<br>'+
-				loc('Stun: %1 (%2 left)', [(w.hurt>decay.wrinklerHurtNoEffectMinimum)?(loc('-%1% speed', Beautify(100 - 100 / Math.max((w.hurt - decay.wrinklerHurtNoEffectMinimum) / (Game.Has('Diabetica Daemonicus')?15:30), 1), 1))):loc('none'), (w.hurt>decay.wrinklerHurtNoEffectMinimum)?Game.sayTime((w.hurt - decay.wrinklerHurtNoEffectMinimum) / (decay.wrinklerHurtDecRate / (1 + decay.powerPokedStack)) * Game.fps):loc('none')])
+				loc('Stun: %1 (%2 left)', [(w.hurt>decay.wrinklerHurtNoEffectMinimum)?(loc('-%1% speed', Beautify(100 - 100 / Math.max((w.hurt - decay.wrinklerHurtNoEffectMinimum) / (Game.Has('Eternal light')?15:30), 1), 1))):loc('none'), (w.hurt>decay.wrinklerHurtNoEffectMinimum)?Game.sayTime((w.hurt - decay.wrinklerHurtNoEffectMinimum) / (decay.wrinklerHurtDecRate / (1 + decay.powerPokedStack)) * Game.fps):loc('none')])
 				, 0, 6, true, true);
 				/*Game.Notify(loc('Wrinkler report'), loc('This wrinkler currently has %1 health across all of its %2 layers, which would take a total of %3 clicks with the current %4 damage per click (%5); it %6, meaning that it would take %7 to reach the big cookie! %8', [
 					Beautify(hp),
@@ -5875,6 +5877,12 @@ Game.registerMod("Kaizo Cookies", {
 				'something straightforward: the sentence "cast incantation called nuke wizard towers leveling to repent for your mistakes" is not an orteil tooltip moment, and also refunds all lumps used to upgrade it!'
 			];
 			new decay.SWCode('castincantationcallednukewizardtowerslevelingtorepentforyourmistakes', function() { if (Game.Objects['Wizard tower'].level < 1) { return; } let lumpCount = (Game.Objects['Wizard tower'].level ** 2 - Game.Objects['Wizard tower'].level) / 2; Game.lumps += lumpCount; Game.Objects['Wizard tower'].level = 1; Game.Notify('Wizard tower level reset!', 'Your wizard tower levels have been successfully reset, and refunding <b>'+Beautify(lumpCount)+'</b> sugar lumps.', [17, 21]); }, { req: decay.ifCursed });
+
+			for (let i in decay.scrolls) {
+				if (!decay.SWCodes.includes(decay.scrolls[i].SWCodeObj)) { 
+					decay.SWCodes.push(decay.scrolls[i].SWCodeObj);
+				}
+			}
 		}
 		decay.createDefaultSWCodes();
 
@@ -6371,7 +6379,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		decay.getCFChance = function() { 
-			if (Game.resets < 1) { return 0.25 * Math.pow(0.6, Game.gcBuffCount()); }
+			if (Game.resets < 1) { return 0.5 * Math.pow(0.6, Game.gcBuffCount()); }
 			let chance = 1;
 			if (decay.challengeStatus('combo1')) { chance += (Game.HasAchiev('A wizard is you')?0.5:0.25); }
 			chance += decay.challengeStatus('allBuffStackR') * 0.02;
@@ -6952,7 +6960,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.stop(6, 'duketater');
 				Game.Popup('Decay halted!',Game.mouseX,Game.mouseY);
 				decay.purifyAll(1.15, 0.15, 5);
-				M.dropUpgrade('Duketater cookies',0.005);
+				M.dropUpgrade('Duketater cookies',0.01);
 			}
 			decay.halts['crumbspore'] = new decay.haltChannel({
 				keep: 3,
@@ -6996,7 +7004,7 @@ Game.registerMod("Kaizo Cookies", {
 				factor: 0.9
 			});
 			M.plants['queenbeetLump'].onHarvest = function() {
-				//if (age < this.mature) { return; }
+				if (age < this.mature) { return; }
 				decay.stop(6, 'jqb');
 				decay.purifyAll(1, 1, 1);
 			}
@@ -7150,11 +7158,13 @@ Game.registerMod("Kaizo Cookies", {
 			power: 0.15,
 			tickspeedPow: 1
 		});
+		addLoc('Curve activated');
+		addLoc('Sugar lump wrinkler spawned!');
 		for (let i in Game.Objects) {
 			eval('Game.Objects["'+i+'"].sell='+Game.Objects[i].sell.toString().replace(`if (godLvl==1) Game.gainBuff('devastation',10,1+sold*0.01);`, `if (godLvl==1) Game.gainBuff('devastation',10,1+sold*0.01,1+sold*0.01);`)
 				 .replace(`else if (godLvl==2) Game.gainBuff('devastation',10,1+sold*0.005);`, `else if (godLvl==2) Game.gainBuff('devastation',10,1+sold*0.005,1+sold*0.004);`)
 				 .replace(`else if (godLvl==3) Game.gainBuff('devastation',10,1+sold*0.0025);`,`else if (godLvl==3) Game.gainBuff('devastation',10,1+sold*0.0025,1+sold*0.0015); if (Game.hasBuff('Devastation')) { decay.triggerNotif('godzamok'); }`)
-				 .replace('if (success && Game.hasGod)', 'if (success && (Game.auraMult("Earth Shatterer") || (decay.challengeStatus("dualcast") && this.name == "Wizard tower"))) { decay.stop(Math.pow(sold, 0.5) * (decay.challengeStatus("earthShatterer")?1.1:1) * (Game.auraMult("Earth Shatterer")?Game.auraMult("Earth Shatterer"):0.1) * 1, "earthShatterer"); } if (success && Game.hasGod)')
+				 .replace('if (success && Game.hasGod)', 'if (success && (Game.auraMult("Earth Shatterer") || (decay.challengeStatus("dualcast") && this.name == "Wizard tower"))) { decay.stop(Math.pow(sold, 0.5) * (decay.challengeStatus("earthShatterer")?1.1:1) * (Game.auraMult("Earth Shatterer")?Game.auraMult("Earth Shatterer"):0.1) * 1, "earthShatterer"); } if (success && Math.random() < 1 / (100000 / Game.auraMult("Dragon\'s Curve"))) { let h = decay.spawnWrinklerLead(); if (h) { h.size += 2; h.lumpCarrying = h.lumpCarrying || choose([1, 2, 4, 4, 4, 4]); decay.createLumpGrowths.call(h); } Game.Notify(loc(\'Curve activated\'), loc(\'Sugar lump wrinkler spawned!\'), [20, 25]); } if (success && Game.hasGod)')
 				 .replace('else if (godLvl==2) old.multClick+=sold*0.005;', 'else if (godLvl==2) { old.multClick+=sold*0.005; old.arg2+=sold*0.004; }')
 				 .replace('else if (godLvl==3) old.multClick+=sold*0.0025;', 'else if (godLvl==3) { old.multClick+=sold*0.0025; old.arg2+=sold*0.0015; } old.desc = loc("Clicking power +%1% for %2!",[Math.floor(old.multClick*100-100),Game.sayTime(old.time,-1)]);')
 				 .replace(`Game.auraMult('Dragon Orbs')*0.1`, `Game.auraMult('Dragon Orbs')*(decay.challengeStatus('comboOrbs')?0.25:0.1)`)
@@ -7235,10 +7245,10 @@ Game.registerMod("Kaizo Cookies", {
 			temp.gods['asceticism'].desc2='<span class="green">'+loc("+%1% base CpS.",10)+' '+loc('Decay propagation rate -%1%.', 20)+'</span>';
 			temp.gods['asceticism'].desc3='<span class="green">'+loc("+%1% base CpS.",5)+' '+loc('Decay propagation rate -%1%.', 10)+'</span>';
 
-			addLoc('Sugar lump-carrying wrinklers appear %1x more often');
-			temp.gods['order'].desc1='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often', 2.5)+'</span>';
-			temp.gods['order'].desc2='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often', 2)+'</span>';
-			temp.gods['order'].desc3='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often', 1.5)+'</span>';
+			addLoc('Sugar lump-carrying wrinklers appear %1x more often.');
+			temp.gods['order'].desc1='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often.', 1.75)+'</span>';
+			temp.gods['order'].desc2='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often.', 1.5)+'</span>';
+			temp.gods['order'].desc3='<span class="green">'+loc('Sugar lump-carrying wrinklers appear %1x more often.', 1.25)+'</span>';
 
             //Making Cyclius display the nerf?
 			eval("temp.gods['ages'].activeDescFunc="+Game.Objects['Temple'].minigame.gods['ages'].activeDescFunc.toString().replace("if (godLvl==1) mult*=0.15*Math.sin((Date.now()/1000/(60*60*3))*Math.PI*2);","if (godLvl==1) mult*=0.15*Math.sin((Date.now()/1000/(60*60*12))*Math.PI*2);"));
@@ -7321,7 +7331,7 @@ Game.registerMod("Kaizo Cookies", {
 			let list = [];
 			if (decay.challengeStatus('combo2')) { list.push('Lucky day'); }
 			if (decay.challengeStatus('comboDragonCursor')) { list.push('A crumbly egg'); }
-			if (decay.challengeStatus('sb4')) { list.push('Trigger fingers'); list.push('Non-euclidean baking trays') }
+			if (decay.challengeStatus('sb4')) { list.push('Trigger fingers'); list.push('Non-euclidean baking trays'); }
 
 			let newList = [];
 			for (let i in list) {
@@ -7685,10 +7695,10 @@ Game.registerMod("Kaizo Cookies", {
 		});
 		eval('Game.shimmerTypes.reindeer.initFunc='+Game.shimmerTypes.reindeer.initFunc.toString().replace(`if (Game.Has('Weighted sleighs')) dur*=2;`, `if (Game.Has('Weighted sleighs') && !Game.hasBuff('Reindeer frenzy')) dur*=2;`));
 
-		replaceDesc('Stevia Caelestis', 'Wrinklers approach the big cookie <b>5%</b> slower.<br>You deal <b>5%</b> more damage to wrinklers.', true);
-		replaceDesc('Diabetica Daemonicus', 'The wrinkler stun effect on damage is <b>twice</b> as potent.', true);
-		replaceDesc('Sugar aging process', 'Each grandma (up to 800) increases damage against shiny wrinklers by <b><span>0.<span>0</span>5</span>%</b>.', true);
-		replaceDesc('Sucralosia Inutilis', 'Each wrinkler has a <b>10%</b> chance to spawn with <b>4</b> less layers.', true);
+		replaceDesc('Stevia Caelestis', 'Sugar lump-carrying wrinklers are <b>25%</b> more likely to carry special sugar lumps.', true);
+		replaceDesc('Diabetica Daemonicus', 'You deal <b>30%</b> more damage to lump-carrying wrinklers.', true);
+		replaceDesc('Sugar aging process', 'Each Grandma makes meaty sugar lumps <b>0.<span>0</span>6%</b> more common and make meaty sugar lumps give <b>0.<span>0</span>6%</b> more, for up to 666 Grandmas.', true);
+		replaceDesc('Sucralosia Inutilis', 'Bifurcated sugar lumps give 2 sugar lumps <b>75%</b> of the times instead of 50%.', true);
 		Game.Upgrades['Kitten wages'].basePrice /= 1000;
 
 		Game.synergyPriceFunc = function() { return (this.buildingTie1.basePrice*this.buildingTie2.basePrice)*Game.Tiers[this.tier].price*(Game.Has('Chimera')?0.98:1); }
@@ -7992,6 +8002,7 @@ Game.registerMod("Kaizo Cookies", {
 		auraDesc(12, "Elder frenzy from Wrath cookies appear <b>4x as often</b>.", 'Aura: 4x Elder frenzy chance from Wrath cookies');
 		auraDesc(13, "Having purity now makes positive buffs run out slower, for up to <b>-50%</b> buff duration decrease rate.", 'Aura: purity decreases buff duration decrease rate');
         auraDesc(15, "All cookie production <b>multiplied by 1.5</b>.", 'Aura: all cookie production multiplied by 1.5');
+		auraDesc(17, "Selling buildings has a <b>1 in 100,000</b> chance to summon a lump-carrying wrinkler per building sold.", 'Aura: sell buildings to summon lump wrinklers');
 		auraDesc(21, "Clicking on the big cookie knock back <b>all</b> wrinklers slightly, but excessive use in a short amount of time may lead to reduced effectiveness.", 'Aura: global wrinkler knockback on click');
 
 		decay.dragonGutsKBMeter = 0;
@@ -8763,7 +8774,7 @@ Game.registerMod("Kaizo Cookies", {
 					allWrinklers[i].dist += 0.03;
 					if (Game.Has('Abaddon')) { allWrinklers[i].dist += 0.07; }
 				}
-				allWrinklers[i].hurt += 150 * (Game.Has('Diabetica Daemonicus') + 1);
+				allWrinklers[i].hurt += 150 * (Game.Has('Eternal light') + 1);
 				if (allWrinklers[i].size < prevSize) { decay.spawnWrinklerbits(allWrinklers[i], 4, 1.5, 1.5, decay.wrinklerExplosionBitsFunc, originX - allWrinklers[i].x, originY - allWrinklers[i].y); }
 			}
 		}
@@ -11738,6 +11749,10 @@ Game.registerMod("Kaizo Cookies", {
 				decay.veilBackgroundGlintParticle.curvePow = 0.5;
 			});
 
+			this.createHeavenlyUpgrade('Mangled cookies', 'Wrinklers approach the big cookie <b>5%</b> slower.<br>You deal <b>5%</b> more damage to wrinklers.<q>Whatever happened to this big cookie mustn\'ve been pleasant...</q>', 1e6, [23, 1, kaizoCookies.images.custImg], ['Wrinkly cookies'], -417, -997, 253.5);
+			this.createHeavenlyUpgrade('Eternal light', 'The wrinkler stun effect on damage is <b>twice</b> as potent.<q>Actions disrupting the wrinklers\' concentration is now much more impactful in producing confusion.</q>', 2e6, [25, 1, kaizoCookies.images.custImg], ['Mangled cookies'], -565, -1029, 253.6);
+			this.createHeavenlyUpgrade('Ancient shiny busters', 'Each grandma (up to 800) increases damage against shiny wrinklers by <b><span>0.<span>0</span>5</span>%</b>.<q>What was their name again...? G...rand...?</q>', 1e9, [2, 2, kaizoCookies.images.custImg], ['Sugar aging process'], -242, -1389, 253.7);
+
 			this.upgrades = []; //:ortroll:
 
 			decay.purityAchievsReqMap = [];
@@ -11905,7 +11920,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.cookiesEarned>=1000000000000000) { Game.Unlock('Caramelized luxury'); }
 			if (Game.AchievementsOwned>=400) { Game.Unlock('Meaty disgust'); }
 			if (Game.AchievementsOwned>=500) { Game.Unlock('High-fructose sugar lumps'); }
-			if (Game.HasAchiev('Sugar sugar')) { Game.Unlock('Rainy day lumps'); }
+			if (Game.HasAchiev('Sugar sugar') && Game.cookiesEarned >= Game.Upgrades['Rainy day lumps'].basePrice) { Game.Unlock('Rainy day lumps'); }
 
 			if (Game.Has('Cursedor')) { Game.Unlock('Cursedor [inactive]'); }
 			
