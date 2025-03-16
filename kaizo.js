@@ -11068,7 +11068,13 @@ Game.registerMod("Kaizo Cookies", {
 
 			Game.cookieType = 0;
 
-			Crumbs.findObject('bigCookie').findChild('bigCookieDisplay').behaviors.push(new Crumbs.behaviorInstance(function() { this.imgs[0] = Game.cookiesByChoice[Game.cookieType].pic; }));
+			Crumbs.findObject('bigCookie').findChild('bigCookieDisplay').addBehavior(new Crumbs.behaviorInstance(function() { this.imgs[0] = Game.cookiesByChoice[Game.cookieType].pic; this.scaleX = (Game.cookiesByChoice[Game.cookieType].scaleX || 1) * 0.5; this.scaleY = (Game.cookiesByChoice[Game.cookieType].scaleY || 1) * 0.5; }));
+			const childList = Crumbs.findObject('bigCookie').findChild('bigCookieDisplay').children;
+			for (let i in childList) {
+				if (childList[i].imgs.length && childList[i].imgs[0] == 'cookieShadow.png') {
+					childList[i].addBehavior(new Crumbs.behaviorInstance(function() { this.scaleX = 4 / this.scaleFactorX; this.scaleY = 4 / this.scaleFactorY; }));
+				}
+			}
 
 			Game.last.pool='toggle';
 			Game.last.choicesFunction=function()
@@ -11099,9 +11105,9 @@ Game.registerMod("Kaizo Cookies", {
 				{pic:kaizoCookies.images.bigWrath,name:'Wrath cookie',icon:[15,5]},
 				{pic:kaizoCookies.images.classic,name:'Classic cookie',icon:[18,1,kaizoCookies.images.custImg]},
 				{pic:'imperfectCookie.png',name:'Imperfect cookie',icon:[19,1,kaizoCookies.images.custImg]},
-				{pic:kaizoCookies.images.yeetDragon,name:'Yeetdragon cookie',icon:[17,0,kaizoCookies.images.custImg]},
+				{pic:kaizoCookies.images.yeetDragon,name:'Yeetdragon cookie',icon:[17,0,kaizoCookies.images.custImg],scaleX:0.6,scaleY:0.6},
 				{pic:kaizoCookies.images.minecraft,name:'Minecraft cookie',icon:[16,1,kaizoCookies.images.custImg]},
-				{pic:kaizoCookies.images.terraria,name:'Terraria cookie',icon:[17,1,kaizoCookies.images.custImg]}
+				{pic:kaizoCookies.images.terraria,name:'Terraria cookie',icon:[17,1,kaizoCookies.images.custImg],scaleX:2,scaleY:2}
 			];
 			Game.cookiesByChoice={};
 			for (let i in Game.AllCookies)
