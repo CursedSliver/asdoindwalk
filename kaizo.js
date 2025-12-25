@@ -221,7 +221,7 @@ Game.registerMod("Kaizo Cookies", {
 		kaizoCookies = this;
 		if (App) { if (CrumbsEngineLoaded) { this.header(); } else { Game.Notify('Incorrect loading order!', 'Please restart the game, and load Crumbs Engine before Kaizo cookies.', 0); } return; }
 		if (typeof CrumbsEngineLoaded === 'undefined' || !CrumbsEngineLoaded) { 
-			try { Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://cursedsliver.github.io/Crumbs-engine/Crumbs.js'); } catch (err) { Game.Notify('Crumbs engine failed to load!', 'Critical prerequisite failed to load; mod loading halted', 0); console.log(err); }
+			try { Game.LoadMod((window.kaizo_load_local)?'./Crumbs.js':'https://yeetdragon24.github.io/Old-crumbs/Crumbs.js'); } catch (err) { Game.Notify('Crumbs engine failed to load!', 'Critical prerequisite failed to load; mod loading halted', 0); console.log(err); }
 		}
 
 		//the cccem solution, fixes import corruption on mod load
