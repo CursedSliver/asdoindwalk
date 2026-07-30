@@ -266,6 +266,7 @@
                 this.cookieImagesCache.push(Game.Upgrades[i]);
             }
         }
+        this.cookieImagesCache.push(Game.Upgrades['Chocolate chip cookie']);
     },
     enableBigCookieAC: function() {
         this.state.bigCookieEnabled = true;
