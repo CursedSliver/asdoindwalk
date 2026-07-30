@@ -874,7 +874,8 @@
             bubbles: true,
             cancelable: true,
             clientX: x,
-            clientY: y
+            clientY: y,
+            detail: 1
         };
 
         const mousedownEvent = new MouseEvent('mousedown', eventOptions);
