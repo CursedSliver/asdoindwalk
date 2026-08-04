@@ -21,6 +21,10 @@
             AddLanguage(lang, Langs[lang].name, langMap[lang], true);
         }
         document.addEventListener('mousemove', e => {
+            this.track.lastRealMouseX = this.track.realMouseX;
+            this.track.lastRealMouseY = this.track.realMouseY;
+            this.track.realMouseDeltaX = this.track.realMouseX >= 0 ? e.clientX - this.track.realMouseX : 0;
+            this.track.realMouseDeltaY = this.track.realMouseY >= 0 ? e.clientY - this.track.realMouseY : 0;
             this.track.realMouseX = e.clientX;
             this.track.realMouseY = e.clientY;
         });
@@ -71,6 +75,10 @@
     track: {
         realMouseX: -1,
         realMouseY: -1,
+        lastRealMouseX: -1,
+        lastRealMouseY: -1,
+        realMouseDeltaX: 0,
+        realMouseDeltaY: 0,
         realMouseHeld: false,
         lastBigCookieClick: performance.now(),
         queuedClicks: 0, // for when the interval is less than 1 ms (godmode), batch clicks
@@ -84,7 +92,8 @@
         lastClickSpot: [0, 0],
         defaultParticleAddSuppress: false,
         soundSuppressed: false,
-        trailTimeout: null
+        trailTimeout: null,
+        clickOccurredThisFrame: false
     },
     regenerateLimiters: function() {
         // Bundles particle generation to draw speed to avoid throttling
@@ -150,7 +159,29 @@
             if (mode === 'held-down' && !this.track.realMouseHeld) {
                 shouldClick = false;
             }
-            this.track.velX = this.track.velY = 0;
+
+            const dt = Math.max(performance.now() - this.track.lastBigCookieClick, 1) / 1000;
+            const realInterval = Math.max(this.state.bigCookieClicksIntervalMS, (this.state.bigCookieClickCap === 'faithful')?20:0, (this.state.bigCookieCap === 'hacker')?1:0);
+            const friction = (0.001 + 0.019 * Math.pow(Math.min(realInterval / 100, 1), 0.5)) ** dt;
+            this.track.velX *= friction;
+            this.track.velY *= friction;
+
+            const leftRect = Game.LeftBackground?.canvas?.getBoundingClientRect();
+            if (leftRect) {
+                const centerX = leftRect.left + leftRect.width / 2;
+                const centerY = leftRect.height * 0.4;
+                const normX = (this.track.realMouseX - centerX) / 128;
+                const normY = (this.track.realMouseY - centerY) / 128;
+
+                const deltaScale = 1 / Math.sqrt(Math.max(this.state.speedMult, 0.1)) * 40;
+                const heldDownDamping = (mode === 'held-down')?0.5:1;
+
+                if (this.track.lastClickSpot) {
+                    this.track.velX += (normX - this.track.lastClickSpot[0]) * deltaScale * heldDownDamping;
+                    this.track.velY += (normY - this.track.lastClickSpot[1]) * deltaScale * heldDownDamping;
+                }
+                this.track.lastClickSpot = [normX, normY];
+            }
         } else if (this.state.visuals !== 'hidden') {
             const pattern = this.state.traversalPattern;
             const totalSpace = pattern.spaceTable[pattern.spaceTable.length - 1];
@@ -163,7 +194,8 @@
             Game.mouseX = centerX + off[0];
             Game.mouseY = centerY + off[1];
 
-            const friction = (0.001 + 0.019 * Math.pow(Math.min(this.state.bigCookieClicksIntervalMS / 100, 1), 0.5)) ** ((performance.now() - this.track.lastBigCookieClick) / 1000);
+            const realInterval = Math.max(this.state.bigCookieClicksIntervalMS, (this.state.bigCookieClickCap === 'faithful')?20:0, (this.state.bigCookieCap === 'hacker')?1:0);
+            const friction = (0.001 + 0.019 * Math.pow(Math.min(realInterval / 100, 1), 0.5)) ** ((performance.now() - this.track.lastBigCookieClick) / 1000);
             this.track.velX *= friction;
             this.track.velY *= friction;
             if (this.track.lastClickSpot) {
@@ -177,6 +209,7 @@
         Game.BigCookieState = 2;
 
         if (shouldClick) {
+            this.track.clickOccurredThisFrame = true;
             const oldClick = Game.lastClick;
             const ev = new Event('click');
             if (this.state.visuals !== 'vanilla') { this.track.defaultParticleAddSuppress = true; }
@@ -278,7 +311,7 @@
         this.lastClickSpot = null;
         this.track.velX = 0;
         this.track.velY = 0;
-        if (this.state.trail && this.state.bigCookieClickMode === 'automatic' && this.state.visuals === 'enhanced') {
+        if (this.state.trail && this.state.visuals === 'enhanced') {
             this.trailSpawnLoop();
         }
         this.bigCookieLoop();
@@ -289,29 +322,44 @@
         this.stopTrailLoop();
     },
     trailSpawnLoop: function() {
-        if (!this.state.trail || !this.state.bigCookieEnabled || this.state.bigCookieClickMode !== 'automatic' || this.state.visuals !== 'enhanced') {
+        if (!this.state.trail || !this.state.bigCookieEnabled || this.state.visuals !== 'enhanced') {
             return;
         }
+        const mode = this.state.bigCookieClickMode;
+
         const left = Game.LeftBackground?.canvas;
         if (!left) {
             this.track.trailTimeout = setTimeout(() => this.trailSpawnLoop(), 20);
             return;
         }
-        const centerX = left.getBoundingClientRect().left + left.getBoundingClientRect().width / 2;
-        const centerY = left.getBoundingClientRect().height * 0.4;
-        const pattern = this.state.traversalPattern;
-        if (!pattern) {
-            this.track.trailTimeout = setTimeout(() => this.trailSpawnLoop(), 20);
-            return;
+
+        let x, y;
+
+        if (mode === 'automatic') {
+            const centerX = left.getBoundingClientRect().left + left.getBoundingClientRect().width / 2;
+            const centerY = left.getBoundingClientRect().height * 0.4;
+            const pattern = this.state.traversalPattern;
+            if (!pattern) {
+                this.track.trailTimeout = setTimeout(() => this.trailSpawnLoop(), 20);
+                return;
+            }
+            const totalSpace = pattern.spaceTable[pattern.spaceTable.length - 1];
+            const acc = this.state.reverseTraversal
+                ? totalSpace - (this.track.tAccumulator % totalSpace)
+                : this.track.tAccumulator % totalSpace;
+            const off = pattern.positionAt(pattern.tAt(this.state.constantSpeed ? acc : pattern.distAt(acc)))[0]
+                .map(e => e * 128);
+            x = centerX + off[0];
+            y = centerY + off[1];
+        } else {
+            // hoverover or held-down: only emit trail when a click actually occurs
+            if (!this.track.clickOccurredThisFrame) {
+                this.track.trailTimeout = setTimeout(() => this.trailSpawnLoop(), 20);
+                return;
+            }
+            x = this.track.realMouseX;
+            y = this.track.realMouseY;
         }
-        const totalSpace = pattern.spaceTable[pattern.spaceTable.length - 1];
-        const acc = this.state.reverseTraversal
-            ? totalSpace - (this.track.tAccumulator % totalSpace)
-            : this.track.tAccumulator % totalSpace;
-        const off = pattern.positionAt(pattern.tAt(this.state.constantSpeed ? acc : pattern.distAt(acc)))[0]
-            .map(e => e * 128);
-        const x = centerX + off[0];
-        const y = centerY + off[1];
 
         this.ParticleTypes.Trail.create()
             .setX(x)
@@ -322,6 +370,7 @@
             .setMT(5 / this.state.speedMult)
             .deploy();
 
+        this.track.clickOccurredThisFrame = false;
         this.track.trailTimeout = setTimeout(() => this.trailSpawnLoop(), 20);
     },
     stopTrailLoop: function() {
@@ -493,8 +542,8 @@
             <option value="hoverover" ${this.state.bigCookieClickMode === 'hoverover' ? 'selected' : ''}>${loc('Hover over')}</option>
             <option value="held-down" ${this.state.bigCookieClickMode === 'held-down' ? 'selected' : ''}>${loc('Held down')}</option>
         </select></div>
-        <div class="line${lb?'':' ac-details-hidden'}"></div>
-        <div class="${lb?'':'ac-details-hidden'}">${loc('Visuals:')} <select id="big-cookie-clicker-visuals">
+        <div class="line"></div>
+        <div>${loc('Visuals:')} <select id="big-cookie-clicker-visuals">
             <option value="hidden" ${this.state.visuals === 'hidden' ? 'selected' : ''}>${loc('Hidden')}</option>
             <option value="vanilla" ${this.state.visuals === 'vanilla' ? 'selected' : ''}>${loc('Vanilla')}</option>
             <option value="enhanced" ${this.state.visuals === 'enhanced' ? 'selected' : ''}>${loc('Enhanced')}</option>
@@ -579,18 +628,23 @@
             if (this.value === 'automatic') {
                 l('traversal-pattern-container').style.display = '';
                 if (that.state.trail && that.state.bigCookieEnabled && that.state.visuals === 'enhanced') {
+                    that.stopTrailLoop();
                     that.trailSpawnLoop();
                 }
             } else {
                 l('traversal-pattern-container').style.display = 'none';
-                that.stopTrailLoop();
+                if (that.state.trail && that.state.bigCookieEnabled && that.state.visuals === 'enhanced') {
+                    that.stopTrailLoop();
+                    that.trailSpawnLoop();
+                }
             }
         });
         l('big-cookie-clicker-visuals')?.addEventListener?.('change', function() {
             that.state.visuals = this.value;
             if (this.value !== 'enhanced') {
                 that.stopTrailLoop();
-            } else if (that.state.trail && that.state.bigCookieEnabled && that.state.bigCookieClickMode === 'automatic') {
+            } else if (that.state.trail && that.state.bigCookieEnabled) {
+                that.stopTrailLoop();
                 that.trailSpawnLoop();
             }
             that.refreshTab();
@@ -620,7 +674,8 @@
         });
         l('big-cookie-trail')?.addEventListener?.('change', function() {
             that.state.trail = this.checked;
-            if (this.checked && that.state.bigCookieEnabled && that.state.bigCookieClickMode === 'automatic' && that.state.visuals === 'enhanced') {
+            if (this.checked && that.state.bigCookieEnabled && that.state.visuals === 'enhanced') {
+                that.stopTrailLoop();
                 that.trailSpawnLoop();
             } else if (!this.checked) {
                 that.stopTrailLoop();
@@ -731,7 +786,7 @@
         `, [
             [loc('Confirm'), 'var v=l(\'lb-confirm-input\').value.trim();if(v === \''+
                 this.lbPassPhrases[mode].split(' ').sort().join(' ')
-                +'\'){metaclicker.state.lbMode=\'' + mode + '\';if(\'' + mode + '\'!==\'competitive\'){metaclicker.state.bigCookieClickMode=\'held-down\';metaclicker.state.bigCookieClickCap=\'faithful\';metaclicker.state.visuals=\'vanilla\';}var el=l(\'metaclicker-content\');if(el){el.innerHTML=metaclicker.contentBigCookieAC();metaclicker.eventsBigCookieAC();}Game.ClosePrompt();}else{var err=l(\'lb-confirm-error\');if(err){err.style.display=\'\';err.innerHTML=\'' + loc('Phrase does not match. Please try again.') + '\';}}', 'float:left'],
+                +'\'){metaclicker.state.lbMode=\'' + mode + '\';if(\'' + mode + '\'!==\'competitive\'){metaclicker.state.bigCookieClickMode=\'held-down\';metaclicker.state.bigCookieClickCap=\'faithful\';}var el=l(\'metaclicker-content\');if(el){el.innerHTML=metaclicker.contentBigCookieAC();metaclicker.eventsBigCookieAC();}Game.ClosePrompt();}else{var err=l(\'lb-confirm-error\');if(err){err.style.display=\'\';err.innerHTML=\'' + loc('Phrase does not match. Please try again.') + '\';}}', 'float:left'],
             [loc('Cancel'), '', 'float:right']
         ]);
         // Focus the input field
