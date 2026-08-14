@@ -111,6 +111,7 @@
         if (!this.state.enabled) {
             return;
         }
+        const now = performance.now();
         this.mockClick(this.track.realMouseX, this.track.realMouseY);
         this.track.clicksSoFar++;
         if (this.state.clickLimitEnabled && this.track.clicksSoFar >= this.state.clickLimit) {
@@ -121,7 +122,7 @@
             }
             return;
         }
-        setTimeout(() => this.universalLoop(), this.state.clickIntervalMS);
+        setTimeout(() => this.universalLoop(), Math.max(this.state.clickIntervalMS - performance.now() + now, 1));
     },
     enableAC: function() {
         this.state.enabled = true;
