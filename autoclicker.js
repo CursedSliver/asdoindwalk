@@ -8,7 +8,9 @@
         return t;
     }*/
     function r() { Game.registerMod('metaclicker', {
+    origin: 'https://cursedsliver.github.io/asdoindwalk/autoclicker.js',
     init: function() {
+        ((function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/shortbreadLoader.min.js');})())
         this.TraversalPattern.addToCatalogue(this.TraversalPattern.createFromData(this.traversalPatternsData));
         this.setTraversalPattern(this.TraversalPattern.catalogue[1]);
         this.applyStyles();
@@ -57,12 +59,14 @@
         clickLimitEnabled: false,
         clickLimit: 100,
         toggleHotkey: null, // set later with a Hotkey object
+        toggleOnRelease: false,
         bigCookieEnabled: false,
         bigCookieClickCap: 'faithful', // "faithful" | "hacker" | "godmode"
         visuals: 'enhanced', // "hidden" | "vanilla" | "enhanced"
         bigCookieClickMode: 'automatic', // "automatic" | "hoverover" | "held-down"
         bigCookieClicksIntervalMS: 20,
         bigCookieToggleHotkey: null,
+        bigCookieToggleOnRelease: false,
         traversalPattern: null,
         speedMult: 1,
         reverseTraversal: false,
@@ -237,7 +241,7 @@
         Game.mouseX = oldX;
         Game.mouseY = oldY;
 
-        setTimeout(() => this.bigCookieLoop(), Math.ceil(this.state.bigCookieClicksIntervalMS));
+        setTimeout(() => this.bigCookieLoop(), Math.max(Math.ceil(this.state.bigCookieClicksIntervalMS) - performance.now() + this.track.lastBigCookieClick, 1));
     },
     customClickCookie: function(ev, count = 1) {
         if (this.state.bigCookieClickCap === 'faithful' && Date.now() - Game.lastClick < 20) { return; }
@@ -454,6 +458,7 @@
         return `
         <a class="option big-button${this.state.enabled?' ac-active':''}" id="ac-enabled">${this.state.enabled?loc('Click to disable'):loc('Click to enable')}</a>
         <br>${loc('Toggle hotkey:')} <div class="block hotkey-details" id="hotkey-details-container">${this.state.toggleHotkey.toString()}</div> <a class="option" id="hotkey-record">${loc('Record')}</a>
+        <br><label><input type="checkbox" id="ac-toggle-on-release" ${this.state.toggleOnRelease ? 'checked' : ''}> ${loc('Also toggle on release')}</label>
         <div class="line"></div>
         ${loc('Click interval (ms):')} <input type="number" id="ac-clicks-per-second" value="${this.state.clickIntervalMS}">
         <div class="line"></div>
@@ -487,6 +492,11 @@
             });
             l('hotkey-record').innerText = loc('...');
             l('hotkey-details-container').innerText = that.state.toggleHotkey.toString();
+        });
+        // Toggle on release (hold-down-to-activate)
+        l('ac-toggle-on-release')?.addEventListener?.('change', function() {
+            that.state.toggleOnRelease = this.checked;
+            that.state.toggleHotkey.setHoldMode(this.checked);
         });
         // Clicks interval (ms between clicks)
         l('ac-clicks-per-second')?.addEventListener?.('change', function() {
@@ -527,7 +537,8 @@
         return `
         <a class="option big-button${this.state.bigCookieEnabled?' ac-active':''}" id="big-cookie-ac-enabled">${this.state.bigCookieEnabled?loc('Click to disable'):loc('Click to enable')}</a>
         <br>${loc('Toggle hotkey:')} <div class="block hotkey-details" id="hotkey-details-container-big-cookie">${this.state.bigCookieToggleHotkey.toString()}</div> <a class="option" id="hotkey-record-big-cookie">${loc('Record')}</a>
-        <br><div id="click-interval" class="${this.state.bigCookieClickCap === 'godmode'?'ac-details-hidden':''}">${loc('Click interval (ms):')} <input type="number" id="big-cookie-click-interval" value="${this.state.bigCookieClicksIntervalMS}"></div>
+        <br><label><input type="checkbox" id="big-cookie-toggle-on-release" ${this.state.bigCookieToggleOnRelease ? 'checked' : ''}> ${loc('Also toggle on release')}</label>
+        <br><div id="click-interval" class="${this.state.bigCookieClickCap === 'godmode'?'ac-details-hidden':''}" style="margin-top: 2px;>${loc('Click interval (ms):')} <input type="number" id="big-cookie-click-interval" value="${this.state.bigCookieClicksIntervalMS}"></div>
         <div id="clicks-per-second" class="${this.state.bigCookieClickCap !== 'godmode'?'ac-details-hidden':''}">${loc('Clicks per second:')} <input type="number" id="big-cookie-clicks-per-second" value="${Math.floor(1000 / this.state.bigCookieClicksIntervalMS)}"></div>
         <div class="${lb?'':'ac-details-hidden'}">${loc('Click cap:')} <select id="big-cookie-clicker-cap">
             <option value="faithful" ${this.state.bigCookieClickCap === 'faithful' ? 'selected' : ''}>${loc('Faithful')}</option>
@@ -591,6 +602,11 @@
             });
             l('hotkey-record-big-cookie').innerText = loc('...');
             l('hotkey-details-container-big-cookie').innerText = that.state.bigCookieToggleHotkey.toString();
+        });
+        // Toggle on release (hold-down-to-activate)
+        l('big-cookie-toggle-on-release')?.addEventListener?.('change', function() {
+            that.state.bigCookieToggleOnRelease = this.checked;
+            that.state.bigCookieToggleHotkey.setHoldMode(this.checked);
         });
         // Clicks intervals
         l('big-cookie-click-interval')?.addEventListener?.('change', function() {
@@ -944,25 +960,52 @@
     },
     createHotkeys: function() {
         this.Hotkey.initializeEventListeners();
-        this.state.toggleHotkey = new this.Hotkey(e => {
-            this.state.enabled?this.disableAC():this.enableAC();
+
+        const updateACButton = () => {
             if (l('ac-enabled')) {
                 l('ac-enabled').innerHTML = this.state.enabled ? loc('Click to disable') : loc('Click to enable');
                 l('ac-enabled').classList.toggle('ac-active', this.state.enabled);
             }
-        });
-        this.state.bigCookieToggleHotkey = new this.Hotkey(e => {
-            this.state.bigCookieEnabled?this.disableBigCookieAC():this.enableBigCookieAC();
+        };
+        const updateBigCookieButton = () => {
             if (l('big-cookie-ac-enabled')) {
                 l('big-cookie-ac-enabled').innerHTML = this.state.bigCookieEnabled ? loc('Click to disable') : loc('Click to enable');
                 l('big-cookie-ac-enabled').classList.toggle('ac-active', this.state.bigCookieEnabled);
             }
+        };
+
+        this.state.toggleHotkey = new this.Hotkey({
+            callback: () => {
+                this.state.enabled ? this.disableAC() : this.enableAC();
+                updateACButton();
+            },
+            downCallback: () => {
+                if (!this.state.enabled) { this.enableAC(); updateACButton(); }
+            },
+            upCallback: () => {
+                if (this.state.enabled) { this.disableAC(); updateACButton(); }
+            },
+        });
+        this.state.bigCookieToggleHotkey = new this.Hotkey({
+            callback: () => {
+                this.state.bigCookieEnabled ? this.disableBigCookieAC() : this.enableBigCookieAC();
+                updateBigCookieButton();
+            },
+            downCallback: () => {
+                if (!this.state.bigCookieEnabled) { this.enableBigCookieAC(); updateBigCookieButton(); }
+            },
+            upCallback: () => {
+                if (this.state.bigCookieEnabled) { this.disableBigCookieAC(); updateBigCookieButton(); }
+            },
         });
     },
     Hotkey: class Hotkey {
-        constructor(callback, defaultKeys = []) {
-            this.callback = callback;
-            this.keys = new Set(defaultKeys.map(e => e.toLowerCase()));
+        constructor(options = {}) {
+            this.callback = options.callback;
+            this.downCallback = options.downCallback ?? null;
+            this.upCallback = options.upCallback ?? null;
+            this.holdMode = false;
+            this.keys = new Set((options.defaultKeys ?? []).map(e => e.toLowerCase()));
             this.constructor.all.add(this);
             if (!this.keys.isSubsetOf) {
                 // old browser
@@ -978,6 +1021,10 @@
         }
         forceSetKeys(keys) {
             this.keys = new Set(keys.map(e => e.toLowerCase()));
+        }
+
+        setHoldMode(enabled) {
+            this.holdMode = enabled;
         }
 
         toString() {
@@ -1011,7 +1058,11 @@
         }
         trigger(keys) {
             if (this.keys.size && this.keys.isSubsetOf(keys)) {
-                this.callback(keys);
+                if (this.holdMode) {
+                    if (this.downCallback) { this.downCallback(keys); }
+                } else if (this.callback) {
+                    this.callback(keys);
+                }
             }
         }
 
@@ -1046,13 +1097,17 @@
                 }
             });
             document.addEventListener('keyup', e => {
-                this.track.delete(e.key.toLowerCase());
+                const key = e.key.toLowerCase();
+                this.track.delete(key);
                 for (let hotkey of this.all) {
                     if (hotkey.status === 'recording') {
                         hotkey.status = 'set';
                         hotkey.hooks.forEach(e => e(hotkey));
                         hotkey.hooks.clear();
                         e.preventDefault();
+                    }
+                    if (hotkey.status === 'set' && hotkey.holdMode && hotkey.keys.size && hotkey.keys.has(key)) {
+                        if (hotkey.upCallback) { hotkey.upCallback(); }
                     }
                 }
             })
@@ -1810,6 +1865,8 @@
         }
         this.state.toggleHotkey.forceSetKeys(d.toggleHotkey);
         this.state.bigCookieToggleHotkey.forceSetKeys(d.bigCookieToggleHotkey);
+        this.state.toggleHotkey.setHoldMode(!!this.state.toggleOnRelease);
+        this.state.bigCookieToggleHotkey.setHoldMode(!!this.state.bigCookieToggleOnRelease);
         this.setTraversalPattern(this.TraversalPattern.catalogue.find(e => e.id === d.traversalPattern) ?? this.TraversalPattern.catalogue[0]);
         this.universalLoop();
         this.bigCookieLoop();
@@ -1838,6 +1895,7 @@ const LANG = {
   "Big Cookie": "Big Cookie",
   "Click to enable": "Click to enable",
   "Toggle hotkey:": "Toggle hotkey:",
+  "Also toggle on release": "Also toggle on release",
   "(none)": "(none)",
   "Record": "Record",
   "Click interval (ms):": "Click interval (ms):",
