@@ -17,7 +17,7 @@
         AddLanguage('EN', 'english', LANG, true);
         const lang = localStorageGet('CookieClickerLang') ?? 'EN';
         const langMap = {
-            'CN': LANG_CN
+            'ZH-CN': LANG_CN
         }
         if (lang !== 'EN' && langMap[lang]) {
             AddLanguage(lang, Langs[lang].name, langMap[lang], true);
@@ -462,8 +462,8 @@
         <br><label><input type="checkbox" id="ac-toggle-on-release" ${this.state.toggleOnRelease ? 'checked' : ''}> ${loc('Also toggle on release')}</label>
         <div class="line"></div>
         ${loc('Click interval (ms):')} <input type="number" id="ac-clicks-per-second" value="${this.state.clickIntervalMS}">
-        <div class="line"></div>
-        <label class="click-limit-row">
+        <div class="line" style="${lb?'':'display:none;'}"></div>
+        <label class="click-limit-row" style="${lb?'':'display:none;'}">
             <input type="checkbox" id="ac-click-limit-enabled" ${this.state.clickLimitEnabled ? 'checked' : ''}>
             ${loc('Click')}
             <input type="number" id="ac-click-limit" value="${this.state.clickLimit}">
@@ -568,7 +568,7 @@
         <div id="traversal-pattern-container" style="${this.state.bigCookieClickMode === 'automatic'?'':'display:none;'}">
             <div class="line"></div>
             ${loc('Traversal pattern:')} <select id="big-cookie-traversal-pattern">
-            ${this.TraversalPattern.catalogue.map(e => `<option value="${e.name}" ${e.name === this.state.traversalPattern.name ? 'selected' : ''}>${e.name}</option>`).join('')}
+            ${this.TraversalPattern.catalogue.map(e => `<option value="${e.name}" ${e.name === this.state.traversalPattern.name ? 'selected' : ''}>${loc(e.name)}</option>`).join('')}
             </select>
             <br>${loc('Speed multiplier:')} <input type="number" id="big-cookie-speed-mult" value="${this.state.speedMult}">
             <br><label><input type="checkbox" id="big-cookie-reverse-traversal" ${this.state.reverseTraversal ? 'checked' : ''}> ${loc('Reverse direction')}</label>
@@ -1966,7 +1966,87 @@ const LANG = {
   "(release to set)": "(release to set)"
 }
 
-const LANG_CN = Object.assign({}, LANG); // translate later
+const LANG_CN = {
+  "Point": "点",
+  "Circle": "圆形",
+  "Infinity": "无限",
+  "Ellipse": "椭圆",
+  "Triangle": "三角形",
+  "Metaclicker v%1": "Metaclicker v%1",
+  "-": "-",
+  "Universal": "通用",
+  "Big Cookie": "大饼干",
+  "Click to enable": "点击以启用",
+  "Toggle hotkey:": "切换快捷键：",
+  "Also toggle on release": "松开时也切换",
+  "(none)": "（无）",
+  "Record": "录制",
+  "Click interval (ms):": "点击间隔（毫秒）：",
+  "Click": "点击",
+  "times": "次",
+  "+": "+",
+  "Clicks per second:": "每秒点击次数：",
+  "Some settings are restricted due to your leaderboard settings. To use the big cookie autoclicker, you must hold down your mouse over the big cookie for it to activate.": "由于你的排行榜设置，部分设置受到限制。要使用大饼干自动点击器，你必须将鼠标按住在大饼干上方才能激活。",
+  "Click cap:": "点击上限：",
+  "Faithful": "忠实",
+  "Hacker": "黑客",
+  "God mode": "上帝模式",
+  "Click mode:": "点击模式：",
+  "Automatic": "自动",
+  "Hover over": "悬停",
+  "Held down": "按住",
+  "Visuals:": "视觉效果：",
+  "Hidden": "隐藏",
+  "Vanilla": "原版",
+  "Enhanced": "增强",
+  "Ultra": "极致",
+  "Traversal pattern:": "移动轨迹：",
+  "Speed multiplier:": "速度倍率：",
+  "Reverse direction": "反向移动",
+  "Constant travel speed": "恒定移动速度",
+  "Trail particles": "轨迹粒子",
+  "Numbers": "数字",
+  "Particles": "粒子",
+  "Click sound": "点击音效",
+  "Leaderboard mode: %1": "排行榜模式：%1",
+  "Click to disable": "点击以禁用",
+  "Leaderboard settings": "排行榜设置",
+  "Leaderboard mode: ": "排行榜模式：",
+  "None": "无",
+  "Competitive": "Competitive",
+  "Finnless": "Finnless",
+  "General": "General",
+  "Dashnet Forums Cookie Clicker Leaderboards": "Dashnet 论坛 Cookie Clicker 排行榜",
+  "Leaderboard modes are setting restrictions on the autoclicker, based on the %1.": "排行榜模式会根据 %1 对自动点击器设置限制。",
+  "If you choose any leaderboard mode other than \"none\", some of your settings will be restricted.": "如果你选择了除“无”以外的任何排行榜模式，你的部分设置将会受到限制。",
+  "The big cookie autoclicker's click mode will be forced to \"Held down\" in all leaderboards, and the click cap will be set to \"Faithful\".": "在所有排行榜中，大饼干自动点击器的点击模式将被强制设为“按住”，点击上限将被设为“忠实”。",
+  "In addition, you cannot use the autoclicker in the competitive leaderboard.": "此外，你无法在 Competitive 排行榜中使用自动点击器。",
+  "Leaderboard mode selection is permanent. Once set, it cannot be changed for this save. Wiping save will reset leaderboard modes.": "排行榜模式的选择是永久的。一旦设置，此存档将无法更改。清空存档将重置排行榜模式。",
+  "Warning: Once you select a leaderboard mode, it becomes permanent and cannot be changed later, even if you ascend!": "警告：一旦你选择了排行榜模式，它将永久生效且无法更改，即使飞升也无法更改！",
+  "You will <b>not</b> join the leaderboard automatically. This mod will not prevent you from breaking any leaderboard rules and is not proof of eligibility. Make sure that you have already followed the rules for your leaderboard of choice. To join, follow the instructions by clicking on <a href=\"%1\" target=\"_blank\">this link</a>.": "你<b>不会</b>自动加入排行榜。此模组不会阻止你违反任何排行榜规则，也不能作为资格证明。请确保你已经遵守了你所选排行榜的规则。要加入，请点击<a href=\"%1\" target=\"_blank\">此链接</a>并按照说明操作。",
+  "Confirm leaderboard mode": "确认排行榜模式",
+  "You are about to set your leaderboard mode to %1.": "你即将把排行榜模式设置为 %1。",
+  "This choice is permanent and irreversible. You will not be able to switch leaderboards or change this setting later.": "此选择是永久且不可逆的。你以后将无法切换排行榜或更改此设置。",
+  "To confirm, please sort all words in the following phrase in alphabetical order separated by spaces, then type it in the box below.": "为确认，请将下面短语中的所有单词按字母顺序排列并用空格分隔，然后输入到下方框中。",
+  "Type the confirmation phrase above": "输入上方确认短语",
+  "Confirm selection": "确认选择",
+  "I understand and accept": "我理解并接受",
+  "Phrase does not match. Please try again.": "短语不匹配，请重试。",
+  "All done!": "全部完成！",
+  "Cancel": "取消",
+  "Click cap explanation": "点击上限说明",
+  "Click speed is capped to 50 clicks per second regardless what you set the interval to, which is what the game normally caps all autoclickers to.": "无论你将间隔设为多少，点击速度都被限制为每秒 50 次，这是游戏通常对所有自动点击器的限制。",
+  "The autoclicker can click as fast as 1,000 clicks per second, which is not possible with any external autoclickers. Some people may consider this cheating.": "自动点击器可以每秒点击高达 1,000 次，这是任何外部自动点击器都无法做到的。有些人可能认为这属于作弊。",
+  "\"Click interval\" is replaced with \"Clicks per second\", allowing you to click as fast as your CPU can handle. You will also get the Cheated Cookies Taste Awful shadow achievement.": "“点击间隔”被替换为“每秒点击次数”，让你能以 CPU 所能承受的最快速度点击。你还将获得“作弊饼干真难吃”隐藏成就。",
+  "Got it": "知道了",
+  "Are you sure?": "你确定吗？",
+  "You will get the <b>%1</b> achievement. Are you sure you want to enable it?": "你将获得<b>%1</b>成就。你确定要启用吗？",
+  "I'm aware of the consequences, proceed": "我已了解后果，继续",
+  "Nevermind": "算了",
+  "...": "...",
+  "(press keys)": "（按下按键）",
+  "(release to set)": "（松开以设置）"
+}
 
 if (typeof Game !== 'undefined' && Game && Game.ready) { r(); } 
 else { 
