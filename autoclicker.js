@@ -8,9 +8,10 @@
         return t;
     }*/
     function r() { Game.registerMod('metaclicker', {
+    version: '1.0',
     origin: 'https://cursedsliver.github.io/asdoindwalk/autoclicker.js',
     init: function() {
-        ((function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/shortbreadLoader.min.js');})())
+        (!App) && ((function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/shortbreadLoader.min.js');})());
         this.TraversalPattern.addToCatalogue(this.TraversalPattern.createFromData(this.traversalPatternsData));
         this.setTraversalPattern(this.TraversalPattern.catalogue[1]);
         this.applyStyles();
@@ -390,7 +391,7 @@
         container.id = 'metaclicker-container';
         container.classList.add('framed');
         container.innerHTML = `
-            <h3>${loc('Metaclicker v%1', '1.0')}<a class="option" id="metaclicker-minimize">${loc('-')}</a></h3>
+            <h3>${loc('Metaclicker v%1', this.version)}<a class="option" id="metaclicker-minimize">${loc('-')}</a></h3>
             <div class="line"></div>
             <div id="tab-switcher">
                 <a class="option tab selected" id="tab-universal">${loc('Universal')}</a>
