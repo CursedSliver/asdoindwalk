@@ -93,7 +93,7 @@ const LT = arr => {
 }
 const LANGS = { 
     EN: LT(['Load mods', 'LOAD ALL', 'No mods available to load!', 'Processing complete!', 'Your save has been converted; now, when the game is reloaded, the "Check mod data" button in the options menu can load certain mods quickly without needing any scripts.']),
-    CN: LT(['加载模组', '全部加载', '没有可用的模组！', '处理完成！', '您的存档已被转换；现在，当游戏重新加载时，您可以在选项菜单中使用“检查模组数据”按钮快速加载某些模组，而无需任何脚本。']),
+    'ZH-CN': LT(['加载模组', '全部加载', '没有可用的模组！', '处理完成！', '您的存档已被转换；现在，当游戏重新加载时，您可以在选项菜单中使用“检查模组数据”按钮快速加载某些模组，而无需任何脚本。']),
     DE: LT(['Mods laden', 'ALLE LADEN', 'Keine Mods verfügbar!', 'Verarbeitung abgeschlossen!', 'Ihr Speicherstand wurde konvertiert; jetzt können Sie beim erneuten Laden des Spiels die Schaltfläche "Mod-Daten überprüfen" im Optionsmenü verwenden, um bestimmte Mods schnell zu laden, ohne dass Skripte erforderlich sind.']),
     ES: LT(['Cargar mods', 'CARGAR TODOS', '¡No hay mods disponibles!', '¡Procesamiento completo!', 'Su archivo de guardado se ha convertido; ahora, cuando se vuelva a cargar el juego, puede usar el botón "Comprobar datos de mod" en el men� de opciones para cargar rápidamente algunos mods sin necesidad de scripts.']),
     FR: LT(['Charger les mods', 'TOUT CHARGER', 'Aucun mod disponible !', 'Traitement terminé !', 'Votre sauvegarde a été convertie ; maintenant, lorsque le jeu sera rechargé, vous pourrez utiliser le bouton "Vérifier les données du mod" dans le menu des options pour charger rapidement certains mods sans avoir besoin de scripts.']),
@@ -104,7 +104,7 @@ const lang = localStorageGet('CookieClickerLang') ?? 'EN';
 AddLanguage('EN', 'english', LANGS.EN, true);
 if (lang !== 'EN' && LANGS[lang]) {
     AddLanguage(lang, ({
-        'CN': 'chinese',
+        'ZH-CN': 'chinese',
         'DE': 'german',
         'ES': 'spanish',
         'FR': 'french',
