@@ -19,13 +19,47 @@ To play it in singleplayer, you can set up multiple tabs with the mod loaded to 
 ## Installation
 Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
 
-| Method | Code/Link | Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
-| ------ | --------- | ----------- |
-| CCMM extension | `https://glander.club/asjs/EQABuXqD` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
-| Bookmarklet | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
-| Console command | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}` | [Open the developer console](https://balsamiq.com/support/troubleshooting-faqs/browser-console/) and paste the command into the console. |
-| Tampermonkey/Greasemonkey | In the addendum section. | Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey. |
-| Steam Workshop | | Subscribe on Steam Workshop. |
+<table>
+<colgroup>
+<col width="20%">
+<col width="30%">
+<col width="50%">
+</colgroup>
+<thead>
+<tr>
+<th width="20%">Method</th>
+<th width="30%">Code/Link</th>
+<th width="50%">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CCMM extension</td>
+<td><code>https://glander.club/asjs/EQABuXqD</code></td>
+<td>Install the <a href="https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned">CCMM extension</a> and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm.</td>
+</tr>
+<tr>
+<td>Bookmarklet</td>
+<td><code>javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}</code></td>
+<td>Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker.</td>
+</tr>
+<tr>
+<td>Console command</td>
+<td><code>javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}</code></td>
+<td><a href="https://balsamiq.com/support/troubleshooting-faqs/browser-console/">Open the developer console</a> and paste the command into the console.</td>
+</tr>
+<tr>
+<td>Tampermonkey/Greasemonkey</td>
+<td>In the addendum section.</td>
+<td>Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey.</td>
+</tr>
+<tr>
+<td>Steam Workshop</td>
+<td></td>
+<td>Subscribe on Steam Workshop.</td>
+</tr>
+</tbody>
+</table>
 
 ## Contact
 To report bugs or make feature requests, and if you have questions/concerns, make a pull request or DM me on discord: @cursedsliver (make sure that you don't misspell it!)

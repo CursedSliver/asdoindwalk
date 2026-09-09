@@ -11,13 +11,47 @@ This was originally a browser-exclusive mod. It was created in July 2026.
 ## Installation
 Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
 
-| Method | Code/Link | Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
-| ------ | --------- | ----------- |
-| CCMM extension | `https://cursedsliver.github.io/asdoindwalk/autoclicker.js` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
-| Bookmarklet | `javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
-| Console command | `javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}` | [Open the developer console](https://balsamiq.com/support/troubleshooting-faqs/browser-console/) and paste the command into the console. |
-| Tampermonkey/Greasemonkey | In the addendum section. | Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey. |
-| Steam Workshop | [https://steamcommunity.com/sharedfiles/filedetails/?id=3789272470](https://steamcommunity.com/sharedfiles/filedetails/?id=3789272470) | Subscribe on Steam Workshop. |
+<table>
+<colgroup>
+<col width="20%">
+<col width="30%">
+<col width="50%">
+</colgroup>
+<thead>
+<tr>
+<th width="20%">Method</th>
+<th width="30%">Code/Link</th>
+<th width="50%">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CCMM extension</td>
+<td><code>https://cursedsliver.github.io/asdoindwalk/autoclicker.js</code></td>
+<td>Install the <a href="https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned">CCMM extension</a> and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm.</td>
+</tr>
+<tr>
+<td>Bookmarklet</td>
+<td><code>javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}</code></td>
+<td>Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker.</td>
+</tr>
+<tr>
+<td>Console command</td>
+<td><code>javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}</code></td>
+<td><a href="https://balsamiq.com/support/troubleshooting-faqs/browser-console/">Open the developer console</a> and paste the command into the console.</td>
+</tr>
+<tr>
+<td>Tampermonkey/Greasemonkey</td>
+<td>In the addendum section.</td>
+<td>Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey.</td>
+</tr>
+<tr>
+<td>Steam Workshop</td>
+<td><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3789272470">https://steamcommunity.com/sharedfiles/filedetails/?id=3789272470</a></td>
+<td>Subscribe on Steam Workshop.</td>
+</tr>
+</tbody>
+</table>
 
 ## Localization support
 This mod currently supports **English** and **Chinese**. Support for further languages are possible; if you wish to contribute, contact me on discord (cursedsliver) for more details.
