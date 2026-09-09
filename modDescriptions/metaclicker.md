@@ -10,8 +10,9 @@ This was originally a browser-exclusive mod. It was created in July 2026.
 
 ## Installation
 Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
+
 | Method | Code/Link | Description |
-| --- | --- | --- |
+| ------ | --------- | ----------- |
 | CCMM extension | `https://cursedsliver.github.io/asdoindwalk/autoclicker.js` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
 | Bookmarklet | `javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
 | Console command | `javascript:{(function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/autoclicker.js');})();}` | [Open the developer console](https://balsamiq.com/support/troubleshooting-faqs/browser-console/) and paste the command into the console. |
