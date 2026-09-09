@@ -10,7 +10,7 @@ This mod currently does not support translations.
 ## Installation
 Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
 
-| Method | Code/Link | Description |
+| Method | Code/Link | Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | ------ | --------- | ----------- |
 | CCMM extension | `https://glander.club/asjs/X0hQVTeP` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
 | Bookmarklet | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/X0hQVTeP');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
