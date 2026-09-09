@@ -12,6 +12,7 @@
     origin: 'https://cursedsliver.github.io/asdoindwalk/autoclicker.js',
     init: function() {
         (!App) && ((function(){Game.LoadMod('https://cursedsliver.github.io/asdoindwalk/shortbreadLoader.min.js');})());
+        window.metaclicker = this;
         this.TraversalPattern.addToCatalogue(this.TraversalPattern.createFromData(this.traversalPatternsData));
         this.setTraversalPattern(this.TraversalPattern.catalogue[1]);
         this.applyStyles();
@@ -961,6 +962,19 @@
         element.dispatchEvent(clickEvent);
     },
     createHotkeys: function() {
+        if (!Set.prototype.isSubsetOf) {
+            Set.prototype.isSubsetOf = function (other) {
+                if (!(other instanceof Set)) {
+                    throw new TypeError('Argument must be a Set');
+                }
+                for (const element of this) {
+                    if (!other.has(element)) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+        }
         this.Hotkey.initializeEventListeners();
 
         const updateACButton = () => {
@@ -1009,17 +1023,6 @@
             this.holdMode = false;
             this.keys = new Set((options.defaultKeys ?? []).map(e => e.toLowerCase()));
             this.constructor.all.add(this);
-            if (!this.keys.isSubsetOf) {
-                // old browser
-                this.keys.isSubsetOf = function(keys) {
-                    for (let key of keys) {
-                        if (!this.has(key)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
         }
         forceSetKeys(keys) {
             this.keys = new Set(keys.map(e => e.toLowerCase()));
@@ -1763,11 +1766,11 @@
             window.___old_particlesDraw_func = func;
             Game.particlesDraw = function(z) {
                 window.___old_particlesDraw_func(z);
-                metaclicker.drawCustomParticles(z, Game.LeftBackground);
+                if (window.metaclicker) { metaclicker.drawCustomParticles(z, Game.LeftBackground); }
             }
         } else {
             // Inject the function
-            eval('Game.particlesDraw='+str.slice(0, str.length - 1) + '\nmetaclicker.drawCustomParticles(z, ctx);}');
+            eval('Game.particlesDraw='+str.slice(0, str.length - 1) + '\nif (window.metaclicker) { metaclicker.drawCustomParticles(z, ctx); } }');
         }
 
         // Also register a mutationobserver for canvas height
@@ -1807,12 +1810,12 @@
         if (unsafe) {
             window.___old_particleAdd_func = func;
             Game.particleAdd = function(x, y, d, yd, size, dur, z, pic, text) {
-                if (!metaclicker.track.defaultParticleAddSuppress) { 
+                if (window.metaclicker && !metaclicker.track.defaultParticleAddSuppress) { 
                     window.___old_particleAdd_func(x, y, d, yd, size, dur, z, pic, text); 
                 }
             }
         } else {
-            eval('Game.particleAdd='+str.slice(0, str.indexOf('{') + 1) + '\nif (metaclicker.track.defaultParticleAddSuppress) { return; }\n' + str.slice(str.indexOf('{') + 1, str.length));
+            eval('Game.particleAdd='+str.slice(0, str.indexOf('{') + 1) + '\nif (window.metaclicker && metaclicker.track.defaultParticleAddSuppress) { return; }\n' + str.slice(str.indexOf('{') + 1, str.length));
         }
     },
     injectCookieSoundSuppress: function() {
@@ -1882,7 +1885,6 @@
         }
     }
 });
-window.metaclicker = Game.mods.metaclicker;
 } 
 
 const LANG = {
