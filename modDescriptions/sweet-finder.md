@@ -8,10 +8,21 @@ This mod is entirely hand-coded with NO AI assistance of any form. It has a long
 This mod currently does not support translations.
 
 ## Installation
-Use Sweet finder on web using the following bookmarklet:
-`javascript:{(function(){Game.LoadMod('https://glander.club/asjs/X0hQVTeP');})();}`
-It is also usable as a console command.
+Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
+| Method | Code/Link | Description |
+| --- | --- | --- |
+| CCMM extension | `https://glander.club/asjs/X0hQVTeP` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
+| Bookmarklet | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/X0hQVTeP');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
+| Console command | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/X0hQVTeP');})();}` | [Open the developer console](https://balsamiq.com/support/troubleshooting-faqs/browser-console/) and paste the command into the console. |
+| Tampermonkey/Greasemonkey | In the addendum section. | Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey. |
+| Steam Workshop | [https://steamcommunity.com/sharedfiles/filedetails/?id=3789172203](https://steamcommunity.com/sharedfiles/filedetails/?id=3789172203) | Subscribe on Steam Workshop. |
 
+## Contact
+I am the mod creator. To contact me regarding bugs, feature requests, and questions/concerns, DM me on discord: @cursedsliver (make sure that you don't misspell it!)
+
+P.S. There is now a FtHoF Planner **v6.1**! It is more powerful than v5 or v4: [https://plasma4.github.io/FtHoF-Planner-v6]
+
+### Addendum
 If you use tampermonkey or greasemonkey, use the following userscript:
 ```js 
 // ==UserScript==
@@ -24,8 +35,3 @@ If you use tampermonkey or greasemonkey, use the following userscript:
 
 window.eval("javascript:{(function(){Game.LoadMod('javascript:{(function(){Game.LoadMod('https://glander.club/asjs/X0hQVTeP');})();}');})();}");
 ```
-
-## Contact
-I am the mod creator. To contact me regarding bugs, feature requests, and questions/concerns, DM me on discord: @cursedsliver (make sure that you don't misspell it!)
-
-P.S. There is now a FtHoF Planner **v6.1**! It is more powerful than v5 or v4: [https://plasma4.github.io/FtHoF-Planner-v6]

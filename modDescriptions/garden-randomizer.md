@@ -17,9 +17,14 @@ Here is an example sheet for four players: [https://docs.google.com/spreadsheets
 To play it in singleplayer, you can set up multiple tabs with the mod loaded to simulate the multiplayer experience.
 
 ## Installation
-Use Garden randomizer on web using the following bookmarklet:
-`javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}`
-It is also usable as a console command.
+Choose one of the following methods to install the mod. For a browser, the CCMM extension is recommended.
+| Method | Code/Link | Description |
+| --- | --- | --- |
+| CCMM extension | `https://glander.club/asjs/EQABuXqD` | Install the [CCMM extension](https://chromewebstore.google.com/detail/cookie-clicker-mod-manage/gehplcbdghdjeinldbgkjdffgkdcpned) and click the "Register new mod" box at the bottom. Paste the link into the URL field of the textbox that appears, then confirm. |
+| Bookmarklet | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}` | Input into the URL field of the bookmarklet, then click on the bookmark while on an instance of Cookie Clicker. |
+| Console command | `javascript:{(function(){Game.LoadMod('https://glander.club/asjs/EQABuXqD');})();}` | [Open the developer console](https://balsamiq.com/support/troubleshooting-faqs/browser-console/) and paste the command into the console. |
+| Tampermonkey/Greasemonkey | In the addendum section. | Post the code in the addendum of this document to a new script on your userscript manager, such as Tampermonkey or Greasemonkey. |
+| Steam Workshop | | Subscribe on Steam Workshop. |
 
 ## Contact
 To report bugs or make feature requests, and if you have questions/concerns, make a pull request or DM me on discord: @cursedsliver (make sure that you don't misspell it!)
