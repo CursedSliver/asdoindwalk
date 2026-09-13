@@ -55,7 +55,7 @@ Choose one of the following methods to install the mod. For a browser, the CCMM 
 ## Contact
 I am the mod creator. To contact me regarding bugs, feature requests, and questions/concerns, DM me on discord: @cursedsliver (make sure that you don't misspell it!)
 
-P.S. There is now a FtHoF Planner **v6.1**! It is more powerful than v5 or v4: [https://plasma4.github.io/FtHoF-Planner-v6]
+P.S. There is now a FtHoF Planner **v6.1**! It is more powerful than v5 or v4: [https://plasma4.github.io/FtHoF-Planner-v6](https://plasma4.github.io/FtHoF-Planner-v6)
 
 ### Addendum
 If you use tampermonkey or greasemonkey, use the following userscript:
