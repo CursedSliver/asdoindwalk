@@ -1,7 +1,7 @@
 # Sweet finder
 If you have used the [FtHoF planner](https://plasma4.github.io/FtHoF-Planner-v6) or have gotten lucky, you might know that you can occasionally get sugar lumps from the Force the Hand of Fate grimoire spell, albeit at an extremely low chance. The effect is called "Sweet!" and gives you one sugar lump. This mod makes it so that upon pressing F or reincarnating, you are notified about the minimum number of spells needed to get a sweet, and how to get it.
 
-This is commonly used with GFD Skip Skip in a strategy called Sweet Plannering, which is the fastest way to get sugar lumps in the game without directly manipulating the RNG with hard exploits. It has a top lump gain rate of **~7 lumps per hour** when used with this mod. More info here: [https://pastebin.com/WSdRdqx2]
+This is commonly used with GFD Skip Skip in a strategy called Sweet Plannering, which is the fastest way to get sugar lumps in the game without directly manipulating the RNG with hard exploits. It has a top lump gain rate of **~7 lumps per hour** when used with this mod. More info here: [https://pastebin.com/WSdRdqx2](https://pastebin.com/WSdRdqx2)
 
 This mod is entirely hand-coded with NO AI assistance of any form. It has a long history of being a browser-exclusive mod; it was created on January, 2024. 
 
